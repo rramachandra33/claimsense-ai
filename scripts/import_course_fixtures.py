@@ -164,6 +164,11 @@ def facts_for(c, p, docs):
         "in_force_at_loss": in_force,
         "days_after_policy_end": max((loss_date - end).days, 0),
         "status_field_conflict": p["policy_status"] == "Active" and not in_force,
+        # Claims management and policy administration each keep their own vehicle record. Money uses
+        # the claim's ACV ("immediately before the loss", CLS-COLL-001); a mismatch is evidence, not an error.
+        "vin_matches_policy": c["vehicle_vin"] == p["vehicle_vin"],
+        "vehicle_matches_policy": all(c[k] == p[k] for k in ("vehicle_year", "vehicle_make", "vehicle_model")),
+        "acv_differs_from_policy_usd": num(str(acv - dec(p["vehicle_acv_usd"]))),
         "coverage_purchased_for_loss": coverage_purchased,
         "deductible_usd": num(str(deductible)) if deductible is not None else None,
         "repair_to_acv_ratio": float(ratio) if ratio is not None else None,
