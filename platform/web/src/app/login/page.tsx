@@ -22,13 +22,13 @@ export default async function LoginPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="relative hidden flex-col justify-between bg-meridian-darkest p-12 text-teal-50 lg:flex">
+      <div className="relative hidden flex-col justify-between bg-claimsense-darkest p-12 text-teal-50 lg:flex">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-meridian-gold font-serif text-lg font-bold text-[#0B2E2A]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-claimsense-gold font-serif text-lg font-bold text-[#0B2E2A]">
             M
           </span>
           <div className="font-serif text-xl font-semibold tracking-tight text-white">
-            Meridian Bank
+            ClaimSense Bank
           </div>
         </div>
         <div>
@@ -49,32 +49,32 @@ export default async function LoginPage() {
       </div>
 
       {/* Form panel */}
-      <div className="flex items-center justify-center bg-meridian-bg px-6 py-12">
+      <div className="flex items-center justify-center bg-claimsense-bg px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-6 lg:hidden">
             <div className="mb-3 flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-meridian-gold font-serif text-base font-bold text-[#0B2E2A]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-claimsense-gold font-serif text-base font-bold text-[#0B2E2A]">
                 M
               </span>
-              <span className="font-serif text-lg font-semibold text-meridian-ink">
-                Meridian Bank
+              <span className="font-serif text-lg font-semibold text-claimsense-ink">
+                ClaimSense Bank
               </span>
             </div>
           </div>
 
-          <h1 className="text-lg font-semibold text-meridian-ink">
+          <h1 className="text-lg font-semibold text-claimsense-ink">
             Sign in to the Ops Console
           </h1>
-          <p className="mb-6 mt-1 text-sm text-meridian-muted">
+          <p className="mb-6 mt-1 text-sm text-claimsense-muted">
             Use your analyst email — no password required in this sandbox.
           </p>
 
-          <div className="rounded-xl border border-meridian-line bg-white p-6 shadow-card">
+          <div className="rounded-xl border border-claimsense-line bg-white p-6 shadow-card">
             <LoginForm defaultEmail={samples[0]?.email} />
           </div>
 
-          <div className="mt-4 rounded-lg border border-meridian-line bg-white/70 p-4 text-xs text-meridian-muted">
-            <div className="mb-2 font-semibold text-meridian-ink">
+          <div className="mt-4 rounded-lg border border-claimsense-line bg-white/70 p-4 text-xs text-claimsense-muted">
+            <div className="mb-2 font-semibold text-claimsense-ink">
               Sample seeded logins
             </div>
             {dbError ? (
@@ -87,7 +87,7 @@ export default async function LoginPage() {
               <ul className="space-y-1">
                 {samples.map((a) => (
                   <li key={a.analyst_id} className="flex justify-between gap-3">
-                    <span className="font-mono text-meridian-ink">{a.email}</span>
+                    <span className="font-mono text-claimsense-ink">{a.email}</span>
                     <span className="text-slate-400">
                       {a.scope === "type_a"
                         ? "Type A"

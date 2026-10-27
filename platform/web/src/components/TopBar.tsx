@@ -14,10 +14,10 @@ export function TopBar({
   crumbs?: Crumb[];
 }) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-meridian-line bg-white px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-claimsense-line bg-white px-6">
       <div className="min-w-0 flex-1">
         {crumbs && crumbs.length > 0 ? (
-          <nav className="mb-0.5 flex items-center gap-1.5 text-xs text-meridian-muted">
+          <nav className="mb-0.5 flex items-center gap-1.5 text-xs text-claimsense-muted">
             {crumbs.map((c, i) => (
               <span key={i} className="flex items-center gap-1.5">
                 {i > 0 ? <span className="text-slate-300">/</span> : null}
@@ -28,7 +28,7 @@ export function TopBar({
             ))}
           </nav>
         ) : null}
-        <h1 className="truncate text-[15px] font-semibold tracking-tight text-meridian-ink">
+        <h1 className="truncate text-[15px] font-semibold tracking-tight text-claimsense-ink">
           {title}
         </h1>
       </div>
@@ -40,7 +40,7 @@ export function TopBar({
           <input
             type="text"
             placeholder="Search disputes, customers, txns…"
-            className="h-9 w-72 rounded-lg border border-meridian-line bg-meridian-bg/60 pl-9 pr-3 text-sm text-meridian-ink placeholder:text-slate-400 focus:border-meridian-primary focus:bg-white focus:outline-none focus:ring-1 focus:ring-meridian-primary"
+            className="h-9 w-72 rounded-lg border border-claimsense-line bg-claimsense-bg/60 pl-9 pr-3 text-sm text-claimsense-ink placeholder:text-slate-400 focus:border-claimsense-primary focus:bg-white focus:outline-none focus:ring-1 focus:ring-claimsense-primary"
           />
         </div>
       </div>
@@ -48,13 +48,13 @@ export function TopBar({
       <button
         type="button"
         title="Notifications"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-meridian-line bg-white text-slate-500 transition-colors hover:bg-meridian-bg"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-claimsense-line bg-white text-slate-500 transition-colors hover:bg-claimsense-bg"
       >
         <Bell className="h-[18px] w-[18px]" />
         <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-rose-500 ring-2 ring-white" />
       </button>
 
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-meridian-primary/10 text-xs font-semibold text-meridian-deep ring-1 ring-inset ring-meridian-primary/20">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-claimsense-primary/10 text-xs font-semibold text-claimsense-deep ring-1 ring-inset ring-claimsense-primary/20">
         {initials(session.fullName)}
       </span>
     </header>

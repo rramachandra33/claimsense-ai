@@ -14,7 +14,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-meridian-bg">
+    <div className="min-h-screen bg-claimsense-bg">
       <Sidebar session={session} />
       <div className="pl-60">
         <TopBar session={session} title={title} crumbs={crumbs} />

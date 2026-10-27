@@ -21,18 +21,18 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-lg border border-meridian-line bg-white shadow-card",
+        "rounded-lg border border-claimsense-line bg-white shadow-card",
         className
       )}
     >
       {title ? (
-        <div className="flex items-center justify-between gap-3 border-b border-meridian-line px-4 py-3">
+        <div className="flex items-center justify-between gap-3 border-b border-claimsense-line px-4 py-3">
           <div className="flex items-center gap-2">
             {icon ? <span className="text-slate-400">{icon}</span> : null}
             <div>
-              <h2 className="text-sm font-semibold text-meridian-ink">{title}</h2>
+              <h2 className="text-sm font-semibold text-claimsense-ink">{title}</h2>
               {subtitle ? (
-                <p className="text-xs text-meridian-muted">{subtitle}</p>
+                <p className="text-xs text-claimsense-muted">{subtitle}</p>
               ) : null}
             </div>
           </div>
@@ -56,7 +56,7 @@ export function Field({
       <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-meridian-ink">{children}</dd>
+      <dd className="mt-0.5 text-sm text-claimsense-ink">{children}</dd>
     </div>
   );
 }
@@ -79,7 +79,7 @@ export function Empty({
 export function DbErrorPanel({ compact = false }: { compact?: boolean }) {
   return (
     <div className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
-      <div className="font-semibold">Could not reach the Meridian database.</div>
+      <div className="font-semibold">Could not reach the ClaimSense database.</div>
       {!compact ? (
         <>
           <p className="mt-1">

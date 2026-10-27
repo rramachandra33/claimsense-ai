@@ -1,4 +1,4 @@
-"""CLI entrypoint: ``python -m meridian_agent run --dispute <id>``."""
+"""CLI entrypoint: ``python -m claimsense_agent run --dispute <id>``."""
 from __future__ import annotations
 
 import argparse
@@ -12,8 +12,8 @@ from .trace import BOLD, DIM, GREEN, GREY, RESET, YELLOW, Tracer
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="meridian-agent",
-        description="Meridian dispute-resolution agent — the W13 whole-game demo.",
+        prog="claimsense-agent",
+        description="ClaimSense dispute-resolution agent — the W13 whole-game demo.",
     )
     sub = p.add_subparsers(dest="command", required=True)
 
@@ -182,7 +182,7 @@ def main(argv: list[str] | None = None) -> int:
 
     tracer = Tracer()
     tracer.banner(
-        "MERIDIAN DISPUTE AGENT — whole-game demo",
+        "CLAIMSENSE DISPUTE AGENT — whole-game demo",
         f"dispute={args.dispute}  brain={brain_label}",
     )
     print(f"{GREY}data backend: {repo.backend}" + (f"  ·  {note}" if note else "") + f"{RESET}")

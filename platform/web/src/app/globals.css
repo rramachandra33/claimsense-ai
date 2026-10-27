@@ -7,7 +7,7 @@
 }
 
 body {
-  @apply bg-meridian-bg text-meridian-ink antialiased;
+  @apply bg-claimsense-bg text-claimsense-ink antialiased;
 }
 
 /* Tabular numbers for money / countdown / id columns so they line up. */
@@ -33,7 +33,7 @@ body {
 }
 
 /* Subtle row-entrance + pulse used sparingly for live status. */
-@keyframes meridian-pulse-ring {
+@keyframes claimsense-pulse-ring {
   0% {
     box-shadow: 0 0 0 0 rgb(225 29 72 / 0.4);
   }
@@ -45,5 +45,5 @@ body {
   }
 }
 .pulse-breach {
-  animation: meridian-pulse-ring 2s infinite;
+  animation: claimsense-pulse-ring 2s infinite;
 }

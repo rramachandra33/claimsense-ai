@@ -1,7 +1,7 @@
 """Golden-suite semantics: grading, zero-tolerance, and set integrity."""
 import copy
 
-from meridian_agent.golden import (
+from claimsense_agent.golden import (
     EXPECTED_FIELDS, grade_case, load_golden, run_case_quiet, run_golden_suite,
 )
 

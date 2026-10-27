@@ -1,11 +1,11 @@
--- Meridian Bank — agent-facing API tables (P1+P2)
--- Idempotent (IF NOT EXISTS). Lives in the `meridian` schema alongside schema.sql.
+-- ClaimSense Bank — agent-facing API tables (P1+P2)
+-- Idempotent (IF NOT EXISTS). Lives in the `claimsense` schema alongside schema.sql.
 -- Apply AFTER schema.sql:
---   docker exec -i meridian-db psql -U meridian -d meridian < platform/db/api.sql
--- (or to Supabase: psql "<MERIDIAN_DB_URL>" -f platform/db/api.sql)
+--   docker exec -i claimsense-db psql -U claimsense -d claimsense < platform/db/api.sql
+-- (or to Supabase: psql "<CLAIMSENSE_DB_URL>" -f platform/db/api.sql)
 
-CREATE SCHEMA IF NOT EXISTS meridian;
-SET search_path TO meridian, public;
+CREATE SCHEMA IF NOT EXISTS claimsense;
+SET search_path TO claimsense, public;
 
 -- ---------------------------------------------------------------------------
 -- API keys. Each key maps to a seeded analyst seat (OBO simulation: the agent
@@ -42,4 +42,4 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 -- collide with the seeded canonical ticket id space.
 -- ---------------------------------------------------------------------------
 
-CREATE SEQUENCE IF NOT EXISTS meridian.learner_ticket_seq START 9000000000;
+CREATE SEQUENCE IF NOT EXISTS claimsense.learner_ticket_seq START 9000000000;

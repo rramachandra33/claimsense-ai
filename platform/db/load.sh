@@ -5,17 +5,17 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 SCALE="${1:-demo}"
-DB_URL="${MERIDIAN_DB_URL:-postgresql://meridian:meridian@localhost:5432/meridian}"
+DB_URL="${CLAIMSENSE_DB_URL:-postgresql://claimsense:claimsense@localhost:5432/claimsense}"
 
 echo "==> generating $SCALE seed (deterministic)…"
 ( cd seed && uv run --with faker python generate.py --scale "$SCALE" --out ./data )
 
 echo "==> waiting for Postgres at ${DB_URL}…"
-until docker compose exec -T meridian-db pg_isready -U meridian >/dev/null 2>&1; do sleep 1; done
+until docker compose exec -T claimsense-db pg_isready -U claimsense >/dev/null 2>&1; do sleep 1; done
 
 echo "==> applying schema (clean reset)…"
-docker compose exec -T meridian-db psql -U meridian -d meridian -q -c "DROP SCHEMA IF EXISTS meridian CASCADE;"
-docker compose exec -T meridian-db psql -U meridian -d meridian -q -v ON_ERROR_STOP=1 < schema.sql
+docker compose exec -T claimsense-db psql -U claimsense -d claimsense -q -c "DROP SCHEMA IF EXISTS claimsense CASCADE;"
+docker compose exec -T claimsense-db psql -U claimsense -d claimsense -q -v ON_ERROR_STOP=1 < schema.sql
 
 echo "==> loading CSVs (load order respects FKs)…"
 # analysts before disputes (FK); customers/accounts/merchants/transactions before disputes.
@@ -24,14 +24,14 @@ for t in customers accounts merchants transactions analysts disputes dispute_evi
   cols=$(head -1 "seed/data/$t.csv")
   rows=$(($(wc -l < "seed/data/$t.csv") - 1))
   echo "    $t ($rows rows)…"
-  docker compose exec -T meridian-db \
-    psql -U meridian -d meridian -v ON_ERROR_STOP=1 \
-    -c "\copy meridian.$t ($cols) FROM STDIN WITH (FORMAT csv, HEADER true)" < "seed/data/$t.csv"
+  docker compose exec -T claimsense-db \
+    psql -U claimsense -d claimsense -v ON_ERROR_STOP=1 \
+    -c "\copy claimsense.$t ($cols) FROM STDIN WITH (FORMAT csv, HEADER true)" < "seed/data/$t.csv"
 done
 
 echo "==> sanity:"
-docker compose exec -T meridian-db psql -U meridian -d meridian -c \
-  "SELECT (SELECT count(*) FROM meridian.transactions) AS txns,
-          (SELECT count(*) FROM meridian.disputes WHERE sla_breached) AS breaches,
-          (SELECT count(*) FROM meridian.policy_chunks WHERE is_poisoned) AS poisoned;"
+docker compose exec -T claimsense-db psql -U claimsense -d claimsense -c \
+  "SELECT (SELECT count(*) FROM claimsense.transactions) AS txns,
+          (SELECT count(*) FROM claimsense.disputes WHERE sla_breached) AS breaches,
+          (SELECT count(*) FROM claimsense.policy_chunks WHERE is_poisoned) AS poisoned;"
 echo "==> done. Connect: $DB_URL"

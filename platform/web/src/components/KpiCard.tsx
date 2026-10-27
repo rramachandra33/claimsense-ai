@@ -19,14 +19,14 @@ export function KpiCard({
   tone?: "neutral" | "danger" | "warning" | "success";
 }) {
   const toneRing = {
-    neutral: "text-meridian-deep bg-meridian-primary/10",
+    neutral: "text-claimsense-deep bg-claimsense-primary/10",
     danger: "text-rose-600 bg-rose-50",
     warning: "text-amber-600 bg-amber-50",
     success: "text-emerald-600 bg-emerald-50",
   }[tone];
 
   const valueColor = {
-    neutral: "text-meridian-ink",
+    neutral: "text-claimsense-ink",
     danger: "text-rose-600",
     warning: "text-amber-700",
     success: "text-emerald-600",
@@ -45,9 +45,9 @@ export function KpiCard({
         : "text-slate-500 bg-slate-100";
 
   return (
-    <div className="rounded-lg border border-meridian-line bg-white p-4 shadow-card transition-shadow hover:shadow-cardHover">
+    <div className="rounded-lg border border-claimsense-line bg-white p-4 shadow-card transition-shadow hover:shadow-cardHover">
       <div className="flex items-start justify-between">
-        <span className="text-xs font-medium text-meridian-muted">{label}</span>
+        <span className="text-xs font-medium text-claimsense-muted">{label}</span>
         <span
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-md",

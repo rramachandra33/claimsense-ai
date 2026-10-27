@@ -1,7 +1,7 @@
 import { query } from "@/lib/db";
 
 /**
- * Append one row to meridian.audit_log. EVERY agent tool call writes here —
+ * Append one row to claimsense.audit_log. EVERY agent tool call writes here —
  * allow AND deny — which is the W16 RBAC-made-visible surface. Awaited but never
  * fatal: an audit failure must not crash the underlying request.
  */
@@ -17,7 +17,7 @@ export async function logAudit(entry: {
 }): Promise<void> {
   try {
     await query(
-      `INSERT INTO meridian.audit_log
+      `INSERT INTO claimsense.audit_log
           (analyst_id, learner_id, action, resource_type, resource_id,
            scope, decision, detail)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,

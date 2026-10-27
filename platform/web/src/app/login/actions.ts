@@ -19,7 +19,7 @@ export async function loginAction(
   } catch {
     return {
       error:
-        "Could not reach the Meridian database. Is Postgres running? (see README)",
+        "Could not reach the ClaimSense database. Is Postgres running? (see README)",
     };
   }
 

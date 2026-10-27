@@ -74,7 +74,7 @@ export default async function DisputesQueuePage({
   return (
     <AppShell session={session} title="Disputes" crumbs={[{ label: "Dispute queue" }]}>
       <div className="mb-4 flex items-end justify-between">
-        <p className="text-sm text-meridian-muted">
+        <p className="text-sm text-claimsense-muted">
           Open disputes ordered by Reg E deadline · most urgent first
           {scoped ? (
             <span className="ml-1 text-slate-400">
@@ -97,7 +97,7 @@ export default async function DisputesQueuePage({
 
       {/* Filter bar */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1 rounded-lg border border-meridian-line bg-white p-1 shadow-card">
+        <div className="flex items-center gap-1 rounded-lg border border-claimsense-line bg-white p-1 shadow-card">
           {STATUS_FILTERS.map((f) => {
             const active = status === f.key;
             return (
@@ -107,8 +107,8 @@ export default async function DisputesQueuePage({
                 className={cn(
                   "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   active
-                    ? "bg-meridian-primary text-white shadow-sm"
-                    : "text-meridian-muted hover:bg-meridian-bg"
+                    ? "bg-claimsense-primary text-white shadow-sm"
+                    : "text-claimsense-muted hover:bg-claimsense-bg"
                 )}
               >
                 {f.label}
@@ -123,14 +123,14 @@ export default async function DisputesQueuePage({
             "rounded-lg border px-3 py-2 text-xs font-medium shadow-card transition-colors",
             breachedOnly
               ? "border-rose-300 bg-rose-50 text-rose-700"
-              : "border-meridian-line bg-white text-meridian-muted hover:bg-meridian-bg"
+              : "border-claimsense-line bg-white text-claimsense-muted hover:bg-claimsense-bg"
           )}
         >
           Breached only
         </Link>
 
         {!scoped ? (
-          <div className="flex items-center gap-1 rounded-lg border border-meridian-line bg-white p-1 shadow-card">
+          <div className="flex items-center gap-1 rounded-lg border border-claimsense-line bg-white p-1 shadow-card">
             {[
               { key: "", label: "Both" },
               { key: "A", label: "Type A" },
@@ -144,8 +144,8 @@ export default async function DisputesQueuePage({
                   className={cn(
                     "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                     active
-                      ? "bg-meridian-darkest text-white"
-                      : "text-meridian-muted hover:bg-meridian-bg"
+                      ? "bg-claimsense-darkest text-white"
+                      : "text-claimsense-muted hover:bg-claimsense-bg"
                   )}
                 >
                   {t.label}
@@ -163,7 +163,7 @@ export default async function DisputesQueuePage({
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                <tr className="border-b border-meridian-line">
+                <tr className="border-b border-claimsense-line">
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Dispute</th>
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Type</th>
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Customer</th>
@@ -174,7 +174,7 @@ export default async function DisputesQueuePage({
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Reg E deadline</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-meridian-line">
+              <tbody className="divide-y divide-claimsense-line">
                 {rows.length === 0 ? (
                   <tr>
                     <td colSpan={8}>
@@ -193,12 +193,12 @@ export default async function DisputesQueuePage({
                     return (
                       <tr
                         key={r.dispute_id}
-                        className="group transition-colors hover:bg-meridian-bg/60"
+                        className="group transition-colors hover:bg-claimsense-bg/60"
                       >
                         <td className="px-4 py-2.5">
                           <Link
                             href={`/disputes/${r.dispute_id}`}
-                            className="font-mono text-sm font-medium text-meridian-deep group-hover:underline"
+                            className="font-mono text-sm font-medium text-claimsense-deep group-hover:underline"
                           >
                             #{r.dispute_id}
                           </Link>
@@ -209,18 +209,18 @@ export default async function DisputesQueuePage({
                         <td className="px-4 py-2.5">
                           <TypeBadge type={r.dispute_type} />
                         </td>
-                        <td className="px-4 py-2.5 text-meridian-ink">
+                        <td className="px-4 py-2.5 text-claimsense-ink">
                           {r.customer_name}
                         </td>
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-meridian-ink">
+                            <span className="text-claimsense-ink">
                               {r.merchant_name}
                             </span>
                             <RiskBadge risk={r.merchant_risk} />
                           </div>
                         </td>
-                        <td className="px-4 py-2.5 text-right font-mono font-medium tnum text-meridian-ink">
+                        <td className="px-4 py-2.5 text-right font-mono font-medium tnum text-claimsense-ink">
                           {formatCents(r.amount_cents)}
                         </td>
                         <td className="px-4 py-2.5">
@@ -266,12 +266,12 @@ function SummaryStat({
   tone?: "danger";
 }) {
   return (
-    <div className="rounded-lg border border-meridian-line bg-white p-4 shadow-card">
-      <div className="text-xs font-medium text-meridian-muted">{label}</div>
+    <div className="rounded-lg border border-claimsense-line bg-white p-4 shadow-card">
+      <div className="text-xs font-medium text-claimsense-muted">{label}</div>
       <div
         className={cn(
           "mt-1 font-mono text-2xl font-semibold tnum",
-          tone === "danger" ? "text-rose-600" : "text-meridian-ink"
+          tone === "danger" ? "text-rose-600" : "text-claimsense-ink"
         )}
       >
         {value}

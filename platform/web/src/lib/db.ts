@@ -3,15 +3,15 @@ import { Pool, type QueryResultRow } from "pg";
 // A single shared pool per server process. In dev, Next.js hot-reload can
 // re-evaluate modules, so we stash the pool on globalThis to avoid leaking
 // connections.
-const globalForPg = globalThis as unknown as { __meridianPool?: Pool };
+const globalForPg = globalThis as unknown as { __claimsensePool?: Pool };
 
 const connectionString =
-  process.env.MERIDIAN_DB_URL ||
-  "postgresql://meridian:meridian@localhost:5432/meridian";
+  process.env.CLAIMSENSE_DB_URL ||
+  "postgresql://claimsense:claimsense@localhost:5432/claimsense";
 
 export function getPool(): Pool {
-  if (!globalForPg.__meridianPool) {
-    globalForPg.__meridianPool = new Pool({
+  if (!globalForPg.__claimsensePool) {
+    globalForPg.__claimsensePool = new Pool({
       connectionString,
       max: 8,
       // Fail fast if the DB is unreachable rather than hanging a request.
@@ -24,7 +24,7 @@ export function getPool(): Pool {
         : { rejectUnauthorized: false },
     });
   }
-  return globalForPg.__meridianPool;
+  return globalForPg.__claimsensePool;
 }
 
 /**

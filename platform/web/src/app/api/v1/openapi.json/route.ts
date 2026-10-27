@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
-// Hand-written OpenAPI 3.1 spec for the Meridian agent-facing API. Served (no
+// Hand-written OpenAPI 3.1 spec for the ClaimSense agent-facing API. Served (no
 // auth) at /api/v1/openapi.json and rendered at /api/docs.
 const spec = {
   openapi: "3.1.0",
   info: {
-    title: "Meridian Bank Agent API",
+    title: "ClaimSense Bank Agent API",
     version: "1.0.0",
     description:
-      "Agent-facing REST API for the Meridian Bank teaching platform. " +
+      "Agent-facing REST API for the ClaimSense Bank teaching platform. " +
       "An API key maps to a seeded analyst seat (OBO simulation): the agent acts AS that analyst. " +
       "RBAC scope (type_a / type_b / all) is enforced in this deterministic API layer — never by the LLM. " +
       "Every cross-scope access is denied (403) and logged to the audit trail; allowed access is logged too.",

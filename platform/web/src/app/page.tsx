@@ -98,12 +98,12 @@ export default async function DashboardPage() {
     <AppShell session={session} title="Dashboard">
       <div className="mb-5 flex items-end justify-between">
         <div>
-          <p className="text-sm text-meridian-muted">
+          <p className="text-sm text-claimsense-muted">
             Welcome back, {session.fullName.split(" ")[0]}. Here is today&apos;s
             dispute-operations picture.
           </p>
         </div>
-        <span className="hidden rounded-full border border-meridian-line bg-white px-3 py-1 text-xs font-medium text-meridian-deep shadow-card sm:inline-block">
+        <span className="hidden rounded-full border border-claimsense-line bg-white px-3 py-1 text-xs font-medium text-claimsense-deep shadow-card sm:inline-block">
           {scopeNote}
         </span>
       </div>
@@ -202,7 +202,7 @@ export default async function DashboardPage() {
                         key={t.name}
                         className="flex items-center justify-between text-xs"
                       >
-                        <span className="flex items-center gap-2 text-meridian-muted">
+                        <span className="flex items-center gap-2 text-claimsense-muted">
                           <span
                             className={`h-2.5 w-2.5 rounded-sm ${
                               i === 0 ? "bg-amber-500" : "bg-teal-500"
@@ -210,7 +210,7 @@ export default async function DashboardPage() {
                           />
                           {t.name}
                         </span>
-                        <span className="font-mono font-medium text-meridian-ink tnum">
+                        <span className="font-mono font-medium text-claimsense-ink tnum">
                           {t.value.toLocaleString()}
                         </span>
                       </div>
@@ -262,11 +262,11 @@ export default async function DashboardPage() {
                         >
                           {r.risk} merchants
                         </span>
-                        <span className="font-mono text-sm font-semibold tnum text-meridian-ink">
+                        <span className="font-mono text-sm font-semibold tnum text-claimsense-ink">
                           {formatCentsCompact(r.exposure_cents)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-meridian-muted">
+                      <p className="mt-0.5 text-xs text-claimsense-muted">
                         {r.dispute_count.toLocaleString()} open disputes at risk
                       </p>
                     </div>
@@ -287,7 +287,7 @@ export default async function DashboardPage() {
               action={
                 <Link
                   href="/disputes"
-                  className="flex items-center gap-1 text-xs font-medium text-meridian-deep hover:underline"
+                  className="flex items-center gap-1 text-xs font-medium text-claimsense-deep hover:underline"
                 >
                   View queue <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
@@ -296,7 +296,7 @@ export default async function DashboardPage() {
               {data.attention.length === 0 ? (
                 <Empty>No open disputes in your scope.</Empty>
               ) : (
-                <ul className="divide-y divide-meridian-line">
+                <ul className="divide-y divide-claimsense-line">
                   {data.attention.map((d) => {
                     const h =
                       d.hours_to_deadline === null
@@ -307,19 +307,19 @@ export default async function DashboardPage() {
                       <li key={d.dispute_id}>
                         <Link
                           href={`/disputes/${d.dispute_id}`}
-                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-meridian-bg/60"
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-claimsense-bg/60"
                         >
                           <TypeBadge type={d.dispute_type} />
-                          <span className="font-mono text-sm font-medium text-meridian-deep">
+                          <span className="font-mono text-sm font-medium text-claimsense-deep">
                             #{d.dispute_id}
                           </span>
-                          <span className="min-w-0 flex-1 truncate text-sm text-meridian-ink">
+                          <span className="min-w-0 flex-1 truncate text-sm text-claimsense-ink">
                             {d.customer_name}
                             <span className="ml-2 text-xs text-slate-400">
                               {d.merchant_name}
                             </span>
                           </span>
-                          <span className="font-mono text-sm tnum text-meridian-ink">
+                          <span className="font-mono text-sm tnum text-claimsense-ink">
                             {formatCents(d.amount_cents)}
                           </span>
                           <SlaPill tier={tier} label={formatCountdown(h)} />
@@ -341,17 +341,17 @@ export default async function DashboardPage() {
               {data.activity.length === 0 ? (
                 <Empty>No recent activity.</Empty>
               ) : (
-                <ul className="divide-y divide-meridian-line">
+                <ul className="divide-y divide-claimsense-line">
                   {data.activity.map((a) => (
                     <li key={a.dispute_id}>
                       <Link
                         href={`/disputes/${a.dispute_id}`}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-meridian-bg/60"
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-claimsense-bg/60"
                       >
                         <Avatar name={a.customer_name} size="sm" />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="truncate text-sm font-medium text-meridian-ink">
+                            <span className="truncate text-sm font-medium text-claimsense-ink">
                               {a.customer_name}
                             </span>
                             <RiskBadge risk={a.merchant_risk} />
@@ -361,7 +361,7 @@ export default async function DashboardPage() {
                             <span>{relativeTime(a.opened_at)}</span>
                           </div>
                         </div>
-                        <span className="font-mono text-sm tnum text-meridian-ink">
+                        <span className="font-mono text-sm tnum text-claimsense-ink">
                           {formatCents(a.amount_cents)}
                         </span>
                       </Link>

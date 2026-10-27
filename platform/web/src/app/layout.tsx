@@ -8,7 +8,7 @@ const inter = Inter({
   display: "swap",
 });
 
-// Serif reserved for the "Meridian Bank" wordmark only.
+// Serif reserved for the "ClaimSense Bank" wordmark only.
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-serif",
@@ -25,8 +25,8 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Meridian Ops Console",
-  description: "Meridian Bank — internal dispute-operations console",
+  title: "ClaimSense Ops Console",
+  description: "ClaimSense Bank — internal dispute-operations console",
 };
 
 export default function RootLayout({

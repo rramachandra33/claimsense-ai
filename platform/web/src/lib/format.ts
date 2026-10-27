@@ -1,4 +1,4 @@
-// Money is stored as integer cents everywhere in the Meridian schema.
+// Money is stored as integer cents everywhere in the ClaimSense schema.
 export function formatCents(cents: number | string | null | undefined): string {
   if (cents === null || cents === undefined) return "—";
   const n = typeof cents === "string" ? Number(cents) : cents;

@@ -1,18 +1,18 @@
-# The Meridian Engagement — one entry point for everything.
+# The ClaimSense Engagement — one entry point for everything.
 # Every target is idempotent and safe to re-run. `make help` lists them.
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
 PORT       ?= 3100
-DB_URL     ?= postgresql://meridian:meridian@localhost:5432/meridian
+DB_URL     ?= postgresql://claimsense:claimsense@localhost:5432/claimsense
 BASE_URL   ?= http://localhost:$(PORT)/api/v1
 CONSOLE    ?= http://localhost:$(PORT)
 DISPUTE    ?= 29
 SCALE      ?= demo
 
-export MERIDIAN_DB_URL      := $(DB_URL)
-export MERIDIAN_BASE_URL    := $(BASE_URL)
-export MERIDIAN_CONSOLE_URL := $(CONSOLE)
+export CLAIMSENSE_DB_URL      := $(DB_URL)
+export CLAIMSENSE_BASE_URL    := $(BASE_URL)
+export CLAIMSENSE_CONSOLE_URL := $(CONSOLE)
 
 .PHONY: help up deps seed keys web web-dev agent eval test down clean doctor
 
@@ -23,9 +23,9 @@ help: ## show this list
 up: ## Postgres + schema + seed + two scoped API keys (the one-command bank)
 	cd platform/db && docker compose up -d
 	@echo "==> waiting for Postgres…"
-	@until (cd platform/db && docker compose exec -T meridian-db pg_isready -U meridian >/dev/null 2>&1); do sleep 1; done
+	@until (cd platform/db && docker compose exec -T claimsense-db pg_isready -U claimsense >/dev/null 2>&1); do sleep 1; done
 	$(MAKE) seed
-	@cd platform/db && docker compose exec -T meridian-db psql -U meridian -d meridian -q -v ON_ERROR_STOP=1 < api.sql
+	@cd platform/db && docker compose exec -T claimsense-db psql -U claimsense -d claimsense -q -v ON_ERROR_STOP=1 < api.sql
 	@echo "==> api.sql applied"
 	$(MAKE) keys
 	@echo ""
@@ -37,7 +37,7 @@ deps: ## install the console's node deps (needed by mint-key too)
 	@cd platform/web && { node -e "require.resolve('pg')" >/dev/null 2>&1 || npm install --silent; }
 	@cd platform/web && node -e "require.resolve('pg')" >/dev/null 2>&1 || \
 	  { echo "!! node deps still missing — run: cd platform/web && npm install"; exit 1; }
-	@cd platform/web && printf 'MERIDIAN_DB_URL=$(DB_URL)\n' > .env.local
+	@cd platform/web && printf 'CLAIMSENSE_DB_URL=$(DB_URL)\n' > .env.local
 
 seed: ## regenerate + load the deterministic seed (SCALE=demo|full)
 	cd platform/db && ./load.sh $(SCALE)
@@ -52,13 +52,13 @@ web-dev: deps ## hot-reload the console instead (development)
 	cd platform/web && PORT=$(PORT) npm run dev
 
 agent: ## run the triage pipeline on dispute $(DISPUTE) (mock brain, no AWS)
-	cd agent && uv run meridian-agent run --dispute $(DISPUTE) --mock
+	cd agent && uv run claimsense-agent run --dispute $(DISPUTE) --mock
 
 eval: ## the smoke eval gate — the same gate CI runs on every PR
-	cd agent && uv run meridian-agent eval --suite smoke --min-pass 0.9 --mock
+	cd agent && uv run claimsense-agent eval --suite smoke --min-pass 0.9 --mock
 
 golden: ## the full 150-case golden gate (incl. adversarial) — the release gate
-	cd agent && uv run meridian-agent eval --suite golden --min-pass 0.95 --mock
+	cd agent && uv run claimsense-agent eval --suite golden --min-pass 0.95 --mock
 
 verify: ## $$0 smoke gate: prerequisites + smoke eval + unit tests. Run this first.
 	@$(MAKE) --no-print-directory doctor
@@ -77,7 +77,7 @@ doctor: ## check prerequisites and report what's missing
 	@echo "python : $$(python3 -V 2>/dev/null || echo MISSING)"
 	@echo "uv     : $$(uv --version 2>/dev/null || echo 'MISSING — https://docs.astral.sh/uv/')"
 	@echo "aws    : $$(aws --version 2>/dev/null || echo 'missing (only needed for the cloud rungs)')"
-	@echo "db     : $$(cd platform/db && docker compose exec -T meridian-db pg_isready -U meridian 2>/dev/null || echo 'not running — make up')"
+	@echo "db     : $$(cd platform/db && docker compose exec -T claimsense-db pg_isready -U claimsense 2>/dev/null || echo 'not running — make up')"
 
 down: ## stop Postgres (data survives)
 	cd platform/db && docker compose down

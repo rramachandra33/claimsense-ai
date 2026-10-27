@@ -1,4 +1,4 @@
-# Meridian Dispute Agent — the "whole-game" demo
+# ClaimSense Dispute Agent — the "whole-game" demo
 
 The finished agent system the instructor runs **end-to-end in Week 13, hour 1**
 of the IK FDE course: *"in 5 weeks, you build this."* It triages a payment
@@ -8,7 +8,7 @@ scorecard — all on screen, with tracing, in about 50 ms.
 
 It is built to **always run**: no API key and no database are required. The
 default brain is a deterministic, rule-based stand-in for the LLM, and the data
-layer falls back to a bundled JSON fixture if the Meridian Postgres isn't
+layer falls back to a bundled JSON fixture if the ClaimSense Postgres isn't
 reachable. That is what makes it safe for a live demo and for CI.
 
 ```
@@ -21,14 +21,14 @@ Using [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
 cd platform/agent
-uv run python -m meridian_agent run --dispute 29 --mock
+uv run python -m claimsense_agent run --dispute 29 --mock
 ```
 
 Or with plain Python (stdlib only — no install needed):
 
 ```bash
 cd platform/agent
-PYTHONPATH=src python3 -m meridian_agent run --dispute 29 --mock
+PYTHONPATH=src python3 -m claimsense_agent run --dispute 29 --mock
 ```
 
 The three bundled disputes, each chosen to show a different path:
@@ -42,7 +42,7 @@ The three bundled disputes, each chosen to show a different path:
 List what's available in the active backend:
 
 ```bash
-uv run python -m meridian_agent disputes
+uv run python -m claimsense_agent disputes
 ```
 
 ## The two guardrails (the part the demo is really about)
@@ -61,7 +61,7 @@ uv run python -m meridian_agent disputes
 See the guardrail fire live:
 
 ```bash
-uv run python -m meridian_agent run --dispute 29 --mock --demo-tripwire
+uv run python -m claimsense_agent run --dispute 29 --mock --demo-tripwire
 ```
 
 This forces an uncited provisional-credit claim; the output guardrail blocks it
@@ -76,7 +76,7 @@ Responses API** at the same call sites, reusing `db.py`, `guardrail.py`,
 `agents/sdk_runtime.py`:
 
 ```bash
-uv run python -m meridian_agent run --dispute 29 --show-sdk
+uv run python -m claimsense_agent run --dispute 29 --show-sdk
 ```
 
 The brain is selected automatically:
@@ -91,20 +91,20 @@ path stays the source of truth.
 
 ## Live Postgres (optional)
 
-By default the agent tries the Meridian Postgres at
-`MERIDIAN_DB_URL` (default `postgresql://meridian:meridian@localhost:5432/meridian`)
+By default the agent tries the ClaimSense Postgres at
+`CLAIMSENSE_DB_URL` (default `postgresql://claimsense:claimsense@localhost:5432/claimsense`)
 and falls back to the fixture on any failure. To use the live DB:
 
 ```bash
 uv pip install -e '.[db]'          # installs psycopg
 # bring up the bank (from platform/db): docker compose up -d && ./load.sh
-uv run python -m meridian_agent run --dispute 29 --mock   # now reads Postgres
+uv run python -m claimsense_agent run --dispute 29 --mock   # now reads Postgres
 ```
 
 Force the offline fixture even when a DB is up:
 
 ```bash
-uv run python -m meridian_agent run --dispute 29 --mock --fixture
+uv run python -m claimsense_agent run --dispute 29 --mock --fixture
 ```
 
 ## Tests (the W15 lab checkpoints)
@@ -127,9 +127,9 @@ codebase/agent/
 ├── README.md
 ├── tests/
 │   └── test_pipeline.py
-└── src/meridian_agent/
+└── src/claimsense_agent/
     ├── __init__.py
-    ├── __main__.py            # python -m meridian_agent
+    ├── __main__.py            # python -m claimsense_agent
     ├── cli.py                 # run / disputes commands
     ├── pipeline.py            # orchestration + on-screen tracing + scorecard
     ├── brain.py              # mock-vs-LLM selection seam

@@ -1,7 +1,7 @@
 import { query, queryOne } from "./db";
 
 // ---------------------------------------------------------------------------
-// Types mirroring the meridian schema (only the columns the UI reads).
+// Types mirroring the claimsense schema (only the columns the UI reads).
 // ---------------------------------------------------------------------------
 
 export type Analyst = {
@@ -126,7 +126,7 @@ export type AccountRow = {
 export function findAnalystByEmail(email: string): Promise<Analyst | null> {
   return queryOne<Analyst>(
     `SELECT analyst_id::int AS analyst_id, full_name, email, scope, role
-       FROM meridian.analysts
+       FROM claimsense.analysts
       WHERE lower(email) = lower($1)
       LIMIT 1`,
     [email]
@@ -136,7 +136,7 @@ export function findAnalystByEmail(email: string): Promise<Analyst | null> {
 export function sampleAnalysts(limit = 3): Promise<Analyst[]> {
   return query<Analyst>(
     `SELECT analyst_id::int AS analyst_id, full_name, email, scope, role
-       FROM meridian.analysts
+       FROM claimsense.analysts
       ORDER BY analyst_id
       LIMIT $1`,
     [limit]
@@ -173,7 +173,7 @@ export function getQueue(opts: {
             reg_e_due_at, sla_breached, hours_to_deadline,
             customer_name, amount_cents, merchant_name, merchant_risk,
             assigned_analyst
-       FROM meridian.dispute_queue
+       FROM claimsense.dispute_queue
       WHERE status = ANY($1)
         AND ($2::text IS NULL OR dispute_type = $2)
         AND ($3::text IS NULL OR status = $3)
@@ -189,7 +189,7 @@ export async function getQueueStats(scope: string): Promise<QueueStats> {
   const row = await queryOne<{ total_open: string; breached: string }>(
     `SELECT count(*) AS total_open,
             count(*) FILTER (WHERE sla_breached) AS breached
-       FROM meridian.dispute_queue
+       FROM claimsense.dispute_queue
       WHERE status = ANY($1)
         AND ($2::text IS NULL OR dispute_type = $2)`,
     [OPEN_STATUSES, scopeType]
@@ -223,11 +223,11 @@ export function getDispute(id: string): Promise<DisputeDetail | null> {
             c.segment AS customer_segment,
             m.name AS merchant_name, m.category AS merchant_category,
             m.risk_status AS merchant_risk, m.country AS merchant_country
-       FROM meridian.disputes d
-       JOIN meridian.transactions t ON t.txn_id = d.txn_id
-       JOIN meridian.customers c ON c.customer_id = d.customer_id
-       JOIN meridian.merchants m ON m.merchant_id = t.merchant_id
-       LEFT JOIN meridian.analysts an ON an.analyst_id = d.assigned_analyst_id
+       FROM claimsense.disputes d
+       JOIN claimsense.transactions t ON t.txn_id = d.txn_id
+       JOIN claimsense.customers c ON c.customer_id = d.customer_id
+       JOIN claimsense.merchants m ON m.merchant_id = t.merchant_id
+       LEFT JOIN claimsense.analysts an ON an.analyst_id = d.assigned_analyst_id
       WHERE d.dispute_id = $1
       LIMIT 1`,
     [id]
@@ -237,7 +237,7 @@ export function getDispute(id: string): Promise<DisputeDetail | null> {
 export function getEvidence(disputeId: string): Promise<EvidenceRow[]> {
   return query<EvidenceRow>(
     `SELECT evidence_id, source_system, kind, payload, gathered_at
-       FROM meridian.dispute_evidence
+       FROM claimsense.dispute_evidence
       WHERE dispute_id = $1
       ORDER BY gathered_at ASC
       LIMIT 100`,
@@ -249,7 +249,7 @@ export function getDisputeTickets(disputeId: string): Promise<TicketRow[]> {
   return query<TicketRow>(
     `SELECT ticket_id, dispute_id, channel, subject, body, status,
             is_duplicate, duplicate_of, created_at
-       FROM meridian.tickets
+       FROM claimsense.tickets
       WHERE dispute_id = $1
       ORDER BY created_at DESC
       LIMIT 50`,
@@ -271,8 +271,8 @@ export function getTransactions(opts: {
     `SELECT t.txn_id, t.account_id, t.amount_cents, t.currency, t.txn_ts,
             t.channel, t.mcc, t.status, t.is_disputed,
             m.name AS merchant_name, m.risk_status AS merchant_risk
-       FROM meridian.transactions t
-       JOIN meridian.merchants m ON m.merchant_id = t.merchant_id
+       FROM claimsense.transactions t
+       JOIN claimsense.merchants m ON m.merchant_id = t.merchant_id
       WHERE ($1::bigint IS NULL OR t.account_id = $1::bigint)
       ORDER BY t.txn_ts DESC
       LIMIT $2 OFFSET $3`,
@@ -287,7 +287,7 @@ export function getTransactions(opts: {
 export function getCustomer(id: string): Promise<CustomerProfile | null> {
   return queryOne<CustomerProfile>(
     `SELECT customer_id, full_name, email, date_of_birth, segment, joined_at
-       FROM meridian.customers
+       FROM claimsense.customers
       WHERE customer_id = $1
       LIMIT 1`,
     [id]
@@ -297,7 +297,7 @@ export function getCustomer(id: string): Promise<CustomerProfile | null> {
 export function getCustomerAccounts(id: string): Promise<AccountRow[]> {
   return query<AccountRow>(
     `SELECT account_id, account_type, status, opened_at, from_acquired_portfolio
-       FROM meridian.accounts
+       FROM claimsense.accounts
       WHERE customer_id = $1
       ORDER BY opened_at ASC
       LIMIT 50`,
@@ -310,9 +310,9 @@ export function getCustomerTransactions(id: string): Promise<TxnRow[]> {
     `SELECT t.txn_id, t.account_id, t.amount_cents, t.currency, t.txn_ts,
             t.channel, t.mcc, t.status, t.is_disputed,
             m.name AS merchant_name, m.risk_status AS merchant_risk
-       FROM meridian.transactions t
-       JOIN meridian.accounts a ON a.account_id = t.account_id
-       JOIN meridian.merchants m ON m.merchant_id = t.merchant_id
+       FROM claimsense.transactions t
+       JOIN claimsense.accounts a ON a.account_id = t.account_id
+       JOIN claimsense.merchants m ON m.merchant_id = t.merchant_id
       WHERE a.customer_id = $1
       ORDER BY t.txn_ts DESC
       LIMIT 25`,
@@ -337,9 +337,9 @@ export function getCustomerDisputes(id: string): Promise<CustomerDisputeRow[]> {
     `SELECT d.dispute_id, d.dispute_type, d.status, d.reason_code,
             d.sla_breached, d.opened_at, d.reg_e_due_at,
             t.amount_cents, m.name AS merchant_name
-       FROM meridian.disputes d
-       JOIN meridian.transactions t ON t.txn_id = d.txn_id
-       JOIN meridian.merchants m ON m.merchant_id = t.merchant_id
+       FROM claimsense.disputes d
+       JOIN claimsense.transactions t ON t.txn_id = d.txn_id
+       JOIN claimsense.merchants m ON m.merchant_id = t.merchant_id
       WHERE d.customer_id = $1
       ORDER BY d.opened_at DESC
       LIMIT 50`,
@@ -384,7 +384,7 @@ export async function getDashboardKpis(scope: string): Promise<DashboardKpis> {
           AS provisional_outstanding_cents,
         avg(EXTRACT(EPOCH FROM (reg_e_due_at - now())) / 3600.0)
           FILTER (WHERE status = ANY($1)) AS avg_hours_to_due
-       FROM meridian.disputes
+       FROM claimsense.disputes
       WHERE ($2::text IS NULL OR dispute_type = $2)`,
     [OPEN_STATUSES, t]
   );
@@ -409,7 +409,7 @@ export function getDisputesOpenedPerDay(scope: string): Promise<DayPoint[]> {
   return query<DayPoint>(
     `SELECT to_char(date_trunc('day', opened_at), 'Mon DD') AS day,
             count(*)::int AS opened
-       FROM meridian.disputes
+       FROM claimsense.disputes
       WHERE opened_at >= now() - interval '30 days'
         AND ($1::text IS NULL OR dispute_type = $1)
       GROUP BY date_trunc('day', opened_at)
@@ -428,7 +428,7 @@ export function getDisputesByType(scope: string): Promise<TypeSplit[]> {
                               WHEN 'B' THEN 'Type B · Merchant'
                               ELSE dispute_type END AS name,
             count(*)::int AS value
-       FROM meridian.disputes
+       FROM claimsense.disputes
       WHERE status = ANY($1)
         AND ($2::text IS NULL OR dispute_type = $2)
       GROUP BY dispute_type
@@ -444,7 +444,7 @@ export function getDisputesByStatus(scope: string): Promise<StatusSplit[]> {
   const t = scopeToType(scope);
   return query<StatusSplit>(
     `SELECT status, count(*)::int AS value
-       FROM meridian.disputes
+       FROM claimsense.disputes
       WHERE ($1::text IS NULL OR dispute_type = $1)
       GROUP BY status
       LIMIT 10`,
@@ -461,9 +461,9 @@ export function getTopMerchantsByDisputes(
   return query<MerchantVolume>(
     `SELECT m.name AS name, count(*)::int AS value,
             m.risk_status AS risk
-       FROM meridian.disputes d
-       JOIN meridian.transactions t ON t.txn_id = d.txn_id
-       JOIN meridian.merchants m ON m.merchant_id = t.merchant_id
+       FROM claimsense.disputes d
+       JOIN claimsense.transactions t ON t.txn_id = d.txn_id
+       JOIN claimsense.merchants m ON m.merchant_id = t.merchant_id
       WHERE d.status = ANY($1)
         AND ($2::text IS NULL OR d.dispute_type = $2)
       GROUP BY m.merchant_id, m.name, m.risk_status
@@ -485,9 +485,9 @@ export function getRiskExposure(scope: string): Promise<RiskExposure[]> {
     `SELECT m.risk_status AS risk,
             count(*)::int AS dispute_count,
             coalesce(sum(t.amount_cents),0)::bigint AS exposure_cents
-       FROM meridian.disputes d
-       JOIN meridian.transactions t ON t.txn_id = d.txn_id
-       JOIN meridian.merchants m ON m.merchant_id = t.merchant_id
+       FROM claimsense.disputes d
+       JOIN claimsense.transactions t ON t.txn_id = d.txn_id
+       JOIN claimsense.merchants m ON m.merchant_id = t.merchant_id
       WHERE d.status = ANY($1)
         AND m.risk_status IN ('watch','bad')
         AND ($2::text IS NULL OR d.dispute_type = $2)
@@ -505,7 +505,7 @@ export function getNeedsAttention(scope: string): Promise<QueueRow[]> {
             reg_e_due_at, sla_breached, hours_to_deadline,
             customer_name, amount_cents, merchant_name, merchant_risk,
             assigned_analyst
-       FROM meridian.dispute_queue
+       FROM claimsense.dispute_queue
       WHERE status = ANY($1)
         AND ($2::text IS NULL OR dispute_type = $2)
       ORDER BY hours_to_deadline ASC NULLS LAST
@@ -532,10 +532,10 @@ export function getRecentActivity(scope: string): Promise<ActivityRow[]> {
     `SELECT d.dispute_id, d.dispute_type, d.status, d.reason_code, d.opened_at,
             c.full_name AS customer_name, t.amount_cents,
             m.name AS merchant_name, m.risk_status AS merchant_risk
-       FROM meridian.disputes d
-       JOIN meridian.customers c ON c.customer_id = d.customer_id
-       JOIN meridian.transactions t ON t.txn_id = d.txn_id
-       JOIN meridian.merchants m ON m.merchant_id = t.merchant_id
+       FROM claimsense.disputes d
+       JOIN claimsense.customers c ON c.customer_id = d.customer_id
+       JOIN claimsense.transactions t ON t.txn_id = d.txn_id
+       JOIN claimsense.merchants m ON m.merchant_id = t.merchant_id
       WHERE ($1::text IS NULL OR d.dispute_type = $1)
       ORDER BY d.opened_at DESC
       LIMIT 8`,
@@ -573,8 +573,8 @@ export function getCustomersWithDisputes(
     `SELECT c.customer_id, c.full_name, c.email, c.segment,
             count(*)::int AS dispute_count,
             count(*) FILTER (WHERE d.sla_breached)::int AS breached_count
-       FROM meridian.disputes d
-       JOIN meridian.customers c ON c.customer_id = d.customer_id
+       FROM claimsense.disputes d
+       JOIN claimsense.customers c ON c.customer_id = d.customer_id
       WHERE ($1::text IS NULL OR d.dispute_type = $1)
       GROUP BY c.customer_id, c.full_name, c.email, c.segment
       ORDER BY breached_count DESC, dispute_count DESC
@@ -586,7 +586,7 @@ export function getCustomersWithDisputes(
 export function getPolicyChunks(): Promise<PolicyChunk[]> {
   return query<PolicyChunk>(
     `SELECT chunk_id, doc_title, section, content, reg_ref
-       FROM meridian.policy_chunks
+       FROM claimsense.policy_chunks
       WHERE is_poisoned = false
       ORDER BY doc_title ASC, chunk_id ASC
       LIMIT 500`
@@ -607,7 +607,7 @@ export function searchPolicies(opts: {
   const q = opts.q?.trim() || null;
   return query<PolicyChunk>(
     `SELECT chunk_id, doc_title, section, content, reg_ref
-       FROM meridian.policy_chunks
+       FROM claimsense.policy_chunks
       WHERE is_poisoned = false
         AND ($1::text IS NULL
              OR content ILIKE '%' || $1 || '%'
@@ -629,7 +629,7 @@ export function getDisputeTypeById(
 ): Promise<{ dispute_type: string; customer_id: string } | null> {
   return queryOne<{ dispute_type: string; customer_id: string }>(
     `SELECT dispute_type, customer_id
-       FROM meridian.disputes
+       FROM claimsense.disputes
       WHERE dispute_id = $1
       LIMIT 1`,
     [id]
@@ -659,7 +659,7 @@ export function getTicketById(id: string): Promise<CreatedTicket | null> {
   return queryOne<CreatedTicket>(
     `SELECT ticket_id, dispute_id, customer_id, channel, subject, body, status,
             is_duplicate, duplicate_of, created_at, learner_id
-       FROM meridian.tickets
+       FROM claimsense.tickets
       WHERE ticket_id = $1
       LIMIT 1`,
     [id]
@@ -673,7 +673,7 @@ export async function findIdempotentTicket(
 ): Promise<string | null> {
   const row = await queryOne<{ ticket_id: string }>(
     `SELECT ticket_id
-       FROM meridian.idempotency_keys
+       FROM claimsense.idempotency_keys
       WHERE learner_id = $1 AND idem_key = $2
       LIMIT 1`,
     [learnerId, idemKey]
@@ -688,7 +688,7 @@ export async function recordIdempotencyKey(
   ticketId: string
 ): Promise<void> {
   await query(
-    `INSERT INTO meridian.idempotency_keys (learner_id, idem_key, ticket_id)
+    `INSERT INTO claimsense.idempotency_keys (learner_id, idem_key, ticket_id)
      VALUES ($1, $2, $3)
      ON CONFLICT (learner_id, idem_key) DO NOTHING`,
     [learnerId, idemKey, ticketId]
@@ -708,11 +708,11 @@ export function createLearnerTicket(opts: {
   body: string;
 }): Promise<CreatedTicket | null> {
   return queryOne<CreatedTicket>(
-    `INSERT INTO meridian.tickets
+    `INSERT INTO claimsense.tickets
         (ticket_id, dispute_id, customer_id, channel, subject, body,
          status, is_duplicate, created_at, learner_id)
      VALUES
-        (nextval('meridian.learner_ticket_seq'), $1, $2, $3, $4, $5,
+        (nextval('claimsense.learner_ticket_seq'), $1, $2, $3, $4, $5,
          'open', false, now(), $6)
      RETURNING ticket_id, dispute_id, customer_id, channel, subject, body,
                status, is_duplicate, duplicate_of, created_at, learner_id`,
@@ -745,7 +745,7 @@ export function getLearnerAudit(opts: {
   return query<AuditRow>(
     `SELECT audit_id, analyst_id, learner_id, action, resource_type,
             resource_id, scope, decision, detail, ts
-       FROM meridian.audit_log
+       FROM claimsense.audit_log
       WHERE learner_id = $1 OR analyst_id = $2
       ORDER BY ts DESC, audit_id DESC
       LIMIT $3`,

@@ -23,7 +23,7 @@ from agents import (
     Agent, Runner, SQLiteSession, function_tool,
     input_guardrail, output_guardrail, GuardrailFunctionOutput,
 )
-from meridian_agent.guardrail import (
+from claimsense_agent.guardrail import (
     quarantine_poisoned, check_provisional_credit_citation,
 )
 

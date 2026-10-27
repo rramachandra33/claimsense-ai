@@ -17,7 +17,7 @@ jobs:
       - name: Run the smoke eval gate (mock brain — no key needed)
         working-directory: codebase/agent
         run: |
-          PYTHONPATH=src python3 -m meridian_agent eval \
+          PYTHONPATH=src python3 -m claimsense_agent eval \
             --suite smoke --disputes 1-20 --min-pass 0.9 --mock
       - name: Install test deps
         run: python -m pip install --quiet "pytest>=8.0"

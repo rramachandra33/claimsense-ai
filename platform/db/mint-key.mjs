@@ -1,18 +1,18 @@
 #!/usr/bin/env node
-// Mint Meridian API keys.
+// Mint ClaimSense API keys.
 //
 // Usage:
 //   node mint-key.mjs --email <analyst_email> [--learner <id>] [--label <text>]
 //   node mint-key.mjs --demo        # mints one Type-A + one Type-B key
 //
-// Stores sha256(key) in meridian.api_keys mapped to the analyst. Prints the
+// Stores sha256(key) in claimsense.api_keys mapped to the analyst. Prints the
 // PLAINTEXT key once — it is never recoverable afterward.
 //
 // Resolves `pg` from platform/web/node_modules (this script has no deps of its
 // own), so it runs from anywhere:
 //   node platform/db/mint-key.mjs --demo
 //
-// DB URL: MERIDIAN_DB_URL env, else the local docker default.
+// DB URL: CLAIMSENSE_DB_URL env, else the local docker default.
 
 import { randomBytes, createHash } from "node:crypto";
 import { createRequire } from "node:module";
@@ -27,8 +27,8 @@ const pg = require("pg");
 const { Client } = pg;
 
 const CONNECTION_STRING =
-  process.env.MERIDIAN_DB_URL ||
-  "postgresql://meridian:meridian@localhost:5432/meridian";
+  process.env.CLAIMSENSE_DB_URL ||
+  "postgresql://claimsense:claimsense@localhost:5432/claimsense";
 
 function parseArgs(argv) {
   const args = {};
@@ -54,7 +54,7 @@ async function mintForAnalyst(client, analyst, label) {
   const key = generateKey();
   const keyHash = hashKey(key);
   await client.query(
-    `INSERT INTO meridian.api_keys (key_hash, analyst_id, learner_id, label)
+    `INSERT INTO claimsense.api_keys (key_hash, analyst_id, learner_id, label)
      VALUES ($1, $2, $3, $4)`,
     [keyHash, analyst.analyst_id, analyst.learner_id, label]
   );
@@ -73,10 +73,10 @@ async function main() {
     if (args.demo) {
       const { rows } = await client.query(
         `(SELECT analyst_id, full_name, email, scope, learner_id
-            FROM meridian.analysts WHERE scope = 'type_a' ORDER BY analyst_id LIMIT 1)
+            FROM claimsense.analysts WHERE scope = 'type_a' ORDER BY analyst_id LIMIT 1)
          UNION ALL
          (SELECT analyst_id, full_name, email, scope, learner_id
-            FROM meridian.analysts WHERE scope = 'type_b' ORDER BY analyst_id LIMIT 1)`
+            FROM claimsense.analysts WHERE scope = 'type_b' ORDER BY analyst_id LIMIT 1)`
       );
       if (rows.length < 2) {
         throw new Error(
@@ -105,7 +105,7 @@ async function main() {
 
     const { rows } = await client.query(
       `SELECT analyst_id, full_name, email, scope, learner_id
-         FROM meridian.analysts
+         FROM claimsense.analysts
         WHERE lower(email) = lower($1)
         LIMIT 1`,
       [args.email]

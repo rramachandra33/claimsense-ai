@@ -9,14 +9,14 @@ const MAX_REQUESTS = 120; // per key per window
 type Bucket = { count: number; resetAt: number };
 
 const globalForRl = globalThis as unknown as {
-  __meridianRateBuckets?: Map<string, Bucket>;
+  __claimsenseRateBuckets?: Map<string, Bucket>;
 };
 
 function buckets(): Map<string, Bucket> {
-  if (!globalForRl.__meridianRateBuckets) {
-    globalForRl.__meridianRateBuckets = new Map();
+  if (!globalForRl.__claimsenseRateBuckets) {
+    globalForRl.__claimsenseRateBuckets = new Map();
   }
-  return globalForRl.__meridianRateBuckets;
+  return globalForRl.__claimsenseRateBuckets;
 }
 
 export function checkRateLimit(keyHash: string): {

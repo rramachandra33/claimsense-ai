@@ -40,15 +40,15 @@ export function Sidebar({ session }: { session: Session }) {
         : "All scopes";
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col bg-meridian-darkest text-teal-50">
+    <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col bg-claimsense-darkest text-teal-50">
       {/* Wordmark */}
       <div className="flex items-center gap-2.5 px-5 py-5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-meridian-gold font-serif text-base font-bold text-[#0B2E2A] shadow-sm">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-claimsense-gold font-serif text-base font-bold text-[#0B2E2A] shadow-sm">
           M
         </span>
         <div className="leading-tight">
           <div className="font-serif text-base font-semibold tracking-tight text-white">
-            Meridian Bank
+            ClaimSense Bank
           </div>
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-teal-300/70">
             Ops Console
@@ -71,7 +71,7 @@ export function Sidebar({ session }: { session: Session }) {
               className={cn(
                 "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 active
-                  ? "bg-meridian-primary/20 text-white ring-1 ring-inset ring-meridian-primary/40"
+                  ? "bg-claimsense-primary/20 text-white ring-1 ring-inset ring-claimsense-primary/40"
                   : "text-teal-100/70 hover:bg-white/5 hover:text-white"
               )}
             >
@@ -79,7 +79,7 @@ export function Sidebar({ session }: { session: Session }) {
                 className={cn(
                   "h-[18px] w-[18px] shrink-0",
                   active
-                    ? "text-meridian-gold"
+                    ? "text-claimsense-gold"
                     : "text-teal-300/60 group-hover:text-teal-200"
                 )}
               />
@@ -92,7 +92,7 @@ export function Sidebar({ session }: { session: Session }) {
       {/* Signed-in analyst */}
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-meridian-primary/30 text-xs font-semibold text-teal-50 ring-1 ring-inset ring-meridian-primary/40">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-claimsense-primary/30 text-xs font-semibold text-teal-50 ring-1 ring-inset ring-claimsense-primary/40">
             {initials(session.fullName)}
           </span>
           <div className="min-w-0 flex-1 leading-tight">
@@ -100,7 +100,7 @@ export function Sidebar({ session }: { session: Session }) {
               {session.fullName}
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="rounded bg-meridian-gold/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-meridian-gold">
+              <span className="rounded bg-claimsense-gold/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-claimsense-gold">
                 {scopeLabel}
               </span>
               <span className="truncate text-[10px] capitalize text-teal-300/60">

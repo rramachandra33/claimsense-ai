@@ -15,7 +15,7 @@ export async function GET() {
     db = "down";
   }
   return NextResponse.json(
-    { status: "ok", service: "meridian-api", db, time },
+    { status: "ok", service: "claimsense-api", db, time },
     { status: db === "up" ? 200 : 503 }
   );
 }

@@ -120,7 +120,7 @@ export function TypeBadge({ type }: { type: string }) {
       className={cn(
         "inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-[11px] font-bold ring-1 ring-inset",
         isA
-          ? "bg-meridian-goldSoft text-[#8a6a23] ring-amber-200"
+          ? "bg-claimsense-goldSoft text-[#8a6a23] ring-amber-200"
           : "bg-teal-50 text-teal-700 ring-teal-200"
       )}
       title={
@@ -202,7 +202,7 @@ export function ChannelIcon({ channel }: { channel: string }) {
 // ---------------------------------------------------------------------------
 export function SegmentBadge({ segment }: { segment: string }) {
   const map: Record<string, string> = {
-    premier: "bg-meridian-goldSoft text-[#8a6a23] ring-amber-200",
+    premier: "bg-claimsense-goldSoft text-[#8a6a23] ring-amber-200",
     small_business: "bg-sky-50 text-sky-700 ring-sky-200",
     retail: "bg-slate-100 text-slate-600 ring-slate-200",
   };

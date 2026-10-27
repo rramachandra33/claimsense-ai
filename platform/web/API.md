@@ -1,7 +1,7 @@
-# Meridian Bank — Agent-Facing API
+# ClaimSense Bank — Agent-Facing API
 
 The deterministic REST surface every student's agent integrates against. It sits
-in front of the Meridian Postgres data tier and is where the platform teaches the
+in front of the ClaimSense Postgres data tier and is where the platform teaches the
 things a raw auto-API won't: **OBO-simulated identity, RBAC enforced in the API
 layer (never the LLM), an audit trail, idempotent writes, rate limits, and
 structured agent-readable errors.**
@@ -28,7 +28,7 @@ on-behalf-of (OBO) simulation. The seat carries:
 - `learner_id` — the student identity that owns the agent's *writes*
 - `role` — `analyst` | `lead` | `admin`
 
-Only `sha256(key)` is stored (`meridian.api_keys`); the plaintext is shown once
+Only `sha256(key)` is stored (`claimsense.api_keys`); the plaintext is shown once
 at mint time and is never recoverable.
 
 ### Minting keys
@@ -36,7 +36,7 @@ at mint time and is never recoverable.
 Apply the migration once (after `schema.sql`):
 
 ```bash
-docker exec -i meridian-db psql -U meridian -d meridian < platform/db/api.sql
+docker exec -i claimsense-db psql -U claimsense -d claimsense < platform/db/api.sql
 ```
 
 Then mint:
@@ -46,14 +46,14 @@ Then mint:
 node platform/db/mint-key.mjs --demo
 
 # A key for a specific seeded analyst:
-node platform/db/mint-key.mjs --email jason.soto@meridianbank.com --label "agent dev"
+node platform/db/mint-key.mjs --email jason.soto@autosure.test --label "agent dev"
 
 # Override the learner_id the key's writes are attributed to:
-node platform/db/mint-key.mjs --email jason.soto@meridianbank.com --learner learner-042
+node platform/db/mint-key.mjs --email jason.soto@autosure.test --learner learner-042
 ```
 
 The script resolves `pg` from `platform/web/node_modules` and reads
-`MERIDIAN_DB_URL` (defaults to the local Docker URL).
+`CLAIMSENSE_DB_URL` (defaults to the local Docker URL).
 
 ---
 
@@ -64,7 +64,7 @@ The script resolves `pg` from `platform/web/node_modules` and reads
 - A `type_a` seat can read only Type-A disputes; `type_b` only Type-B;
   `all`/lead/admin see everything.
 - Every cross-scope access is **denied (HTTP 403, `code: forbidden_scope`)** and
-  written to `meridian.audit_log` with `decision='deny'`.
+  written to `claimsense.audit_log` with `decision='deny'`.
 - Allowed accesses are written with `decision='allow'`.
 
 The "two-analyst proof": a Type-A key and a Type-B key asking for the *same*
@@ -103,7 +103,7 @@ All examples assume `KEY=mrdn_…` and host `localhost:3000`.
 Liveness + DB reachability. `200` if DB up, `503` if down.
 ```bash
 curl -s localhost:3000/api/v1/health
-# {"status":"ok","service":"meridian-api","db":"up","time":"…"}
+# {"status":"ok","service":"claimsense-api","db":"up","time":"…"}
 ```
 
 ### `GET /api/v1/me`
@@ -209,14 +209,14 @@ curl -s -H "Authorization: Bearer $KEY" localhost:3000/api/v1/audit
 
 4. **Set the env var** in Vercel (Project → Settings → Environment Variables):
    ```
-   MERIDIAN_DB_URL = <SUPABASE_POOLER_URL>
+   CLAIMSENSE_DB_URL = <SUPABASE_POOLER_URL>
    ```
    SSL is auto-enabled for non-localhost hosts (`src/lib/db.ts`), so the Supabase
    connection is encrypted with no extra config.
 
 5. **Mint hosted keys** by pointing the script at the hosted DB:
    ```bash
-   MERIDIAN_DB_URL="<SUPABASE_POOLER_URL>" node platform/db/mint-key.mjs --demo
+   CLAIMSENSE_DB_URL="<SUPABASE_POOLER_URL>" node platform/db/mint-key.mjs --demo
    ```
 
 6. Redeploy after any env change, then verify `https://<app>.vercel.app/api/v1/health`.

@@ -36,7 +36,7 @@ EXPECTED_FIELDS = [
 
 
 def load_golden() -> dict[str, Any]:
-    with resources.files("meridian_agent.data").joinpath("golden_set.json").open() as fh:
+    with resources.files("claimsense_agent.data").joinpath("golden_set.json").open() as fh:
         return json.load(fh)
 
 

@@ -11,8 +11,8 @@ const config: Config = {
     current: "currentColor",
     extend: {
       colors: {
-        // ---- Meridian brand ----------------------------------------------
-        meridian: {
+        // ---- ClaimSense brand ----------------------------------------------
+        claimsense: {
           // teal-emerald primary
           DEFAULT: "#0D9488",
           primary: "#0D9488",

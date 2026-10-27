@@ -78,17 +78,17 @@ export default async function CustomerPage({
       crumbs={[{ label: "Customers" }, { label: `#${customer.customer_id}` }]}
     >
       {/* Profile header */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-meridian-line bg-white p-5 shadow-card">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-claimsense-line bg-white p-5 shadow-card">
         <div className="flex items-center gap-4">
           <Avatar name={customer.full_name} size="md" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-meridian-ink">
+              <h1 className="text-lg font-semibold text-claimsense-ink">
                 {customer.full_name}
               </h1>
               <SegmentBadge segment={customer.segment} />
             </div>
-            <p className="text-sm text-meridian-muted">
+            <p className="text-sm text-claimsense-muted">
               {customer.email} ·{" "}
               <span className="font-mono">#{customer.customer_id}</span>
             </p>
@@ -130,17 +130,17 @@ export default async function CustomerPage({
                 {accounts.map((a) => (
                   <li
                     key={a.account_id}
-                    className="rounded-lg border border-meridian-line p-3"
+                    className="rounded-lg border border-claimsense-line p-3"
                   >
                     <div className="flex items-center justify-between">
                       <Link
                         href={`/transactions?account_id=${a.account_id}`}
-                        className="inline-flex items-center gap-2 font-mono text-sm text-meridian-deep hover:underline"
+                        className="inline-flex items-center gap-2 font-mono text-sm text-claimsense-deep hover:underline"
                       >
                         <CreditCard className="h-3.5 w-3.5 text-slate-400" />#
                         {a.account_id}
                       </Link>
-                      <span className="text-xs capitalize text-meridian-muted">
+                      <span className="text-xs capitalize text-claimsense-muted">
                         {a.account_type} · {a.status}
                       </span>
                     </div>
@@ -177,8 +177,8 @@ export default async function CustomerPage({
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-meridian-bg/70 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    <tr className="border-b border-meridian-line">
+                  <thead className="bg-claimsense-bg/70 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <tr className="border-b border-claimsense-line">
                       <th className="px-4 py-2.5">Dispute</th>
                       <th className="px-4 py-2.5">Type</th>
                       <th className="px-4 py-2.5">Merchant</th>
@@ -187,7 +187,7 @@ export default async function CustomerPage({
                       <th className="px-4 py-2.5">Reg E</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-meridian-line">
+                  <tbody className="divide-y divide-claimsense-line">
                     {disputes.map((d) => {
                       const hours =
                         (new Date(d.reg_e_due_at).getTime() - Date.now()) /
@@ -196,12 +196,12 @@ export default async function CustomerPage({
                       return (
                         <tr
                           key={d.dispute_id}
-                          className="transition-colors hover:bg-meridian-bg/60"
+                          className="transition-colors hover:bg-claimsense-bg/60"
                         >
                           <td className="px-4 py-2.5">
                             <Link
                               href={`/disputes/${d.dispute_id}`}
-                              className="font-mono text-meridian-deep hover:underline"
+                              className="font-mono text-claimsense-deep hover:underline"
                             >
                               #{d.dispute_id}
                             </Link>
@@ -209,7 +209,7 @@ export default async function CustomerPage({
                           <td className="px-4 py-2.5">
                             <TypeBadge type={d.dispute_type} />
                           </td>
-                          <td className="px-4 py-2.5 text-meridian-ink">
+                          <td className="px-4 py-2.5 text-claimsense-ink">
                             {d.merchant_name}
                           </td>
                           <td className="px-4 py-2.5 text-right font-mono font-medium tnum">
@@ -244,25 +244,25 @@ export default async function CustomerPage({
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-meridian-bg/70 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    <tr className="border-b border-meridian-line">
+                  <thead className="bg-claimsense-bg/70 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <tr className="border-b border-claimsense-line">
                       <th className="px-4 py-2.5">Date</th>
                       <th className="px-4 py-2.5">Merchant</th>
                       <th className="px-4 py-2.5">Channel</th>
                       <th className="px-4 py-2.5 text-right">Amount</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-meridian-line">
+                  <tbody className="divide-y divide-claimsense-line">
                     {txns.map((t) => (
                       <tr
                         key={t.txn_id}
-                        className="transition-colors hover:bg-meridian-bg/60"
+                        className="transition-colors hover:bg-claimsense-bg/60"
                       >
-                        <td className="px-4 py-2.5 text-meridian-muted">
+                        <td className="px-4 py-2.5 text-claimsense-muted">
                           {formatDateTime(t.txn_ts)}
                         </td>
                         <td className="px-4 py-2.5">
-                          <span className="inline-flex items-center gap-2 text-meridian-ink">
+                          <span className="inline-flex items-center gap-2 text-claimsense-ink">
                             {t.merchant_name}
                             <RiskBadge risk={t.merchant_risk} />
                           </span>
@@ -302,7 +302,7 @@ function HeaderStat({
       </div>
       <div
         className={`font-mono text-xl font-semibold tnum ${
-          tone === "danger" ? "text-rose-600" : "text-meridian-ink"
+          tone === "danger" ? "text-rose-600" : "text-claimsense-ink"
         }`}
       >
         {value}

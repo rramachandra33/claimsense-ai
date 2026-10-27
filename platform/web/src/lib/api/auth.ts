@@ -33,7 +33,7 @@ function extractKey(req: Request): string | null {
 
 /**
  * Resolve the Bearer (or X-API-Key) credential to a Principal, or null.
- * Looks up the sha256 hash in meridian.api_keys, joining analysts, requiring the
+ * Looks up the sha256 hash in claimsense.api_keys, joining analysts, requiring the
  * key is not revoked. analyst_id is cast to int (BIGINT -> JS number).
  */
 export async function authenticatePrincipal(
@@ -53,8 +53,8 @@ export async function authenticatePrincipal(
     `SELECT a.analyst_id::int AS analyst_id,
             COALESCE(k.learner_id, a.learner_id) AS learner_id,
             a.scope, a.role, a.full_name, a.email
-       FROM meridian.api_keys k
-       JOIN meridian.analysts a ON a.analyst_id = k.analyst_id
+       FROM claimsense.api_keys k
+       JOIN claimsense.analysts a ON a.analyst_id = k.analyst_id
       WHERE k.key_hash = $1
         AND k.revoked = FALSE
       LIMIT 1`,

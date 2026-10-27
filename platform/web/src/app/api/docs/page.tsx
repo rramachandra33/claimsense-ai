@@ -5,7 +5,7 @@ import Script from "next/script";
 // the <redoc> custom element mounts itself once the standalone bundle loads.
 
 export const metadata = {
-  title: "Meridian Bank API — Reference",
+  title: "ClaimSense Bank API — Reference",
 };
 
 export default function ApiDocsPage() {

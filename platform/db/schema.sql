@@ -1,13 +1,13 @@
--- Meridian Bank — canonical schema (core engagement surface)
+-- ClaimSense Bank — canonical schema (core engagement surface)
 -- Postgres 15+. Feeds both the hosted Supabase platform and the local fallback.
 -- The engagement's problems are baked into the DATA (see seed/), not described here.
 --
--- Phases: P0/P1 use the `meridian` schema below. RLS policies (W16) live in rls.sql.
+-- Phases: P0/P1 use the `claimsense` schema below. RLS policies (W16) live in rls.sql.
 -- The W19 text-to-SQL warehouse (`warehouse` schema, 40/900 tables) is generated
 -- separately in P4 — intentionally not here, to keep the first-two-weeks build lean.
 
-CREATE SCHEMA IF NOT EXISTS meridian;
-SET search_path TO meridian, public;
+CREATE SCHEMA IF NOT EXISTS claimsense;
+SET search_path TO claimsense, public;
 
 -- ---------------------------------------------------------------------------
 -- People & accounts
@@ -31,7 +31,7 @@ CREATE TABLE accounts (
     account_type        TEXT   NOT NULL,            -- debit | checking | savings
     opened_at           TIMESTAMPTZ NOT NULL,
     status              TEXT   NOT NULL DEFAULT 'active',  -- active | frozen | closed
-    -- from_acquired_portfolio: the debit-card book Meridian bought; origin of the
+    -- from_acquired_portfolio: the debit-card book ClaimSense bought; origin of the
     -- dispute spike in the story. ~30% of accounts.
     from_acquired_portfolio BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -215,4 +215,4 @@ JOIN transactions t ON t.txn_id = d.txn_id
 JOIN merchants m   ON m.merchant_id = t.merchant_id
 LEFT JOIN analysts a ON a.analyst_id = d.assigned_analyst_id;
 
-COMMENT ON SCHEMA meridian IS 'Meridian Bank canonical engagement data. Problems are seeded into the rows, not documented in DDL.';
+COMMENT ON SCHEMA claimsense IS 'ClaimSense Bank canonical engagement data. Problems are seeded into the rows, not documented in DDL.';

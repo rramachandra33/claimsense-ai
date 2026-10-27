@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-const COOKIE_NAME = "meridian_session";
+const COOKIE_NAME = "claimsense_session";
 
 export type Session = {
   analystId: number;

@@ -1,4 +1,4 @@
-"""The Meridian agent pipeline.
+"""The ClaimSense agent pipeline.
 
 Four cooperating agents, run in sequence against one dispute id:
 

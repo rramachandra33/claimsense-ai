@@ -1,21 +1,21 @@
-# Local Meridian Postgres — the $0/offline fallback mirror of the hosted Supabase DB.
+# Local ClaimSense Postgres — the $0/offline fallback mirror of the hosted Supabase DB.
 # Same schema, same (deterministic) seed data. `docker compose up -d` then ./load.sh
 services:
-  meridian-db:
+  claimsense-db:
     image: postgres:16
-    container_name: meridian-db
+    container_name: claimsense-db
     environment:
-      POSTGRES_USER: meridian
-      POSTGRES_PASSWORD: meridian
-      POSTGRES_DB: meridian
+      POSTGRES_USER: claimsense
+      POSTGRES_PASSWORD: claimsense
+      POSTGRES_DB: claimsense
     ports:
       - "5432:5432"
     volumes:
-      - meridian-pgdata:/var/lib/postgresql/data
+      - claimsense-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U meridian"]
+      test: ["CMD-SHELL", "pg_isready -U claimsense"]
       interval: 3s
       timeout: 3s
       retries: 10
 volumes:
-  meridian-pgdata:
+  claimsense-pgdata:

@@ -46,13 +46,13 @@ def detect_brain(force_mock: bool) -> BrainConfig:
         return BrainConfig(
             mode="llm",
             provider="azure-foundry",
-            model=os.environ.get("MERIDIAN_MODEL", "gpt-5.4-mini"),
+            model=os.environ.get("CLAIMSENSE_MODEL", "gpt-5.4-mini"),
         )
     if os.environ.get("OPENAI_API_KEY"):
         return BrainConfig(
             mode="llm",
             provider="openai",
-            model=os.environ.get("MERIDIAN_MODEL", "gpt-5.4-mini"),
+            model=os.environ.get("CLAIMSENSE_MODEL", "gpt-5.4-mini"),
         )
 
     # No key anywhere — graceful default.

@@ -9,7 +9,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-lg bg-meridian-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-meridian-deep disabled:opacity-60"
+      className="w-full rounded-lg bg-claimsense-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-claimsense-deep disabled:opacity-60"
     >
       {pending ? "Signing in…" : "Sign in"}
     </button>
@@ -33,8 +33,8 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
           type="email"
           autoComplete="email"
           defaultValue={defaultEmail}
-          placeholder="analyst1@meridianbank.test"
-          className="mt-1 w-full rounded-lg border border-meridian-line px-3 py-2 text-sm shadow-sm focus:border-meridian-primary focus:outline-none focus:ring-1 focus:ring-meridian-primary"
+          placeholder="analyst1@autosure.test"
+          className="mt-1 w-full rounded-lg border border-claimsense-line px-3 py-2 text-sm shadow-sm focus:border-claimsense-primary focus:outline-none focus:ring-1 focus:ring-claimsense-primary"
         />
       </div>
       {state.error ? (

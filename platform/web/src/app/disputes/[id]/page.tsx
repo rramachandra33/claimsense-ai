@@ -68,16 +68,16 @@ export default async function DisputeDetailPage({
     >
       <Link
         href="/disputes"
-        className="mb-3 inline-flex items-center gap-1 text-sm text-meridian-deep hover:underline"
+        className="mb-3 inline-flex items-center gap-1 text-sm text-claimsense-deep hover:underline"
       >
         <ArrowLeft className="h-4 w-4" /> Dispute queue
       </Link>
 
       {/* Header card */}
-      <div className="mb-5 rounded-lg border border-meridian-line bg-white p-5 shadow-card">
+      <div className="mb-5 rounded-lg border border-claimsense-line bg-white p-5 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <h1 className="font-mono text-xl font-semibold text-meridian-ink">
+            <h1 className="font-mono text-xl font-semibold text-claimsense-ink">
               #{dispute.dispute_id}
             </h1>
             <TypeBadge type={dispute.dispute_type} />
@@ -96,11 +96,11 @@ export default async function DisputeDetailPage({
                 {dispute.sla_breached ? <BreachedBadge /> : null}
               </div>
             </div>
-            <div className="border-l border-meridian-line pl-3 text-right">
+            <div className="border-l border-claimsense-line pl-3 text-right">
               <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 Disputed amount
               </div>
-              <div className="mt-0.5 font-mono text-xl font-semibold tnum text-meridian-ink">
+              <div className="mt-0.5 font-mono text-xl font-semibold tnum text-claimsense-ink">
                 {formatCents(dispute.amount_cents)}
               </div>
             </div>
@@ -152,7 +152,7 @@ export default async function DisputeDetailPage({
               <Field label="Account">
                 <Link
                   href={`/transactions?account_id=${dispute.account_id}`}
-                  className="font-mono text-meridian-deep hover:underline"
+                  className="font-mono text-claimsense-deep hover:underline"
                 >
                   #{dispute.account_id}
                 </Link>
@@ -197,14 +197,14 @@ export default async function DisputeDetailPage({
                 {tickets.map((t) => (
                   <div
                     key={t.ticket_id}
-                    className="rounded-lg border border-meridian-line p-3"
+                    className="rounded-lg border border-claimsense-line p-3"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs text-slate-500">
                           #{t.ticket_id}
                         </span>
-                        <span className="text-sm font-medium text-meridian-ink">
+                        <span className="text-sm font-medium text-claimsense-ink">
                           {t.subject}
                         </span>
                         <StatusBadge status={t.status} />
@@ -219,7 +219,7 @@ export default async function DisputeDetailPage({
                         {t.channel} · {formatDateTime(t.created_at)}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-sm text-meridian-muted">{t.body}</p>
+                    <p className="mt-1.5 text-sm text-claimsense-muted">{t.body}</p>
                   </div>
                 ))}
               </div>
@@ -234,13 +234,13 @@ export default async function DisputeDetailPage({
             <div className="space-y-2">
               <button
                 type="button"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-meridian-primary px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-meridian-deep"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-claimsense-primary px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-claimsense-deep"
               >
                 <CheckCircle2 className="h-4 w-4" /> Approve credit
               </button>
               <button
                 type="button"
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-meridian-line bg-white px-3 py-2.5 text-sm font-medium text-meridian-ink transition-colors hover:bg-meridian-bg"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-claimsense-line bg-white px-3 py-2.5 text-sm font-medium text-claimsense-ink transition-colors hover:bg-claimsense-bg"
               >
                 <MessageSquarePlus className="h-4 w-4 text-slate-400" /> Request
                 info
@@ -260,7 +260,7 @@ export default async function DisputeDetailPage({
               <div className="min-w-0">
                 <Link
                   href={`/customers/${dispute.customer_id}`}
-                  className="font-medium text-meridian-deep hover:underline"
+                  className="font-medium text-claimsense-deep hover:underline"
                 >
                   {dispute.customer_name}
                 </Link>
@@ -315,7 +315,7 @@ export default async function DisputeDetailPage({
 
           {dispute.resolution ? (
             <Panel title="Resolution">
-              <p className="text-sm capitalize text-meridian-ink">
+              <p className="text-sm capitalize text-claimsense-ink">
                 {dispute.resolution.replace(/_/g, " ")}
               </p>
             </Panel>
@@ -328,13 +328,13 @@ export default async function DisputeDetailPage({
 
 function EvidenceCard({ e }: { e: EvidenceRow }) {
   return (
-    <div className="rounded-lg border border-meridian-line bg-meridian-bg/40 p-3">
+    <div className="rounded-lg border border-claimsense-line bg-claimsense-bg/40 p-3">
       <div className="mb-2 flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <span className="rounded bg-meridian-darkest px-1.5 py-0.5 font-mono text-[10px] font-medium text-teal-100">
+          <span className="rounded bg-claimsense-darkest px-1.5 py-0.5 font-mono text-[10px] font-medium text-teal-100">
             {e.source_system}
           </span>
-          <span className="font-medium capitalize text-meridian-muted">
+          <span className="font-medium capitalize text-claimsense-muted">
             {e.kind.replace(/_/g, " ")}
           </span>
         </div>
@@ -357,7 +357,7 @@ function renderPayload(payload: unknown): React.ReactNode {
         <dt className="shrink-0 font-medium capitalize text-slate-400">
           {k.replace(/_/g, " ")}
         </dt>
-        <dd className="min-w-0 break-words font-mono text-meridian-ink">
+        <dd className="min-w-0 break-words font-mono text-claimsense-ink">
           {typeof v === "object" && v !== null
             ? JSON.stringify(v)
             : String(v)}
@@ -366,7 +366,7 @@ function renderPayload(payload: unknown): React.ReactNode {
     ));
   }
   return (
-    <pre className="overflow-x-auto rounded bg-white p-2 font-mono text-[11px] text-meridian-ink">
+    <pre className="overflow-x-auto rounded bg-white p-2 font-mono text-[11px] text-claimsense-ink">
       {JSON.stringify(payload, null, 2)}
     </pre>
   );

@@ -6,14 +6,14 @@ from datetime import datetime, timezone
 
 import pytest
 
-from meridian_agent.agents import policy as policy_agent
-from meridian_agent.db import FixtureRepo
-from meridian_agent.guardrail import (
+from claimsense_agent.agents import policy as policy_agent
+from claimsense_agent.db import FixtureRepo
+from claimsense_agent.guardrail import (
     check_provisional_credit_citation,
     quarantine_poisoned,
 )
-from meridian_agent.pipeline import run_pipeline
-from meridian_agent.trace import Tracer
+from claimsense_agent.pipeline import run_pipeline
+from claimsense_agent.trace import Tracer
 
 NOW = datetime(2026, 6, 17, tzinfo=timezone.utc)
 

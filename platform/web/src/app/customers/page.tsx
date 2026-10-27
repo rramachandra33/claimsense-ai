@@ -21,7 +21,7 @@ export default async function CustomersPage() {
 
   return (
     <AppShell session={session} title="Customers" crumbs={[{ label: "Customer 360" }]}>
-      <p className="mb-5 text-sm text-meridian-muted">
+      <p className="mb-5 text-sm text-claimsense-muted">
         Customers ranked by dispute activity in your scope · open any profile for
         the full 360 view
       </p>
@@ -33,14 +33,14 @@ export default async function CustomersPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                <tr className="border-b border-meridian-line">
+                <tr className="border-b border-claimsense-line">
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Customer</th>
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Segment</th>
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6] text-right">Disputes</th>
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6] text-right">Breached</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-meridian-line">
+              <tbody className="divide-y divide-claimsense-line">
                 {rows.length === 0 ? (
                   <tr>
                     <td colSpan={4}>
@@ -53,7 +53,7 @@ export default async function CustomersPage() {
                   rows.map((c) => (
                     <tr
                       key={c.customer_id}
-                      className="transition-colors hover:bg-meridian-bg/60"
+                      className="transition-colors hover:bg-claimsense-bg/60"
                     >
                       <td className="px-4 py-2.5">
                         <Link
@@ -62,7 +62,7 @@ export default async function CustomersPage() {
                         >
                           <Avatar name={c.full_name} size="sm" />
                           <div>
-                            <div className="font-medium text-meridian-ink hover:underline">
+                            <div className="font-medium text-claimsense-ink hover:underline">
                               {c.full_name}
                             </div>
                             <div className="text-xs text-slate-400">
@@ -74,7 +74,7 @@ export default async function CustomersPage() {
                       <td className="px-4 py-2.5">
                         <SegmentBadge segment={c.segment} />
                       </td>
-                      <td className="px-4 py-2.5 text-right font-mono font-medium tnum text-meridian-ink">
+                      <td className="px-4 py-2.5 text-right font-mono font-medium tnum text-claimsense-ink">
                         {c.dispute_count}
                       </td>
                       <td className="px-4 py-2.5 text-right font-mono font-medium tnum">

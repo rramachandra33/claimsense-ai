@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Meridian Ops Console → one EC2 box, from nothing to a public URL.
+# ClaimSense Ops Console → one EC2 box, from nothing to a public URL.
 #
 # Run ON the instance (Amazon Linux 2023, t3.small or bigger, 20 GB disk):
 #   curl -fsSL <raw-url>/ec2_bootstrap.sh | bash -s -- <git-clone-url>
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 REPO_URL="${1:-}"
-APP_DIR="${APP_DIR:-/opt/meridian}"
+APP_DIR="${APP_DIR:-/opt/claimsense}"
 PORT="${PORT:-3100}"
 
 log() { echo -e "\n\033[1;34m==> $*\033[0m"; }
@@ -42,23 +42,23 @@ cd "$APP_DIR"
 log "postgres + deterministic seed + api schema"
 cd platform/db
 sudo docker compose up -d
-until sudo docker compose exec -T meridian-db pg_isready -U meridian >/dev/null 2>&1; do sleep 2; done
+until sudo docker compose exec -T claimsense-db pg_isready -U claimsense >/dev/null 2>&1; do sleep 2; done
 sudo ./load.sh demo
-sudo docker compose exec -T meridian-db psql -U meridian -d meridian -q -v ON_ERROR_STOP=1 < api.sql
+sudo docker compose exec -T claimsense-db psql -U claimsense -d claimsense -q -v ON_ERROR_STOP=1 < api.sql
 
 log "minting two scoped analyst keys — COPY THESE, they are shown once"
-MERIDIAN_DB_URL="postgresql://meridian:meridian@localhost:5432/meridian" node mint-key.mjs --demo | tee "$APP_DIR/ANALYST_KEYS.txt"
+CLAIMSENSE_DB_URL="postgresql://claimsense:claimsense@localhost:5432/claimsense" node mint-key.mjs --demo | tee "$APP_DIR/ANALYST_KEYS.txt"
 
 log "building the console"
 cd "$APP_DIR/platform/web"
 npm install --silent
-printf 'MERIDIAN_DB_URL=postgresql://meridian:meridian@localhost:5432/meridian\n' > .env.local
+printf 'CLAIMSENSE_DB_URL=postgresql://claimsense:claimsense@localhost:5432/claimsense\n' > .env.local
 npm run build
 
 log "installing the systemd service (survives reboot)"
-sudo tee /etc/systemd/system/meridian.service >/dev/null <<UNIT
+sudo tee /etc/systemd/system/claimsense.service >/dev/null <<UNIT
 [Unit]
-Description=Meridian Ops Console
+Description=ClaimSense Ops Console
 After=docker.service
 Requires=docker.service
 
@@ -66,7 +66,7 @@ Requires=docker.service
 Type=simple
 WorkingDirectory=$APP_DIR/platform/web
 Environment=PORT=$PORT
-Environment=MERIDIAN_DB_URL=postgresql://meridian:meridian@localhost:5432/meridian
+Environment=CLAIMSENSE_DB_URL=postgresql://claimsense:claimsense@localhost:5432/claimsense
 ExecStart=/usr/bin/npm run start
 Restart=always
 User=$USER
@@ -75,24 +75,24 @@ User=$USER
 WantedBy=multi-user.target
 UNIT
 sudo systemctl daemon-reload
-sudo systemctl enable --now meridian
+sudo systemctl enable --now claimsense
 
 PUBLIC=$(curl -s --max-time 3 http://169.254.169.254/latest/meta-data/public-hostname || echo "<your-ec2-public-dns>")
 cat <<DONE
 
 ┌───────────────────────────────────────────────────────────────────────┐
-│  Meridian Ops Console is live                                         │
+│  ClaimSense Ops Console is live                                         │
 └───────────────────────────────────────────────────────────────────────┘
 
   Console : http://$PUBLIC:$PORT
   API     : http://$PUBLIC:$PORT/api/v1
   Keys    : $APP_DIR/ANALYST_KEYS.txt
-  Logs    : sudo journalctl -u meridian -f
+  Logs    : sudo journalctl -u claimsense -f
 
   Open port $PORT in the instance's security group (inbound TCP, your IP).
   Point the labs at it:
-      export MERIDIAN_BASE_URL="http://$PUBLIC:$PORT/api/v1"
-      export MERIDIAN_CONSOLE_URL="http://$PUBLIC:$PORT"
+      export CLAIMSENSE_BASE_URL="http://$PUBLIC:$PORT/api/v1"
+      export CLAIMSENSE_CONSOLE_URL="http://$PUBLIC:$PORT"
 
-  Tear down when class ends:  sudo systemctl stop meridian && terminate the instance.
+  Tear down when class ends:  sudo systemctl stop claimsense && terminate the instance.
 DONE

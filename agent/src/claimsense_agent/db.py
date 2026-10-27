@@ -1,9 +1,9 @@
-"""Data access for the Meridian demo.
+"""Data access for the ClaimSense demo.
 
 One contract, two backends:
 
-  * **Postgres** (the live Meridian platform) via `psycopg`, read from
-    ``MERIDIAN_DB_URL`` (default ``postgresql://meridian:meridian@localhost:5432/meridian``).
+  * **Postgres** (the live ClaimSense platform) via `psycopg`, read from
+    ``CLAIMSENSE_DB_URL`` (default ``postgresql://claimsense:claimsense@localhost:5432/claimsense``).
   * **Bundled JSON fixture** — the offline fallback. Used automatically when
     psycopg is not installed OR the DB is unreachable, so the demo *always* runs.
 
@@ -17,7 +17,7 @@ import os
 from importlib import resources
 from typing import Any
 
-DEFAULT_DB_URL = "postgresql://meridian:meridian@localhost:5432/meridian"
+DEFAULT_DB_URL = "postgresql://claimsense:claimsense@localhost:5432/claimsense"
 
 
 class DisputeNotFound(Exception):
@@ -28,7 +28,7 @@ class DisputeNotFound(Exception):
 # Fixture backend
 # ---------------------------------------------------------------------------
 def _load_fixture() -> dict[str, Any]:
-    with resources.files("meridian_agent.data").joinpath("fixture.json").open() as fh:
+    with resources.files("claimsense_agent.data").joinpath("fixture.json").open() as fh:
         return json.load(fh)
 
 
@@ -63,7 +63,7 @@ class FixtureRepo:
 # Postgres backend
 # ---------------------------------------------------------------------------
 class PostgresRepo:
-    """Reads the live Meridian Postgres. Same return shapes as FixtureRepo."""
+    """Reads the live ClaimSense Postgres. Same return shapes as FixtureRepo."""
 
     backend = "postgres"
 
@@ -72,7 +72,7 @@ class PostgresRepo:
 
     def available_disputes(self) -> list[str]:
         with self._conn.cursor() as cur:
-            cur.execute("SELECT dispute_id FROM meridian.disputes ORDER BY dispute_id LIMIT 25")
+            cur.execute("SELECT dispute_id FROM claimsense.disputes ORDER BY dispute_id LIMIT 25")
             return [str(r[0]) for r in cur.fetchall()]
 
     def _row(self, cur) -> dict[str, Any] | None:
@@ -87,19 +87,19 @@ class PostgresRepo:
     def get_dispute_bundle(self, dispute_id: str | int) -> dict[str, Any]:
         with self._conn.cursor() as cur:
             cur.execute(
-                "SELECT * FROM meridian.disputes WHERE dispute_id = %s", (int(dispute_id),)
+                "SELECT * FROM claimsense.disputes WHERE dispute_id = %s", (int(dispute_id),)
             )
             dispute = self._row(cur)
             if dispute is None:
                 raise DisputeNotFound(f"dispute {dispute_id} not in Postgres")
 
             cur.execute(
-                "SELECT * FROM meridian.transactions WHERE txn_id = %s", (dispute["txn_id"],)
+                "SELECT * FROM claimsense.transactions WHERE txn_id = %s", (dispute["txn_id"],)
             )
             txn = self._row(cur)
 
             cur.execute(
-                "SELECT * FROM meridian.customers WHERE customer_id = %s",
+                "SELECT * FROM claimsense.customers WHERE customer_id = %s",
                 (dispute["customer_id"],),
             )
             customer = self._row(cur)
@@ -107,14 +107,14 @@ class PostgresRepo:
             merchant = None
             if txn:
                 cur.execute(
-                    "SELECT * FROM meridian.merchants WHERE merchant_id = %s",
+                    "SELECT * FROM claimsense.merchants WHERE merchant_id = %s",
                     (txn["merchant_id"],),
                 )
                 merchant = self._row(cur)
 
             cur.execute(
                 "SELECT evidence_id, source_system, kind, payload, gathered_at "
-                "FROM meridian.dispute_evidence WHERE dispute_id = %s ORDER BY evidence_id",
+                "FROM claimsense.dispute_evidence WHERE dispute_id = %s ORDER BY evidence_id",
                 (int(dispute_id),),
             )
             evidence = self._rows(cur)
@@ -133,7 +133,7 @@ class PostgresRepo:
             # quarantine the poisoned chunk; we don't silently filter it here.
             cur.execute(
                 "SELECT chunk_id, doc_title, section, content, reg_ref, is_poisoned "
-                "FROM meridian.policy_chunks "
+                "FROM claimsense.policy_chunks "
                 "WHERE reg_ref = 'Reg E' OR is_poisoned = true "
                 "ORDER BY chunk_id"
             )
@@ -165,7 +165,7 @@ def connect(prefer_db: bool = True) -> tuple[Any, str | None]:
     if not prefer_db:
         return FixtureRepo(), "fixture (forced via --fixture)"
 
-    db_url = os.environ.get("MERIDIAN_DB_URL", DEFAULT_DB_URL)
+    db_url = os.environ.get("CLAIMSENSE_DB_URL", DEFAULT_DB_URL)
     try:
         import psycopg  # type: ignore
     except Exception:
@@ -175,7 +175,7 @@ def connect(prefer_db: bool = True) -> tuple[Any, str | None]:
         conn = psycopg.connect(db_url, connect_timeout=3)
         # smoke-test the schema
         with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM meridian.disputes LIMIT 1")
+            cur.execute("SELECT 1 FROM claimsense.disputes LIMIT 1")
             cur.fetchone()
         return PostgresRepo(conn), None
     except Exception as exc:  # noqa: BLE001 — demo must never crash here

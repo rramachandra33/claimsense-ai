@@ -50,7 +50,7 @@ export default async function TransactionsPage({
   return (
     <AppShell session={session} title="Transactions" crumbs={[{ label: "Explorer" }]}>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <p className="text-sm text-meridian-muted">
+        <p className="text-sm text-claimsense-muted">
           Filter by account · results are always paginated and capped for speed
         </p>
         <form method="get" className="flex items-end gap-2">
@@ -62,19 +62,19 @@ export default async function TransactionsPage({
               inputMode="numeric"
               defaultValue={validAccount}
               placeholder="Account ID, e.g. 5134"
-              className="h-9 w-56 rounded-lg border border-meridian-line bg-white pl-9 pr-3 text-sm text-meridian-ink placeholder:text-slate-400 focus:border-meridian-primary focus:outline-none focus:ring-1 focus:ring-meridian-primary"
+              className="h-9 w-56 rounded-lg border border-claimsense-line bg-white pl-9 pr-3 text-sm text-claimsense-ink placeholder:text-slate-400 focus:border-claimsense-primary focus:outline-none focus:ring-1 focus:ring-claimsense-primary"
             />
           </div>
           <button
             type="submit"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-meridian-primary px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-meridian-deep"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-claimsense-primary px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-claimsense-deep"
           >
             <Search className="h-4 w-4" /> Search
           </button>
           {validAccount ? (
             <Link
               href="/transactions"
-              className="inline-flex h-9 items-center gap-1 rounded-lg border border-meridian-line bg-white px-3 text-sm text-meridian-muted hover:bg-meridian-bg"
+              className="inline-flex h-9 items-center gap-1 rounded-lg border border-claimsense-line bg-white px-3 text-sm text-claimsense-muted hover:bg-claimsense-bg"
             >
               <X className="h-3.5 w-3.5" /> Clear
             </Link>
@@ -83,9 +83,9 @@ export default async function TransactionsPage({
       </div>
 
       {validAccount ? (
-        <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-meridian-line bg-white px-3 py-1.5 text-xs text-meridian-muted shadow-card">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-claimsense-line bg-white px-3 py-1.5 text-xs text-claimsense-muted shadow-card">
           Filtered to account
-          <span className="font-mono font-medium text-meridian-deep">
+          <span className="font-mono font-medium text-claimsense-deep">
             #{validAccount}
           </span>
         </div>
@@ -98,7 +98,7 @@ export default async function TransactionsPage({
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                <tr className="border-b border-meridian-line">
+                <tr className="border-b border-claimsense-line">
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Txn</th>
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Date</th>
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Account</th>
@@ -108,7 +108,7 @@ export default async function TransactionsPage({
                   <th className="bg-white px-4 py-2.5 shadow-[inset_0_-1px_0_0_#E6E9E6]">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-meridian-line">
+              <tbody className="divide-y divide-claimsense-line">
                 {pageRows.length === 0 ? (
                   <tr>
                     <td colSpan={7}>
@@ -121,24 +121,24 @@ export default async function TransactionsPage({
                   pageRows.map((t) => (
                     <tr
                       key={t.txn_id}
-                      className="transition-colors hover:bg-meridian-bg/60"
+                      className="transition-colors hover:bg-claimsense-bg/60"
                     >
                       <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
                         #{t.txn_id}
                       </td>
-                      <td className="px-4 py-2.5 text-meridian-muted">
+                      <td className="px-4 py-2.5 text-claimsense-muted">
                         {formatDateTime(t.txn_ts)}
                       </td>
                       <td className="px-4 py-2.5">
                         <Link
                           href={`/transactions?account_id=${t.account_id}`}
-                          className="font-mono text-meridian-deep hover:underline"
+                          className="font-mono text-claimsense-deep hover:underline"
                         >
                           #{t.account_id}
                         </Link>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="inline-flex items-center gap-2 text-meridian-ink">
+                        <span className="inline-flex items-center gap-2 text-claimsense-ink">
                           {t.merchant_name}
                           <RiskBadge risk={t.merchant_risk} />
                         </span>
@@ -146,11 +146,11 @@ export default async function TransactionsPage({
                       <td className="px-4 py-2.5">
                         <ChannelIcon channel={t.channel} />
                       </td>
-                      <td className="px-4 py-2.5 text-right font-mono font-medium tnum text-meridian-ink">
+                      <td className="px-4 py-2.5 text-right font-mono font-medium tnum text-claimsense-ink">
                         {formatCents(t.amount_cents)}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="capitalize text-meridian-muted">
+                        <span className="capitalize text-claimsense-muted">
                           {t.status}
                         </span>
                         {t.is_disputed ? (
@@ -169,7 +169,7 @@ export default async function TransactionsPage({
       )}
 
       <div className="mt-4 flex items-center justify-between text-sm">
-        <span className="text-meridian-muted">
+        <span className="text-claimsense-muted">
           Page {page} · showing {pageRows.length} rows
         </span>
         <div className="flex gap-2">
@@ -198,7 +198,7 @@ function PageLink({
     "inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm shadow-card";
   if (disabled) {
     return (
-      <span className={cn(base, "border-meridian-line bg-white text-slate-300")}>
+      <span className={cn(base, "border-claimsense-line bg-white text-slate-300")}>
         {children}
       </span>
     );
@@ -208,7 +208,7 @@ function PageLink({
       href={href}
       className={cn(
         base,
-        "border-meridian-line bg-white text-meridian-ink hover:bg-meridian-bg"
+        "border-claimsense-line bg-white text-claimsense-ink hover:bg-claimsense-bg"
       )}
     >
       {children}

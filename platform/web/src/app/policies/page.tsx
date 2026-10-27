@@ -17,7 +17,7 @@ const REG_TONES: Record<string, string> = {
 function RegBadge({ regRef }: { regRef: string | null }) {
   if (!regRef) return null;
   const tone =
-    REG_TONES[regRef] ?? "bg-meridian-goldSoft text-[#8a6a23] ring-amber-200";
+    REG_TONES[regRef] ?? "bg-claimsense-goldSoft text-[#8a6a23] ring-amber-200";
   return (
     <span
       className={cn(
@@ -54,7 +54,7 @@ export default async function PoliciesPage() {
 
   return (
     <AppShell session={session} title="Policies" crumbs={[{ label: "Knowledge base" }]}>
-      <p className="mb-5 text-sm text-meridian-muted">
+      <p className="mb-5 text-sm text-claimsense-muted">
         Dispute-operations policy &amp; compliance reference · grouped by document
       </p>
 
@@ -74,16 +74,16 @@ export default async function PoliciesPage() {
               icon={<FileText className="h-4 w-4" />}
               bodyClassName="p-0"
             >
-              <ul className="divide-y divide-meridian-line">
+              <ul className="divide-y divide-claimsense-line">
                 {g.items.map((c) => (
                   <li key={c.chunk_id} className="px-4 py-3">
                     <div className="mb-1 flex items-center justify-between gap-2">
-                      <h3 className="text-sm font-medium text-meridian-ink">
+                      <h3 className="text-sm font-medium text-claimsense-ink">
                         {c.section}
                       </h3>
                       <RegBadge regRef={c.reg_ref} />
                     </div>
-                    <p className="text-sm leading-relaxed text-meridian-muted">
+                    <p className="text-sm leading-relaxed text-claimsense-muted">
                       {c.content}
                     </p>
                   </li>
