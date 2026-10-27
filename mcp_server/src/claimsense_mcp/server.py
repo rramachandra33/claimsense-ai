@@ -1,4 +1,4 @@
-"""ClaimSense MCP server: the agents' only way to reach claim data.
+"""ClaimSense MCP server: the agents' only way to reach claim data (five read-only tools).
 
 It is deliberately thin. Each tool makes one call to the ClaimSense data API with the caller's
 token and returns the API's answer unchanged. It contains no access rules of its own: the API
@@ -6,11 +6,12 @@ checks the token, applies the role table and writes the audit log on every call.
 
 Started by the pipeline for one run, over stdio, with these environment variables:
     CLAIMSENSE_API_URL    data API base URL, e.g. http://localhost:8000
-    CLAIMSENSE_TOKEN      the token to act with (later: the agent's short-lived OBO token)
+    CLAIMSENSE_TOKEN      the agent's short-lived OBO token (POST /api/v1/obo/token)
     CLAIMSENSE_RUN_ID     the pipeline run id, so clause searches are recorded for citation checks
     CLAIMSENSE_AGENT      the agent's name, recorded with each clause search
 
-All tools are read-only. There is no tool for writing notes: that is done by pipeline code.
+All tools are read-only and work on the run's one claim. There is no tool for listing claims
+(agents are given their claim id) and none for writing notes (pipeline code does that).
 """
 import os
 
@@ -37,12 +38,6 @@ def call_api(path, params=None):
     if response.status_code >= 400:
         body["status"] = response.status_code
     return body
-
-
-@server.tool()
-def list_claims() -> dict:
-    """List the claims you are allowed to work on (claim id, dates, amounts, status)."""
-    return call_api("/api/v1/claims")
 
 
 @server.tool()

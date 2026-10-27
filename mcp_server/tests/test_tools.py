@@ -45,7 +45,6 @@ def act_as(monkeypatch):
 
 def test_tools_return_what_the_user_may_see(act_as):
     act_as("david", "adjuster")
-    assert server.list_claims()["count"] == 6
     assert server.get_claim("CLM-2024-2822")["claim"]["policy_id"] == "POL-TXA-89582"
     assert server.get_policy("CLM-2024-2822")["policy"]["coverage_type"] == "Full Coverage"
     docs = server.list_documents("CLM-2024-2822")["documents"]
@@ -78,7 +77,20 @@ def test_quarantined_chunk_never_reaches_the_agent(act_as):
     assert "CLS-ADM-013" not in str(result)
 
 
-def test_server_offers_exactly_six_read_only_tools_over_stdio():
+def test_tools_work_with_an_agents_obo_token(monkeypatch):
+    """The pipeline gives each agent an OBO token; the API enforces its scopes and claim."""
+    alice_token = make_dev_token("alice", "adjuster")
+    alice = TestClient(app, headers={"Authorization": f"Bearer {alice_token}"})
+    obo = alice.post("/api/v1/obo/token", json={"claim_id": "CLM-2024-1800", "agent": "coverage",
+                                                "run_id": str(uuid.uuid4())}).json()["token"]
+    monkeypatch.setattr(server, "api_client",
+                        lambda: TestClient(app, headers={"Authorization": f"Bearer {obo}"}))
+    assert server.get_claim("CLM-2024-1800")["claim"]["claim_id"] == "CLM-2024-1800"
+    assert server.get_document("DOC-00001")["status"] == 403        # coverage has no documents scope
+    assert server.get_claim("CLM-2024-2092")["status"] == 403       # bound to CLM-2024-1800
+
+
+def test_server_offers_exactly_five_read_only_tools_over_stdio():
     """Start the real server the way an agent would, and list its tools."""
     async def list_tool_names():
         params = StdioServerParameters(command=sys.executable, args=["-m", "claimsense_mcp.server"],
@@ -90,6 +102,5 @@ def test_server_offers_exactly_six_read_only_tools_over_stdio():
                 return sorted(t.name for t in tools.tools)
 
     names = asyncio.run(list_tool_names())
-    assert names == ["get_claim", "get_document", "get_policy", "list_claims", "list_documents",
-                     "search_clauses"]
+    assert names == ["get_claim", "get_document", "get_policy", "list_documents", "search_clauses"]
     assert not any("note" in n or "write" in n for n in names)    # no write tool for agents

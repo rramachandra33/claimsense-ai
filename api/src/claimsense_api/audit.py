@@ -12,6 +12,12 @@ def log_audit(action, decision, user=None, resource_type=None, resource_id=None,
               actor="human", on_behalf_of=None, run_id=None, detail=None):
     user_id = user["user_id"] if user else None
     user_group = user["user_group"] if user else None
+    obo = user.get("obo") if user else None
+    if obo:
+        # An agent acting for this user: record both identities, and the run.
+        actor = obo["agent"]
+        on_behalf_of = user_id
+        run_id = run_id or obo["run_id"]
     try:
         execute(
             """INSERT INTO claimsense.audit_log

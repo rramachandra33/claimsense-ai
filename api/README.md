@@ -35,6 +35,7 @@ make api-test                   # access tests (7 users x 20 claims and the refu
 | `GET /api/v1/claims/{id}/documents` | The claim's document list (no text) |
 | `GET /api/v1/documents/{id}` | One document with its text; text is null unless OCR is Completed (CLS-DOC-009) |
 | `GET /api/v1/clauses?q=…&top_k=4&run_id=…&agent=…` | Policy-manual search over `clause_index` only, so a quarantined clause can never come back; matches any word, best first. With a `run_id`, what came back is saved in `retrieval_log` |
+| `POST /api/v1/obo/token` | Pipeline code asks, with the adjuster's token, for one agent's short-lived token (see below) |
 | `POST /api/v1/claims/{id}/notes` | The one write: saves the assessment and its append-only claim note together. Needs an `Idempotency-Key` header. Called by pipeline code, never offered to agents as a tool |
 
 ### The note write's rules
@@ -48,4 +49,21 @@ make api-test                   # access tests (7 users x 20 claims and the refu
 Not yet covered by a test: two identical requests arriving at the same instant (the code falls back to the
 replay/409 logic through the database's unique key).
 
-Next: the MCP server.
+### On-behalf-of (OBO) agent tokens
+
+Agents have no permissions of their own. For each run, pipeline code asks for one token per agent
+(`{claim_id, agent, run_id}`), using the adjuster's token; the adjuster must be able to read the claim.
+The token acts for the adjuster, is bound to that one claim and run, carries only the agent's scopes,
+and lasts 5 minutes.
+
+| Agent | Scopes |
+|---|---|
+| `reader` | `claim:read`, `documents:read` |
+| `coverage` | `claim:read`, `policy:read`, `clauses:search` |
+| `risk` | `claim:read`, `documents:read` |
+| `drafter` | `claim:read` |
+
+On every call with an OBO token the API also checks the scope and the bound claim, refuses listing
+claims, writing notes and minting tokens, records searches under the token's own run and agent, and
+stops working as soon as the adjuster is suspended. Audit rows record the agent as `actor` and the
+adjuster as `on_behalf_of`.

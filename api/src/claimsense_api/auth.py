@@ -14,6 +14,7 @@ import jwt
 from .db import fetch_one
 
 DEV_ISSUER = "claimsense-dev"
+OBO_ISSUER = "claimsense-obo"          # agent tokens, see obo.py
 TOKEN_LIFETIME_SECONDS = 8 * 60 * 60
 
 
@@ -60,16 +61,35 @@ def read_bearer_token(authorization_header):
 def verify_token(token):
     """Check signature, expiry and issuer. Only HS256 is accepted (never 'none')."""
     try:
-        return jwt.decode(token, jwt_secret(), algorithms=["HS256"], issuer=DEV_ISSUER,
-                          options={"require": ["sub", "exp", "iss"]})
+        claims = jwt.decode(token, jwt_secret(), algorithms=["HS256"],
+                            options={"require": ["sub", "exp", "iss"]})
     except jwt.ExpiredSignatureError:
         raise AuthError("token expired")
     except jwt.InvalidTokenError as e:
         raise AuthError(f"invalid token: {e}")
+    if claims["iss"] not in (DEV_ISSUER, OBO_ISSUER):
+        raise AuthError("unknown token issuer")
+    return claims
+
+
+def obo_details(claims):
+    """The agent fields of an OBO token, or None for an ordinary user token."""
+    if claims["iss"] != OBO_ISSUER:
+        return None
+    return {
+        "agent": claims["act"]["agent"],
+        "claim_id": claims["claim_id"],
+        "run_id": claims["run_id"],
+        "scopes": claims["scope"].split(),
+    }
 
 
 def get_user(authorization_header):
-    """Return the calling user as a dict, or raise AuthError / InactiveUser."""
+    """Return the calling user as a dict, or raise AuthError / InactiveUser.
+
+    With an OBO token the user is still the human the agent acts for (so a suspended adjuster
+    stops their agents too), and user["obo"] holds the agent, claim, run and scopes.
+    """
     claims = verify_token(read_bearer_token(authorization_header))
     user = fetch_one("SELECT user_id, full_name, user_group, status FROM claimsense.users "
                      "WHERE user_id = %s", (claims["sub"],))
@@ -81,4 +101,5 @@ def get_user(authorization_header):
         raise AuthError("token group does not match the user record")
     if user["status"] != "active":
         raise InactiveUser(f"user is {user['status']}")
+    user["obo"] = obo_details(claims)
     return user

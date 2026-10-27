@@ -21,6 +21,7 @@ from .db import execute, fetch_all, fetch_one
 from pydantic import BaseModel
 
 from .notes import NoteError, NoteRequest, check_note, write_note
+from .obo import AGENT_SCOPES, OBO_LIFETIME_SECONDS, make_obo_token
 
 app = FastAPI(title="ClaimSense data API", version="0.1.0")
 
@@ -119,6 +120,7 @@ def me(authorization: str = Header(default=None)):
 def list_claims(authorization: str = Header(default=None)):
     """The work queue: only the claims this caller may read."""
     user = require_user(authorization, "list_claims", "claims")
+    check_agent(user, "claims:list", "list_claims", resource_type="claims")   # no agent has this scope
     all_claims = fetch_all(f"SELECT {CLAIM_COLUMNS} FROM claims_mgmt.claims ORDER BY claim_id")
     visible = []
     for claim in all_claims:
@@ -130,11 +132,30 @@ def list_claims(authorization: str = Header(default=None)):
     return {"claims": visible, "count": len(visible)}
 
 
-def load_claim_for(user, claim_id, action):
+def check_agent(user, scope, action, claim_id=None, resource_type="claim"):
+    """Extra checks when an agent calls with an OBO token: the scope, and the claim it is bound to.
+
+    Does nothing for a person's own token.
+    """
+    obo = user["obo"]
+    if obo is None:
+        return
+    if scope not in obo["scopes"]:
+        log_audit(action, "deny", user=user, resource_type=resource_type, resource_id=claim_id,
+                  reason=f"agent {obo['agent']} lacks scope {scope}")
+        raise ApiError(403, "forbidden", "This agent is not allowed to do that.")
+    if claim_id is not None and claim_id != obo["claim_id"]:
+        log_audit(action, "deny", user=user, resource_type=resource_type, resource_id=claim_id,
+                  reason=f"OBO token is bound to {obo['claim_id']}")
+        raise claim_not_available(claim_id)
+
+
+def load_claim_for(user, claim_id, action, scope="claim:read"):
     """Step 2 for every claim-scoped route: return the claim if the user may read it.
 
     Writes the audit row either way. Unknown and forbidden claims get the same refusal.
     """
+    check_agent(user, scope, action, claim_id)
     claim = fetch_one(f"SELECT {CLAIM_COLUMNS} FROM claims_mgmt.claims WHERE claim_id = %s",
                       (claim_id,))
     if claim is None:
@@ -167,7 +188,7 @@ POLICY_COLUMNS = """policy_id, vehicle_vin, vehicle_year, vehicle_make, vehicle_
 def get_policy(claim_id: str, authorization: str = Header(default=None)):
     """The policy is read through a claim the caller may read, so policy ids cannot be browsed."""
     user = require_user(authorization, "get_policy", "claim", claim_id)
-    claim = load_claim_for(user, claim_id, "get_policy")
+    claim = load_claim_for(user, claim_id, "get_policy", scope="policy:read")
     policy = fetch_one(f"SELECT {POLICY_COLUMNS} FROM policy_admin.policies WHERE policy_id = %s",
                        (claim["policy_id"],))
     return {"claim_id": claim_id, "policy": policy}
@@ -177,7 +198,7 @@ def get_policy(claim_id: str, authorization: str = Header(default=None)):
 def list_documents(claim_id: str, authorization: str = Header(default=None)):
     """The document inventory for a claim (no text here; fetch one document to read it)."""
     user = require_user(authorization, "list_documents", "claim", claim_id)
-    load_claim_for(user, claim_id, "list_documents")
+    load_claim_for(user, claim_id, "list_documents", scope="documents:read")
     documents = fetch_all("""SELECT document_id, document_type, description, upload_date,
                                     page_count, ocr_status
                                FROM doc_store.documents WHERE claim_id = %s
@@ -189,6 +210,7 @@ def list_documents(claim_id: str, authorization: str = Header(default=None)):
 def get_document(document_id: str, authorization: str = Header(default=None)):
     """One document with its text. The text is null unless OCR is Completed (CLS-DOC-009)."""
     user = require_user(authorization, "get_document", "document", document_id)
+    check_agent(user, "documents:read", "get_document", resource_type="document")
     document = fetch_one("""SELECT document_id, claim_id, document_type, description, upload_date,
                                    page_count, ocr_status, ocr_text
                               FROM doc_store.documents WHERE document_id = %s""", (document_id,))
@@ -196,6 +218,10 @@ def get_document(document_id: str, authorization: str = Header(default=None)):
     if document is None:
         log_audit("get_document", "deny", user=user, resource_type="document",
                   resource_id=document_id, reason="unknown document")
+        raise not_available
+    if user["obo"] and document["claim_id"] != user["obo"]["claim_id"]:
+        log_audit("get_document", "deny", user=user, resource_type="document", resource_id=document_id,
+                  reason=f"OBO token is bound to {user['obo']['claim_id']}")
         raise not_available
     claim = fetch_one(f"SELECT {CLAIM_COLUMNS} FROM claims_mgmt.claims WHERE claim_id = %s",
                       (document["claim_id"],))
@@ -216,6 +242,11 @@ def search_clauses(q: str = "", top_k: int = 4, run_id: UUID | None = None, agen
     When a pipeline run passes its run_id, the returned clause ids are saved in retrieval_log;
     a draft may later cite only clauses retrieved in its own run."""
     user = require_user(authorization, "search_clauses", "clauses")
+    check_agent(user, "clauses:search", "search_clauses", resource_type="clauses")
+    if user["obo"]:
+        # An agent's searches are always recorded under its own run, whatever the request says.
+        run_id = user["obo"]["run_id"]
+        agent = user["obo"]["agent"]
     q = q.strip()
     if len(q) < 3 or len(q) > 500:
         raise ApiError(400, "invalid_argument", "q must be between 3 and 500 characters.")
@@ -246,6 +277,10 @@ def create_note(claim_id: str, note: NoteRequest, authorization: str = Header(de
                 idempotency_key: str = Header(default=None)):
     """Save a validated draft decision as an assessment plus an append-only claim note."""
     user = require_user(authorization, "write_note", "claim", claim_id)
+    if user["obo"]:
+        log_audit("write_note", "deny", user=user, resource_type="claim", resource_id=claim_id,
+                  reason="agents may not write notes")
+        raise ApiError(403, "forbidden", "This agent is not allowed to do that.")
     load_claim_for(user, claim_id, "write_note")
     if not idempotency_key or len(idempotency_key) > 200:
         raise ApiError(400, "invalid_argument", "An Idempotency-Key header (up to 200 characters) is required.")
@@ -264,3 +299,30 @@ def create_note(claim_id: str, note: NoteRequest, authorization: str = Header(de
         return JSONResponse(status_code=200, headers={"Idempotent-Replay": "true"},
                             content={"note": jsonable_encoder(saved), "idempotent_replay": True})
     return {"note": saved, "idempotent_replay": False}
+
+
+class OboRequest(BaseModel):
+    claim_id: str
+    agent: str
+    run_id: UUID
+
+
+@app.post("/api/v1/obo/token")
+def issue_obo_token(body: OboRequest, authorization: str = Header(default=None)):
+    """Pipeline code asks for one agent's token for one claim and run, with the adjuster's token.
+
+    The adjuster must be able to read the claim. Agents cannot call this with their own OBO token.
+    """
+    user = require_user(authorization, "issue_obo", "claim", body.claim_id)
+    if user["obo"]:
+        log_audit("issue_obo", "deny", user=user, resource_type="claim", resource_id=body.claim_id,
+                  reason="an agent may not mint tokens")
+        raise ApiError(403, "forbidden", "This agent is not allowed to do that.")
+    if body.agent not in AGENT_SCOPES:
+        raise ApiError(400, "invalid_argument", f"agent must be one of {', '.join(AGENT_SCOPES)}.")
+    load_claim_for(user, body.claim_id, "issue_obo")
+    token = make_obo_token(user, body.claim_id, body.agent, str(body.run_id))
+    log_audit("issue_obo", "allow", user=user, resource_type="claim", resource_id=body.claim_id,
+              run_id=body.run_id, detail={"agent": body.agent, "scopes": AGENT_SCOPES[body.agent]})
+    return {"token": token, "agent": body.agent, "claim_id": body.claim_id,
+            "scopes": AGENT_SCOPES[body.agent], "expires_in": OBO_LIFETIME_SECONDS}

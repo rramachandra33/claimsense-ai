@@ -7,15 +7,15 @@ writes the audit log on every call.
 
 | Tool | Calls |
 |---|---|
-| `list_claims` | `GET /api/v1/claims` |
 | `get_claim(claim_id)` | `GET /api/v1/claims/{id}` |
 | `get_policy(claim_id)` | `GET /api/v1/claims/{id}/policy` |
 | `list_documents(claim_id)` | `GET /api/v1/claims/{id}/documents` |
 | `get_document(document_id)` | `GET /api/v1/documents/{id}` |
 | `search_clauses(query, top_k)` | `GET /api/v1/clauses` (records the run for citation checks) |
 
-All tools are read-only. There is **no write tool**: the claim note is written by pipeline code after
-validation, never by an agent.
+All tools are read-only and work on the run's one claim. There is **no tool for listing claims**
+(an agent is given its claim id, and its OBO token is bound to it) and **no write tool**: the claim
+note is written by pipeline code after validation, never by an agent.
 
 ## How it is started
 
@@ -24,7 +24,7 @@ The pipeline starts it for one run over **stdio**, with:
 | Variable | Meaning |
 |---|---|
 | `CLAIMSENSE_API_URL` | Data API base URL, e.g. `http://localhost:8000` |
-| `CLAIMSENSE_TOKEN` | The token to act with (later: the agent's short-lived OBO token) |
+| `CLAIMSENSE_TOKEN` | The agent's short-lived OBO token (`POST /api/v1/obo/token`) |
 | `CLAIMSENSE_RUN_ID` | The pipeline run id, so searches are recorded in `retrieval_log` |
 | `CLAIMSENSE_AGENT` | The agent's name, recorded with each search |
 

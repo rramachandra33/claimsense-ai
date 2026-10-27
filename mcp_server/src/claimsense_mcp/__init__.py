@@ -1,1 +1,1 @@
-"""ClaimSense MCP server — six read-only tools over the ClaimSense data API."""
+"""ClaimSense MCP server — five read-only tools over the ClaimSense data API."""
