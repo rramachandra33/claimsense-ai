@@ -1,151 +1,82 @@
-# ClaimSense Dispute Agent — the "whole-game" demo
+# ClaimSense assessment pipeline
 
-The finished agent system the instructor runs **end-to-end in Week 13, hour 1**
-of the IK FDE course: *"in 5 weeks, you build this."* It triages a payment
-dispute, gathers evidence from multiple source systems, applies Reg E policy
-under two guardrails, routes to a human when needed, and prints an eval
-scorecard — all on screen, with tracing, in about 50 ms.
-
-It is built to **always run**: no API key and no database are required. The
-default brain is a deterministic, rule-based stand-in for the LLM, and the data
-layer falls back to a bundled JSON fixture if the ClaimSense Postgres isn't
-reachable. That is what makes it safe for a live demo and for CI.
+Four agents assess one claim, in an order fixed by code, and code writes one draft note for the
+adjuster to confirm.
 
 ```
-triage → handoff → evidence → policy(+guardrails) → human-handoff → eval scorecard
+code facts → reader → coverage → risk → drafter → check the draft → write the note
 ```
 
-## Quick start (zero setup, zero key)
+| Step | Who | Reaches data with | Does |
+|---|---|---|---|
+| Code facts | pipeline code | the adjuster's token, through the API | dates, money, total-loss ratio, document checks (`facts.py`) |
+| 1 · Reader | agent | its own OBO token, through MCP | reads every document whose OCR has finished |
+| 2 · Coverage | agent | its own OBO token, through MCP | checks coverage and searches the policy manual for the clauses to cite |
+| 3 · Risk | agent | its own OBO token, through MCP | fraud indicators (CLS-FRD-007), searches for the fraud clause |
+| 4 · Drafter | agent | its own OBO token, through MCP | drafts the outcome, summary and citations |
+| Check the draft | pipeline code | none | citations retrieved in this run, a citation or a DENY reason, no APPROVE against code's findings |
+| Write the note | pipeline code | the adjuster's token, with an `Idempotency-Key` | one assessment and one append-only claim note |
 
-Using [`uv`](https://docs.astral.sh/uv/):
+A draft that fails a check is replaced by code's own decision (`decision_source:
+deterministic_fallback`). If no clause can be cited, the outcome is DENY (open question 3).
+
+## Brains
+
+* `mock` (default): deterministic stand-ins in `agents/mock.py`. They make the same tool calls a
+  real agent would, through the real MCP server and API, and replace only the model's judgment
+  with simple rules. No model, no key, no AWS, and every run gives the same result.
+* `bedrock`: Claude on Amazon Bedrock through the OpenAI Agents SDK. **Next step, not built yet.**
+
+## Run
+
+Start the database and the API first (see `TESTING_LOCALLY.md` at the repo root):
 
 ```bash
-cd platform/agent
-uv run python -m claimsense_agent run --dispute 29 --mock
+make up
+export CLAIMSENSE_JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+CLAIMSENSE_DEV_LOGIN=1 make api
 ```
 
-Or with plain Python (stdlib only — no install needed):
+Then, in another terminal:
 
 ```bash
-cd platform/agent
-PYTHONPATH=src python3 -m claimsense_agent run --dispute 29 --mock
+make agent CLAIM=CLM-2024-1800 AS=alice             # APPROVE
+make agent CLAIM=CLM-2024-2822 AS=david             # DENY: loss 3 days after the policy ended
+make agent CLAIM=CLM-2024-1873 AS=alice             # refused: carol's claim
+cd agent && uv run claimsense-agent run --claim CLM-2024-1800 --user alice --demo-bad-draft
+                                                    # the code checks replace a bad draft
+cd agent && uv run claimsense-agent claims --user bob   # the claims bob may read
 ```
 
-The three bundled disputes, each chosen to show a different path:
+Each run adds a new note (re-runs never overwrite). `make up` reloads the course data and clears them.
 
-| `--dispute` | Type | Story it tells on stage |
-|---|---|---|
-| **29** | A — fraud | **SLA-breached**, Reg E clock red → grounded provisional-credit citation, then **human handoff**. The headline demo. |
-| **1** | B — merchant | Clean low-amount dispute, in-window → auto-resolved, no human needed. |
-| **7** | B — merchant | Provisional credit already issued **with a `provisional_credit_error` flag** + watch-listed merchant → human handoff. |
-
-List what's available in the active backend:
+## Tests
 
 ```bash
-uv run python -m claimsense_agent disputes
+make test        # or: cd agent && uv run --extra dev pytest -q
 ```
 
-## The two guardrails (the part the demo is really about)
+The tests start their own API on a free port, so `make api` does not need to be running; the
+database does (`make up`). They clean up the notes they write.
 
-1. **Poisoned-chunk quarantine (input guardrail).** The policy KB contains one
-   prompt-injection chunk (`policy_chunks.chunk_id = 121`, `is_poisoned = true`)
-   that tries to exfiltrate account `999999` to an external address. The agent
-   **never ingests it** — it is dropped before reaching model context, and the
-   quarantine is logged, not silent.
+## Provisional, still to decide
 
-2. **Reg E provisional-credit citation tripwire (output guardrail).** ANY
-   statement involving provisional credit MUST cite a policy chunk id. An
-   uncited claim **trips the wire and the output is BLOCKED** — never returned
-   to a human or written to the system of record.
+* **Precedence** (open question 2): when several outcomes are signalled, `PROVISIONAL_PRECEDENCE`
+  in `facts.py` picks DENY, then FLAG, then ROUTE. A documentation gap on its own counts as FLAG.
+  Both are placeholders until the precedence decision; the cases are in `evals/precedence_cases.json`.
+* **Fraud threshold**: vendor score 0.70.
 
-See the guardrail fire live:
-
-```bash
-uv run python -m claimsense_agent run --dispute 29 --mock --demo-tripwire
-```
-
-This forces an uncited provisional-credit claim; the output guardrail blocks it
-and the scorecard shows `guardrail enforced … BLOCKED uncited claim`.
-
-## Where the real agents go (W15)
-
-The pipeline is structured so the W15 lab swaps in the **OpenAI Agents SDK +
-Responses API** at the same call sites, reusing `db.py`, `guardrail.py`,
-`trace.py`, and the scorecard unchanged. The reference wiring (Agents, Handoffs,
-`@input_guardrail` / `@output_guardrail`, `SQLiteSession`) is in
-`agents/sdk_runtime.py`:
-
-```bash
-uv run python -m claimsense_agent run --dispute 29 --show-sdk
-```
-
-The brain is selected automatically:
-
-* `--mock` (or no key) → deterministic stand-ins (the demo/CI path).
-* `OPENAI_API_KEY` → OpenAI Responses API.
-* `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` → Microsoft Foundry / Azure.
-
-The live LLM runtime is intentionally a documented shim that raises
-`NotImplementedError` — it is the **student deliverable**, so the demo's mock
-path stays the source of truth.
-
-## Live Postgres (optional)
-
-By default the agent tries the ClaimSense Postgres at
-`CLAIMSENSE_DB_URL` (default `postgresql://claimsense:claimsense@localhost:5433/claimsense`)
-and falls back to the fixture on any failure. To use the live DB:
-
-```bash
-uv pip install -e '.[db]'          # installs psycopg
-# bring up the bank (from platform/db): docker compose up -d && ./load.sh
-uv run python -m claimsense_agent run --dispute 29 --mock   # now reads Postgres
-```
-
-Force the offline fixture even when a DB is up:
-
-```bash
-uv run python -m claimsense_agent run --dispute 29 --mock --fixture
-```
-
-## Tests (the W15 lab checkpoints)
-
-```bash
-uv run --extra dev pytest -q
-# or, no install:
-PYTHONPATH=src python3 -m pytest -q
-```
-
-The suite verifies end-to-end completion, the poisoned-chunk quarantine, the
-provisional-credit tripwire (both blocking an uncited claim and passing a
-grounded one), and the breached-clock human handoff.
-
-## File tree
+## Files
 
 ```
-codebase/agent/
-├── pyproject.toml
-├── README.md
-├── tests/
-│   └── test_pipeline.py
-└── src/claimsense_agent/
-    ├── __init__.py
-    ├── __main__.py            # python -m claimsense_agent
-    ├── cli.py                 # run / disputes commands
-    ├── pipeline.py            # orchestration + on-screen tracing + scorecard
-    ├── brain.py              # mock-vs-LLM selection seam
-    ├── db.py                  # Postgres (psycopg) with JSON-fixture fallback
-    ├── guardrail.py           # quarantine + Reg E citation tripwire
-    ├── trace.py               # zero-dep span/console rendering (→ OTel in W15)
-    ├── data/fixture.json      # 3 real disputes + policy chunks (incl. poisoned)
-    └── agents/
-        ├── triage.py          # 1. classify Type A/B + Reg E urgency
-        ├── evidence.py        # 2. gather from >=3 source systems
-        ├── policy.py          # 3. retrieve Reg E + apply rule + guardrails
-        ├── handoff.py         # 4. route to human-approval queue
-        └── sdk_runtime.py     # 5. real Agents SDK seam (W15 deliverable)
+src/claimsense_agent/
+├── cli.py          run / claims commands
+├── pipeline.py     the run: facts, four agents, draft checks, note write
+├── facts.py        code facts and the outcome signals (same rules as scripts/import_course_fixtures.py)
+├── schemas.py      typed outputs for each agent and for the run
+├── api.py          the pipeline's own API calls (adjuster's token), with note-write retries
+├── tools.py        one agent's MCP session (its OBO token)
+├── brain.py        mock or bedrock
+├── trace.py        on-screen trace (from the Week 15 sample)
+└── agents/mock.py  the four mock agents
 ```
-
-## Cost
-
-**$0.** The whole-game demo runs on the mock brain with no cloud resources —
-exactly the W13 cost line in the lesson plan.

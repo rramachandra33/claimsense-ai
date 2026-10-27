@@ -1,6 +1,6 @@
-"""ClaimSense dispute-resolution agent — the W13 'whole-game' demo.
+"""ClaimSense assessment pipeline: four agents (reader, coverage, risk, drafter) over the MCP server.
 
-Run: ``python -m claimsense_agent run --dispute 29``
+Run: ``claimsense-agent run --claim CLM-2024-1800 --user alice``
 """
 
 __version__ = "0.1.0"

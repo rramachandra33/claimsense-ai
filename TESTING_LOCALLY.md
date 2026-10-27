@@ -1,0 +1,96 @@
+# Testing ClaimSense locally (MacBook, no AWS needed)
+
+Everything built so far runs on this Mac: PostgreSQL (Docker, port 5433), the data API (port 8000),
+the MCP server (started per run over stdio) and the console (port 3100). Docker Desktop must be running.
+
+## 1. Start
+
+```bash
+# Terminal 1: database + data API
+cd ~/raju/CLAIMSENSE-AI
+make up                                   # only if the database is not already running
+export CLAIMSENSE_JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+CLAIMSENSE_DEV_LOGIN=1 make api           # http://localhost:8000
+
+# Terminal 2: console
+cd ~/raju/CLAIMSENSE-AI
+make web                                  # http://localhost:3100
+```
+
+## 2. Test
+
+**A. Console** (http://localhost:3100): sign in by user id and compare.
+
+| Sign in as | Expect |
+|---|---|
+| alice | 6 claims; `/claims/CLM-2024-1873` shows "Not available" |
+| david | 6 claims; `/claims/CLM-2024-2822` shows the lapsed policy (ended 2024-01-28, loss 2024-01-31) |
+| bob | all 20 claims |
+| carol | 3 claims; `/documents/DOC-00007` shows the pending-OCR notice |
+| eve | 4 claims (2 assigned + 2 total-loss candidates) |
+| frank | refused (suspended) |
+
+The Policy manual page never shows `CLS-ADM-013`, the injected clause, whatever you search for.
+
+**B. API test page:** http://localhost:8000/docs. Paste a token into `authorization` as `Bearer <token>`.
+Get one with `make token USER=alice` (same `CLAIMSENSE_JWT_SECRET` as the API) or from `/api/v1/dev/login`.
+
+**C. Agent (OBO) tokens by hand** (Terminal 3):
+
+```bash
+ALICE=$(curl -s -X POST localhost:8000/api/v1/dev/login -H 'Content-Type: application/json' \
+  -d '{"user_id":"alice"}' | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
+
+OBO=$(curl -s -X POST localhost:8000/api/v1/obo/token -H "Authorization: Bearer $ALICE" \
+  -H 'Content-Type: application/json' \
+  -d "{\"claim_id\":\"CLM-2024-1800\",\"agent\":\"coverage\",\"run_id\":\"$(uuidgen)\"}" \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
+
+curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims/CLM-2024-1800            # 200 its claim
+curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims/CLM-2024-2092            # 403 bound to 1800
+curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims/CLM-2024-1800/documents  # 403 no documents scope
+curl -H "Authorization: Bearer $OBO" "localhost:8000/api/v1/clauses?q=collision"           # 200 coverage may search
+curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims                          # 403 agents cannot list
+```
+
+The OBO token expires after 5 minutes; ask for a new one if you get 401.
+
+**D. Automated tests** (need only the database):
+
+```bash
+make api-test     # 62 tests
+make mcp-test     # 6 tests
+make test         # 19 tests: the agent pipeline end to end (starts its own API)
+uv run --with pytest pytest platform/db/seed -q    # 4 tests
+```
+
+**F. Run the four agents (mock brain, no AWS)** (Terminal 3, with `make api` running):
+
+```bash
+make agent CLAIM=CLM-2024-1800 AS=alice      # APPROVE, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004
+make agent CLAIM=CLM-2024-2822 AS=david      # DENY: loss 3 days after the policy ended (CLS-PER-006)
+make agent CLAIM=CLM-2024-1873 AS=alice      # run failed: claim not available (carol's claim)
+make agent CLAIM=CLM-2024-1873 AS=bob        # FLAG (provisional precedence: FLAG and ROUTE both signalled)
+cd agent && uv run claimsense-agent run --claim CLM-2024-1800 --user alice --demo-bad-draft
+                                             # a bad draft is replaced: decision_source deterministic_fallback
+```
+
+Each run prints a trace (code facts, each agent, the draft check, the note write) and writes one note.
+The console does not show notes or a Run Assessment button yet; see them in the database:
+
+```bash
+cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claimsense -c \
+  "SELECT note_id, claim_id, outcome, cited_clauses, created_at FROM claims_mgmt.claim_notes ORDER BY note_id DESC LIMIT 10;"
+```
+
+**E. See the audit trail:**
+
+```bash
+cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claimsense -c \
+  "SELECT ts, user_id, actor, action, resource_id, decision, reason FROM claimsense.audit_log ORDER BY audit_id DESC LIMIT 20;"
+```
+
+## 3. Stop
+
+Ctrl+C in each terminal. `make down` stops the database (data kept); `make up` brings it back
+(it also reloads the course data, which clears drafts and the audit log).

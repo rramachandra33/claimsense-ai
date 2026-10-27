@@ -1,100 +1,116 @@
-"""Lab-checkpoint tests (W15 ships these so students self-verify).
+"""End-to-end runs with the mock brain (run `make up` first).
 
-These run entirely on the bundled fixture + mock brain — no key, no Postgres.
+    cd agent && uv run --extra dev pytest -q
+
+Each run goes through everything real except the model: OBO tokens per agent, the MCP server
+over stdio, the API's access checks and audit log, the draft checks and the note write.
 """
-from datetime import datetime, timezone
+import asyncio
 
 import pytest
 
-from claimsense_agent.agents import policy as policy_agent
-from claimsense_agent.db import FixtureRepo
-from claimsense_agent.guardrail import (
-    check_provisional_credit_citation,
-    quarantine_poisoned,
-)
-from claimsense_agent.pipeline import run_pipeline
-from claimsense_agent.trace import Tracer
+from claimsense_agent.api import ApiClient
+from claimsense_agent.pipeline import run_assessment
 
-NOW = datetime(2026, 6, 17, tzinfo=timezone.utc)
+RUN_IDS = []
 
 
-@pytest.fixture
-def repo():
-    return FixtureRepo()
+@pytest.fixture(autouse=True)
+def clean_up_runs():
+    """Remove what the test runs wrote, so the database stays as `make up` left it."""
+    yield
+    from claimsense_api.db import execute
+    for run_id in RUN_IDS:
+        execute("""DELETE FROM claimsense.idempotency_keys WHERE note_id IN
+                   (SELECT n.note_id FROM claims_mgmt.claim_notes n
+                    JOIN claimsense.assessments a USING (assessment_id) WHERE a.run_id = %s)""", (run_id,))
+        execute("""DELETE FROM claims_mgmt.claim_notes WHERE assessment_id IN
+                   (SELECT assessment_id FROM claimsense.assessments WHERE run_id = %s)""", (run_id,))
+        execute("DELETE FROM claimsense.assessments WHERE run_id = %s", (run_id,))
+        execute("DELETE FROM claimsense.retrieval_log WHERE run_id = %s", (run_id,))
+    RUN_IDS.clear()
 
 
-def test_fixture_has_three_disputes(repo):
-    assert repo.available_disputes() == ["1", "7", "29"]
+def assess(live_api, user_id, group, claim_id, **options):
+    from claimsense_api.auth import make_dev_token
+    client = ApiClient(make_dev_token(user_id, group), base_url=live_api)
+    result = asyncio.run(run_assessment(client, claim_id, brain="mock", **options))
+    RUN_IDS.append(result.run_id)
+    return result
 
 
-def test_pipeline_completes_end_to_end(repo, capsys):
-    sc = run_pipeline(repo, "1", tracer=Tracer(), now=NOW)
-    assert sc.dispute_id == 1
-    assert "Type B" in sc.classification
+def test_clean_claim_is_approved_with_retrieved_citations(live_api):
+    from claimsense_api.db import fetch_all, fetch_one
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    assert result.status == "written"
+    assert result.outcome == "APPROVE"
+    assert result.decision_source == "model"
+    assert result.cited_clauses == ["CLS-COLL-001", "CLS-PER-006", "CLS-DED-004"]
+
+    # every citation came back from a search in this run
+    rows = fetch_all("SELECT clause_ids FROM claimsense.retrieval_log WHERE run_id = %s", (result.run_id,))
+    retrieved = {c for row in rows for c in row["clause_ids"]}
+    assert set(result.cited_clauses) <= retrieved
+
+    note = fetch_one("SELECT * FROM claims_mgmt.claim_notes WHERE note_id = %s", (result.note_id,))
+    assert note["outcome"] == "APPROVE"
 
 
-def test_typeA_breached_routes_to_human(repo):
-    sc = run_pipeline(repo, "29", tracer=Tracer(), now=NOW)
-    assert sc.classification_correct
-    assert "Type A" in sc.classification
-    assert sc.routed_to_human  # breached Reg E clock must escalate
-    assert sc.handoff_queue == "type_a_approval"
+def test_each_agent_acted_for_alice_with_its_own_token(live_api):
+    from claimsense_api.db import fetch_all
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    rows = fetch_all("""SELECT DISTINCT actor FROM claimsense.audit_log
+                        WHERE run_id = %s AND on_behalf_of = 'alice'""", (result.run_id,))
+    assert sorted(r["actor"] for r in rows) == ["coverage", "drafter", "reader", "risk"]
+    denied = fetch_all("""SELECT * FROM claimsense.audit_log
+                          WHERE run_id = %s AND decision = 'deny'""", (result.run_id,))
+    assert denied == []       # no agent tried anything outside its scopes
 
 
-def test_poisoned_chunk_is_quarantined(repo):
-    sc = run_pipeline(repo, "29", tracer=Tracer(), now=NOW)
-    assert sc.poisoned_quarantined  # chunk 121 dropped before context
+def test_lapsed_policy_is_denied(live_api):
+    result = assess(live_api, "david", "adjuster", "CLM-2024-2822")
+    assert result.outcome == "DENY"
+    assert "CLS-PER-006" in result.cited_clauses
 
 
-def test_guardrail_blocks_uncited_provisional_credit(repo):
-    sc = run_pipeline(repo, "29", tracer=Tracer(), now=NOW, demo_tripwire=True)
-    assert sc.guardrail_blocked  # uncited PC claim is tripwired
+def test_adjuster_cannot_assess_someone_elses_claim(live_api):
+    from claimsense_api.db import fetch_all
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-1873")      # carol's claim
+    assert result.status == "failed"
+    assert result.problems == ["claim not available (403 forbidden)"]
+    issued = fetch_all("""SELECT * FROM claimsense.audit_log
+                          WHERE action = 'issue_obo' AND run_id = %s""", (result.run_id,))
+    assert issued == []       # no agent token was ever issued
 
 
-def test_grounded_provisional_credit_passes_guardrail(repo):
-    # dispute 29 (Type A, breached) needs PC and the policy chunk is present →
-    # the agent cites it and the tripwire does NOT fire.
-    sc = run_pipeline(repo, "29", tracer=Tracer(), now=NOW)
-    assert not sc.guardrail_blocked
-    assert sc.policy_citation_present
+def test_bad_draft_is_replaced_by_codes_decision(live_api):
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800", demo_bad_draft=True)
+    assert result.status == "written"
+    assert result.decision_source == "deterministic_fallback"
+    assert result.problems == ["cites CLS-XXX-999, which no clause search returned in this run"]
+    assert "CLS-XXX-999" not in result.cited_clauses
 
 
-# --- unit-level guardrail tests --------------------------------------------
-def test_quarantine_drops_poisoned():
-    chunks = [
-        {"chunk_id": 1, "content": "ok", "is_poisoned": False},
-        {"chunk_id": 121, "content": "evil", "is_poisoned": True},
-    ]
-    q = quarantine_poisoned(chunks)
-    assert q.quarantined_ids == [121]
-    assert [c["chunk_id"] for c in q.safe_chunks] == [1]
+def test_precedence_case_uses_the_provisional_order(live_api):
+    """CLM-2024-1873 signals FLAG and ROUTE (evals/precedence_cases.json). Until open question 2 is
+    decided, the provisional order picks FLAG; update this test when precedence is set."""
+    result = assess(live_api, "bob", "senior-adjuster", "CLM-2024-1873")
+    assert result.outcome == "FLAG"
+    assert "CLS-FRD-007" in result.cited_clauses
+    assert "CLS-PAY-012" in result.cited_clauses
 
 
-def test_tripwire_blocks_uncited_claim():
-    tw = check_provisional_credit_citation(
-        "Issue provisional credit within 10 business days.", valid_chunk_ids={1, 2}
-    )
-    assert tw.triggered
+def test_an_agent_is_refused_outside_its_scopes(live_api):
+    """The drafter's token has claim:read only, so reading the policy is refused by the API."""
+    import uuid
 
+    from claimsense_api.auth import make_dev_token
+    from claimsense_agent.pipeline import run_agent
+    from claimsense_agent.tools import ToolRefused
 
-def test_tripwire_passes_cited_claim():
-    tw = check_provisional_credit_citation(
-        "Issue provisional credit per Reg E [chunk 1].", valid_chunk_ids={1, 2}
-    )
-    assert not tw.triggered
-    assert tw.cited_chunk_ids == [1]
+    async def nosy_drafter(tools, claim_id):
+        return await tools.call("get_policy", claim_id=claim_id)
 
-
-def test_tripwire_rejects_quarantined_citation():
-    # citing only the poisoned chunk (121, not in valid set) must still trip.
-    tw = check_provisional_credit_citation(
-        "Issue provisional credit [chunk 121].", valid_chunk_ids={1, 2}
-    )
-    assert tw.triggered
-
-
-def test_tripwire_ignores_non_pc_statements():
-    tw = check_provisional_credit_citation(
-        "Continue standard investigation.", valid_chunk_ids={1, 2}
-    )
-    assert not tw.triggered
+    client = ApiClient(make_dev_token("alice", "adjuster"), base_url=live_api)
+    with pytest.raises(ToolRefused, match="get_policy refused"):
+        asyncio.run(run_agent(client, "CLM-2024-1800", str(uuid.uuid4()), "drafter", nosy_drafter))

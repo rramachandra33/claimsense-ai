@@ -1,7 +1,7 @@
 [project]
 name = "claimsense-mcp"
 version = "0.1.0"
-description = "Thin MCP server: six read-only tools that call the ClaimSense data API with the caller's token"
+description = "Thin MCP server: five read-only tools that call the ClaimSense data API with the caller's token"
 requires-python = ">=3.12"
 dependencies = [
     "mcp>=1.2",

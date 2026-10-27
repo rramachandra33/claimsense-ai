@@ -60,7 +60,7 @@ and lasts 5 minutes.
 |---|---|
 | `reader` | `claim:read`, `documents:read` |
 | `coverage` | `claim:read`, `policy:read`, `clauses:search` |
-| `risk` | `claim:read`, `documents:read` |
+| `risk` | `claim:read`, `documents:read`, `clauses:search` |
 | `drafter` | `claim:read` |
 
 On every call with an OBO token the API also checks the scope and the bound claim, refuses listing

@@ -1,10 +1,7 @@
-"""The ClaimSense agent pipeline.
+"""The four ClaimSense agents, run by pipeline code in this order:
 
-Four cooperating agents, run in sequence against one dispute id:
+    reader → coverage → risk → drafter
 
-    triage  →(handoff)→  evidence  →  policy(+guardrails)  →  human-handoff
-
-Each module exposes a ``run(...)`` function. In --mock mode the reasoning is a
-deterministic rule-based stand-in; the real OpenAI Agents SDK version lives in
-``sdk_runtime`` and is wired in at the same call sites (see brain.py).
+Each agent has its own OBO token and reaches data only through the MCP server. `mock` holds
+deterministic stand-ins that call the real tools but replace the model with simple rules.
 """

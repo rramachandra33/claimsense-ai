@@ -17,7 +17,7 @@ OBO_LIFETIME_SECONDS = 5 * 60
 AGENT_SCOPES = {
     "reader": ["claim:read", "documents:read"],
     "coverage": ["claim:read", "policy:read", "clauses:search"],
-    "risk": ["claim:read", "documents:read"],
+    "risk": ["claim:read", "documents:read", "clauses:search"],   # cites the fraud clause, CLS-FRD-007
     "drafter": ["claim:read"],
 }
 

@@ -7,7 +7,8 @@ PORT       ?= 3100
 DB_URL     ?= postgresql://claimsense:claimsense@localhost:5433/claimsense
 BASE_URL   ?= http://localhost:$(PORT)/api/v1
 CONSOLE    ?= http://localhost:$(PORT)
-DISPUTE    ?= 29
+CLAIM      ?= CLM-2024-1800
+AS         ?= alice
 
 export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
@@ -56,14 +57,14 @@ web: deps ## build + serve the Ops Console on :$(PORT)
 web-dev: deps ## hot-reload the console instead (development)
 	cd platform/web && PORT=$(PORT) npm run dev
 
-agent: ## run the triage pipeline on dispute $(DISPUTE) (mock brain, no AWS)
-	cd agent && uv run claimsense-agent run --dispute $(DISPUTE) --mock
+agent: ## assess a claim with the mock agents: make agent CLAIM=CLM-2024-1800 AS=alice (needs make api)
+	cd agent && uv run claimsense-agent run --claim $(CLAIM) --user $(AS) --brain mock
 
-eval: ## the smoke eval gate — the same gate CI runs on every PR
-	cd agent && uv run claimsense-agent eval --suite smoke --min-pass 0.9 --mock
+eval: ## the evaluation suite (being rebuilt from the 20 course claims; not ready yet)
+	@echo "The evaluation suite is being rebuilt from the course claims (next step). For now: make test"
 
-golden: ## the full 150-case golden gate (incl. adversarial) — the release gate
-	cd agent && uv run claimsense-agent eval --suite golden --min-pass 0.95 --mock
+golden: ## the release gate (being rebuilt with the evaluation suite; not ready yet)
+	@echo "The golden gate comes with the rebuilt evaluation suite (next step)."
 
 verify: ## $$0 smoke gate: prerequisites + smoke eval + unit tests. Run this first.
 	@$(MAKE) --no-print-directory doctor
@@ -73,8 +74,8 @@ verify: ## $$0 smoke gate: prerequisites + smoke eval + unit tests. Run this fir
 	@$(MAKE) --no-print-directory test
 	@echo "verify: OK"
 
-test: ## the agent's pytest suite
-	cd agent && uv run pytest -q
+test: ## the agent pipeline's tests (needs make up; starts its own API)
+	cd agent && uv run --extra dev pytest -q
 
 doctor: ## check prerequisites and report what's missing
 	@echo "docker : $$(docker --version 2>/dev/null || echo MISSING)"

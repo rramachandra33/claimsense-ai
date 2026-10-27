@@ -1,27 +1,28 @@
 [project]
 name = "claimsense-agent"
 version = "0.1.0"
-description = "ClaimSense dispute-resolution agent — the W13 whole-game demo for the IK FDE course"
+description = "ClaimSense assessment pipeline: four agents (reader, coverage, risk, drafter) in a code-ordered run"
 readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "MIT" }
-authors = [{ name = "IK FDE Curriculum" }]
+requires-python = ">=3.12"
 
-# The demo runs end-to-end with NOTHING but the stdlib in --mock mode.
-# Everything below is optional and only used on the "real" paths.
-dependencies = []
+# The agents reach claim data only through the ClaimSense MCP server, which this package starts
+# for each agent over stdio. Mock mode needs nothing else: no model, no AWS.
+dependencies = [
+    "claimsense-mcp",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+]
 
 [project.optional-dependencies]
-# Live Postgres path (the hosted/local ClaimSense platform). Falls back to the
-# bundled JSON fixture automatically if psycopg or the DB is unavailable.
-db = ["psycopg[binary]>=3.1"]
-# Real LLM agents via the OpenAI Agents SDK + Responses API. Only imported when
-# an OPENAI_API_KEY (or Azure/Foundry) config is present AND --mock is not set.
-llm = ["openai-agents>=0.0.1", "openai>=1.40"]
-dev = ["pytest>=8.0"]
+# The tests start the data API in-process on a free port.
+dev = ["pytest>=8.0", "claimsense-api"]
 
 [project.scripts]
 claimsense-agent = "claimsense_agent.cli:main"
+
+[tool.uv.sources]
+claimsense-mcp = { path = "../mcp_server", editable = true }
+claimsense-api = { path = "../api", editable = true }
 
 [build-system]
 requires = ["hatchling"]

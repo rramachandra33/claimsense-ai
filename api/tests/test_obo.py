@@ -81,6 +81,13 @@ def test_reader_agent_can_read_documents_but_not_policy_or_clauses():
     assert client.get("/api/v1/clauses?q=collision", headers=agent).status_code == 403
 
 
+def test_risk_agent_can_search_clauses_but_not_read_policy():
+    agent = as_agent(obo_token("risk").json()["token"])
+    assert client.get("/api/v1/clauses?q=fraud", headers=agent).status_code == 200
+    assert client.get(f"/api/v1/claims/{CLAIM}/documents", headers=agent).status_code == 200
+    assert client.get(f"/api/v1/claims/{CLAIM}/policy", headers=agent).status_code == 403
+
+
 def test_no_agent_can_list_claims_or_write_notes():
     for name in ("reader", "coverage", "risk", "drafter"):
         agent = as_agent(obo_token(name).json()["token"])
