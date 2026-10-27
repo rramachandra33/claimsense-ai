@@ -27,7 +27,7 @@ across systems, duplicate tickets, provisional-credit errors.
 
 ```bash
 cd ../db
-docker compose up -d        # Postgres 16 on localhost:5432
+docker compose up -d        # Postgres 16 on localhost:5433
 ./load.sh                   # schema + deterministic demo seed
 ```
 
@@ -77,7 +77,7 @@ Postgres is down.
 
 | Var | Default | Notes |
 |---|---|---|
-| `CLAIMSENSE_DB_URL` | `postgresql://claimsense:claimsense@localhost:5432/claimsense` | Postgres connection string. For hosted Supabase, use the **session pooler** connection string. |
+| `CLAIMSENSE_DB_URL` | `postgresql://claimsense:claimsense@localhost:5433/claimsense` | Postgres connection string. For hosted Supabase, use the **session pooler** connection string. |
 
 ## Deploy (Vercel + Supabase)
 

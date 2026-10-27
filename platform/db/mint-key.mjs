@@ -28,7 +28,7 @@ const { Client } = pg;
 
 const CONNECTION_STRING =
   process.env.CLAIMSENSE_DB_URL ||
-  "postgresql://claimsense:claimsense@localhost:5432/claimsense";
+  "postgresql://claimsense:claimsense@localhost:5433/claimsense";
 
 function parseArgs(argv) {
   const args = {};

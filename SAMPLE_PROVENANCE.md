@@ -37,6 +37,18 @@ later change shows up as a diff against the original.
    `agent/src/claimsense_agent` (`claimsense-agent` CLI). Behaviour unchanged: the smoke gate and the 15
    unit tests pass, the lock file is consistent, the console type-checks and builds. `reference/` and
    this file keep the original names on purpose.
-2. **Still bank-dispute domain (next):** tables, routes and logic are still disputes, Reg E rules and
+2. **Database schema and loader (done):** `platform/db/schema.sql` replaced with the ClaimSense
+   schema (four schemas: `claims_mgmt`, `policy_admin`, `doc_store`, `claimsense`; see
+   `docs/ClaimSense-AI-Schema-ER-Diagram.pdf`). The sample's `seed/generate.py` (Meridian bank
+   generator) was removed; `seed/build_seed.py` builds CSVs from `data/course_fixtures` and
+   `data/identity/users.json`, and its load-time guardrail (`seed/guardrail.py`) quarantines the
+   injected chunk in `seed/injected_clauses.json`. `load.sh` keeps the sample's structure (build CSVs,
+   reset, `\copy`, sanity counts). The local database now uses host port 5433 so it can run beside a
+   local PostgreSQL on 5432. `api.sql`, `mint-key.mjs` and the `keys` target are legacy Meridian API-key
+   pieces, no longer part of `make up`; they go when the API moves to Cognito.
+3. **Still bank-dispute domain (next):** the console, API routes and the agent's live database path
+   still expect the old Meridian tables, so they will not work against the new database until adapted
+   (the agent's offline `--mock` path and tests still pass).
+4. **Earlier note on what remained:** tables, routes and logic are still disputes, Reg E rules and
    scoped API keys, and some prose reads "ClaimSense Bank". Adapting them to claims, the AutoSure manual,
    the course data, Cognito and the MCP server follows the reuse plan, in separate commits.

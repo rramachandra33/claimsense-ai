@@ -9,7 +9,8 @@ services:
       POSTGRES_PASSWORD: claimsense
       POSTGRES_DB: claimsense
     ports:
-      - "5432:5432"
+      # Host port 5433 by default, so it can run beside a local PostgreSQL on 5432.
+      - "${CLAIMSENSE_DB_PORT:-5433}:5432"
     volumes:
       - claimsense-pgdata:/var/lib/postgresql/data
     healthcheck:

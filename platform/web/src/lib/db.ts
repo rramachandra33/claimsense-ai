@@ -7,7 +7,7 @@ const globalForPg = globalThis as unknown as { __claimsensePool?: Pool };
 
 const connectionString =
   process.env.CLAIMSENSE_DB_URL ||
-  "postgresql://claimsense:claimsense@localhost:5432/claimsense";
+  "postgresql://claimsense:claimsense@localhost:5433/claimsense";
 
 export function getPool(): Pool {
   if (!globalForPg.__claimsensePool) {

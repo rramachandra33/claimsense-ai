@@ -47,12 +47,12 @@ sudo ./load.sh demo
 sudo docker compose exec -T claimsense-db psql -U claimsense -d claimsense -q -v ON_ERROR_STOP=1 < api.sql
 
 log "minting two scoped analyst keys — COPY THESE, they are shown once"
-CLAIMSENSE_DB_URL="postgresql://claimsense:claimsense@localhost:5432/claimsense" node mint-key.mjs --demo | tee "$APP_DIR/ANALYST_KEYS.txt"
+CLAIMSENSE_DB_URL="postgresql://claimsense:claimsense@localhost:5433/claimsense" node mint-key.mjs --demo | tee "$APP_DIR/ANALYST_KEYS.txt"
 
 log "building the console"
 cd "$APP_DIR/platform/web"
 npm install --silent
-printf 'CLAIMSENSE_DB_URL=postgresql://claimsense:claimsense@localhost:5432/claimsense\n' > .env.local
+printf 'CLAIMSENSE_DB_URL=postgresql://claimsense:claimsense@localhost:5433/claimsense\n' > .env.local
 npm run build
 
 log "installing the systemd service (survives reboot)"
@@ -66,7 +66,7 @@ Requires=docker.service
 Type=simple
 WorkingDirectory=$APP_DIR/platform/web
 Environment=PORT=$PORT
-Environment=CLAIMSENSE_DB_URL=postgresql://claimsense:claimsense@localhost:5432/claimsense
+Environment=CLAIMSENSE_DB_URL=postgresql://claimsense:claimsense@localhost:5433/claimsense
 ExecStart=/usr/bin/npm run start
 Restart=always
 User=$USER

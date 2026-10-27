@@ -92,7 +92,7 @@ path stays the source of truth.
 ## Live Postgres (optional)
 
 By default the agent tries the ClaimSense Postgres at
-`CLAIMSENSE_DB_URL` (default `postgresql://claimsense:claimsense@localhost:5432/claimsense`)
+`CLAIMSENSE_DB_URL` (default `postgresql://claimsense:claimsense@localhost:5433/claimsense`)
 and falls back to the fixture on any failure. To use the live DB:
 
 ```bash

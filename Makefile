@@ -4,11 +4,10 @@
 SHELL := /bin/bash
 
 PORT       ?= 3100
-DB_URL     ?= postgresql://claimsense:claimsense@localhost:5432/claimsense
+DB_URL     ?= postgresql://claimsense:claimsense@localhost:5433/claimsense
 BASE_URL   ?= http://localhost:$(PORT)/api/v1
 CONSOLE    ?= http://localhost:$(PORT)
 DISPUTE    ?= 29
-SCALE      ?= demo
 
 export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
@@ -20,14 +19,11 @@ help: ## show this list
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-up: ## Postgres + schema + seed + two scoped API keys (the one-command bank)
+up: ## Postgres + schema + course-fixture seed (one command)
 	cd platform/db && docker compose up -d
 	@echo "==> waiting for Postgres…"
 	@until (cd platform/db && docker compose exec -T claimsense-db pg_isready -U claimsense >/dev/null 2>&1); do sleep 1; done
 	$(MAKE) seed
-	@cd platform/db && docker compose exec -T claimsense-db psql -U claimsense -d claimsense -q -v ON_ERROR_STOP=1 < api.sql
-	@echo "==> api.sql applied"
-	$(MAKE) keys
 	@echo ""
 	@echo "==> ready. next: make web   (console on $(CONSOLE))"
 
@@ -39,10 +35,10 @@ deps: ## install the console's node deps (needed by mint-key too)
 	  { echo "!! node deps still missing — run: cd platform/web && npm install"; exit 1; }
 	@cd platform/web && printf 'CLAIMSENSE_DB_URL=$(DB_URL)\n' > .env.local
 
-seed: ## regenerate + load the deterministic seed (SCALE=demo|full)
-	cd platform/db && ./load.sh $(SCALE)
+seed: ## rebuild the seed CSVs from data/course_fixtures and reload the database
+	cd platform/db && ./load.sh
 
-keys: deps ## mint a type_a + type_b analyst key pair (print once, copy into .env)
+keys: deps ## (legacy Meridian API keys; to be replaced by Cognito) mint an analyst key pair
 	@cd platform/db && node mint-key.mjs --demo
 
 web: deps ## build + serve the Ops Console on :$(PORT)

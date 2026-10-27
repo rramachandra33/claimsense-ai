@@ -22,3 +22,6 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Generated seed CSVs (rebuilt by platform/db/seed/build_seed.py)
+platform/db/seed/data/

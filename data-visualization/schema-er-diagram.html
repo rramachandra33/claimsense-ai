@@ -1,0 +1,402 @@
+<title>ClaimSense Schema Diagram</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one wide ER figure; client systems across the top, ClaimSense's own schema below. Hue = schema. */
+:root {
+  --bg: #f5f6f8; --panel: #ffffff; --ink: #1c2430; --muted: #5f6b7a; --line: #c9d0d9;
+  --pa: #2e7d55; --pa-bg: #eaf4ee; --cm: #2f5d8a; --cm-bg: #eaf1f8; --ds: #6b7685; --ds-bg: #eef0f3;
+  --cs: #6651a8; --cs-bg: #f1eefa; --ok: #2e7d55; --bad: #b3362f; --warn: #a35a12;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11151b; --panel: #181e27; --ink: #e4e8ee; --muted: #9aa5b4; --line: #364150;
+  --pa: #6cc597; --pa-bg: #15271d; --cm: #7fb0e0; --cm-bg: #162333; --ds: #a3adbb; --ds-bg: #1c222b;
+  --cs: #ad9cf0; --cs-bg: #211c33; --ok: #6cc597; --bad: #ef7d75; --warn: #e5a05a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #11151b; --panel: #181e27; --ink: #e4e8ee; --muted: #9aa5b4; --line: #364150;
+  --pa: #6cc597; --pa-bg: #15271d; --cm: #7fb0e0; --cm-bg: #162333; --ds: #a3adbb; --ds-bg: #1c222b;
+  --cs: #ad9cf0; --cs-bg: #211c33; --ok: #6cc597; --bad: #ef7d75; --warn: #e5a05a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1280px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 18px; max-width: 78ch; }
+.fig { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+svg { display: block; width: 100%; min-width: 1000px; height: auto; font-family: var(--sans); }
+figure { margin: 0; }
+figcaption { color: var(--muted); font-size: 14px; margin-top: 10px; max-width: 80ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+h2 { font-size: 17px; margin: 26px 0 8px; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.notes div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 14px; min-width: 0; }
+.notes b { display: block; margin-bottom: 2px; }
+code { font: 13px var(--mono); }
+/* svg parts */
+.grp { stroke-width: 1.2; }
+.g-pa { fill: var(--pa-bg); stroke: var(--pa); } .g-cm { fill: var(--cm-bg); stroke: var(--cm); }
+.g-ds { fill: var(--ds-bg); stroke: var(--ds); } .g-cs { fill: var(--cs-bg); stroke: var(--cs); }
+.gname { font: 600 14px var(--mono); }
+.c-pa { fill: var(--pa); } .c-cm { fill: var(--cm); } .c-ds { fill: var(--ds); } .c-cs { fill: var(--cs); }
+.glabel { fill: var(--muted); font-size: 12px; }
+.tb { fill: var(--panel); stroke: var(--line); stroke-width: 1.2; }
+.tb.view { stroke-dasharray: 5 4; }
+.th { stroke: none; }
+.h-pa { fill: var(--pa); } .h-cm { fill: var(--cm); } .h-ds { fill: var(--ds); } .h-cs { fill: var(--cs); }
+.tname { fill: var(--panel); font: 600 13px var(--mono); }
+.col { fill: var(--ink); font: 11.5px var(--mono); }
+.col.pk { font-weight: 600; }
+.note { fill: var(--muted); font-size: 10.5px; }
+.note.warn { fill: var(--warn); }
+.mk { font: 600 9px var(--mono); }
+.mk-pk, .mk-uq { fill: var(--warn); } .mk-fk { fill: var(--cm); }
+.rel { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+.rel.ok { stroke: var(--ok); stroke-width: 1.8; }
+.rel.bad { stroke: var(--bad); stroke-width: 1.8; stroke-dasharray: 6 4; }
+.rel.dash { stroke-dasharray: 3 3; }
+.rlabel { fill: var(--muted); font-size: 10.5px; }
+.crow { fill: none; stroke: var(--ink); stroke-width: 1.3; }
+</style>
+
+<div class="wrap">
+  <h1>ClaimSense Schema Diagram</h1>
+  <p class="sub">Proposed PostgreSQL schema for the course data: the three client systems the MCP server serves, and ClaimSense's own tables for drafts, retrieval, idempotency and audit. Key columns are shown; full definitions are in the schema proposal. Not yet written to <code>platform/db</code>.</p>
+  <figure>
+    <div class="fig">
+      <svg viewBox="0 0 1240 1012" role="img" aria-label="Entity-relationship diagram. Policy administration holds policies and policy clauses; claims management holds claims and claim notes; the document store holds documents. Policies have many claims, claims have many documents and many claim notes, and each claim note links one-to-one to an assessment. In the ClaimSense schema, the load guardrail moves each policy clause either into the searchable clause index or into clause quarantine; assessments have many retrieval-log rows whose returned clause IDs bound what may be cited; users upload documents and own claims; idempotency keys protect claim-note writes and the audit log records every call.">
+        <defs>
+          <marker id="crow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+            <path class="crow" d="M0,6 H11 M11,1 L4,6 L11,11"/>
+          </marker>
+        </defs>
+<rect class="grp g-pa" x="20" y="52" width="390" height="530" rx="10"/>
+<text class="gname c-pa" x="34" y="74">policy_admin</text>
+<text class="glabel" x="396" y="74" text-anchor="end">Policy administration</text>
+<rect class="grp g-cm" x="425" y="52" width="390" height="530" rx="10"/>
+<text class="gname c-cm" x="439" y="74">claims_mgmt</text>
+<text class="glabel" x="801" y="74" text-anchor="end">Claims management</text>
+<rect class="grp g-ds" x="830" y="52" width="390" height="530" rx="10"/>
+<text class="gname c-ds" x="844" y="74">doc_store</text>
+<text class="glabel" x="1206" y="74" text-anchor="end">Document store</text>
+<rect class="grp g-cs" x="20" y="612" width="1200" height="386" rx="10"/>
+<text class="gname c-cs" x="34" y="634">claimsense</text>
+<text class="glabel" x="1206" y="634" text-anchor="end">ClaimSense (our system)</text>
+<path class="rel" d="M390,140 H443" marker-end="url(#crow)"/>
+<text class="rlabel" x="417" y="128" text-anchor="middle">1 : N</text>
+<path class="rel" d="M795,140 H848" marker-end="url(#crow)"/>
+<text class="rlabel" x="822" y="128" text-anchor="middle">1 : N</text>
+<path class="rel" d="M620,350 V380" marker-end="url(#crow)"/>
+<text class="rlabel" x="628" y="369" text-anchor="start">1 : N</text>
+<path class="rel" d="M700,560 V650" marker-end="url(#crow)"/>
+<text class="rlabel" x="708" y="610" text-anchor="start">1 : 1  assessment_id</text>
+<path class="rel" d="M1060,270 V650" marker-end="url(#crow)"/>
+<text class="rlabel" x="1068" y="470" text-anchor="start">uploaded_by</text>
+<path class="rel ok" d="M200,466 V650" marker-end="url(#crow)"/>
+<text class="rlabel" x="208" y="640" text-anchor="start">loaded (clean)</text>
+<path class="rel bad" d="M70,466 V600 H30 V860 H38" marker-end="url(#crow)"/>
+<text class="rlabel" x="36" y="595" text-anchor="start">quarantined (injected)</text>
+<path class="rel" d="M640,700 H592" marker-end="url(#crow)"/>
+<text class="rlabel" x="616" y="692" text-anchor="middle">1 : N</text>
+<text class="rlabel" x="616" y="716" text-anchor="middle">run_id</text>
+<path class="rel dash" d="M340,736 H292"/>
+<text class="rlabel" x="316" y="728" text-anchor="middle">cites</text>
+<text class="rlabel" x="316" y="752" text-anchor="middle">⊆ these</text>
+<g class="tbl">
+<rect class="tb " x="40" y="92" width="350" height="213" rx="6"/>
+<rect class="th h-pa" x="40" y="92" width="350" height="28" rx="6"/>
+<rect class="th h-pa" x="40" y="112" width="350" height="8"/>
+<text class="tname" x="52" y="111">policies</text>
+<text class="mk mk-pk" x="50" y="133">PK</text>
+<text class="col pk" x="74" y="133">policy_id</text>
+<text class="note" x="380" y="133" text-anchor="end">POL-TXA-#####</text>
+<text class="col" x="74" y="149">holder_first</text>
+<text class="note warn" x="380" y="149" text-anchor="end">PII · never returned</text>
+<text class="col" x="74" y="165">holder_last</text>
+<text class="note warn" x="380" y="165" text-anchor="end">PII · never returned</text>
+<text class="col" x="74" y="181">vehicle_vin</text>
+<text class="note" x="380" y="181" text-anchor="end">own copy</text>
+<text class="col" x="74" y="197">vehicle_acv_usd</text>
+<text class="note" x="380" y="197" text-anchor="end">agreed at inception</text>
+<text class="col" x="74" y="213">coverage_type</text>
+<text class="note" x="380" y="213" text-anchor="end">Full | Liability Only</text>
+<text class="col" x="74" y="229">collision_deductible_usd</text>
+<text class="note" x="380" y="229" text-anchor="end">null if N/A</text>
+<text class="col" x="74" y="245">comprehensive_deductible_usd</text>
+<text class="note" x="380" y="245" text-anchor="end">null if N/A</text>
+<text class="col" x="74" y="261">policy_status</text>
+<text class="note" x="380" y="261" text-anchor="end">admin only</text>
+<text class="col" x="74" y="277">policy_start</text>
+<text class="note" x="380" y="277" text-anchor="end">date</text>
+<text class="col" x="74" y="293">policy_end</text>
+<text class="note" x="380" y="293" text-anchor="end">date, inclusive</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="40" y="346" width="350" height="117" rx="6"/>
+<rect class="th h-pa" x="40" y="346" width="350" height="28" rx="6"/>
+<rect class="th h-pa" x="40" y="366" width="350" height="8"/>
+<text class="tname" x="52" y="365">policy_clauses</text>
+<text class="mk mk-pk" x="50" y="387">PK</text>
+<text class="col pk" x="74" y="387">clause_id</text>
+<text class="note" x="380" y="387" text-anchor="end">CLS-COLL-001 …</text>
+<text class="col" x="74" y="403">title</text>
+<text class="col" x="74" y="419">text</text>
+<text class="col" x="74" y="435">source</text>
+<text class="note" x="380" y="435" text-anchor="end">manual v2024.1</text>
+<text class="col" x="74" y="451">is_poisoned</text>
+<text class="note warn" x="380" y="451" text-anchor="end">test ground truth only</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="445" y="92" width="350" height="261" rx="6"/>
+<rect class="th h-cm" x="445" y="92" width="350" height="28" rx="6"/>
+<rect class="th h-cm" x="445" y="112" width="350" height="8"/>
+<text class="tname" x="457" y="111">claims</text>
+<text class="mk mk-pk" x="455" y="133">PK</text>
+<text class="col pk" x="479" y="133">claim_id</text>
+<text class="note" x="785" y="133" text-anchor="end">CLM-####-####</text>
+<text class="mk mk-fk" x="455" y="149">FK</text>
+<text class="col" x="479" y="149">policy_id</text>
+<text class="note" x="785" y="149" text-anchor="end">→ policies</text>
+<text class="mk mk-fk" x="455" y="165">FK</text>
+<text class="col" x="479" y="165">assigned_adjuster</text>
+<text class="note" x="785" y="165" text-anchor="end">→ users</text>
+<text class="col" x="479" y="181">vehicle_vin</text>
+<text class="note" x="785" y="181" text-anchor="end">own copy · checked vs policy</text>
+<text class="col" x="479" y="197">vehicle_acv_usd</text>
+<text class="note" x="785" y="197" text-anchor="end">ACV at loss · used for payout</text>
+<text class="col" x="479" y="213">incident_date</text>
+<text class="note" x="785" y="213" text-anchor="end">date</text>
+<text class="col" x="479" y="229">incident_type</text>
+<text class="note" x="785" y="229" text-anchor="end">→ loss category</text>
+<text class="col" x="479" y="245">incident_description</text>
+<text class="note warn" x="785" y="245" text-anchor="end">untrusted text</text>
+<text class="col" x="479" y="261">repair_estimate_usd</text>
+<text class="note" x="785" y="261" text-anchor="end">numeric</text>
+<text class="col" x="479" y="277">injuries_reported</text>
+<text class="note" x="785" y="277" text-anchor="end">bool</text>
+<text class="col" x="479" y="293">police_report_filed</text>
+<text class="note" x="785" y="293" text-anchor="end">bool</text>
+<text class="col" x="479" y="309">fraud_risk_score</text>
+<text class="note" x="785" y="309" text-anchor="end">0–1</text>
+<text class="col" x="479" y="325">claim_status</text>
+<text class="note" x="785" y="325" text-anchor="end">4 values</text>
+<text class="col" x="479" y="341">… 6 more</text>
+<text class="note" x="785" y="341" text-anchor="end">make, model, year …</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="445" y="382" width="350" height="181" rx="6"/>
+<rect class="th h-cm" x="445" y="382" width="350" height="28" rx="6"/>
+<rect class="th h-cm" x="445" y="402" width="350" height="8"/>
+<text class="tname" x="457" y="401">claim_notes</text>
+<text class="mk mk-pk" x="455" y="423">PK</text>
+<text class="col pk" x="479" y="423">note_id</text>
+<text class="note" x="785" y="423" text-anchor="end">append-only</text>
+<text class="mk mk-fk" x="455" y="439">FK</text>
+<text class="col" x="479" y="439">claim_id</text>
+<text class="note" x="785" y="439" text-anchor="end">→ claims</text>
+<text class="mk mk-fk" x="455" y="455">FK</text>
+<text class="col" x="479" y="455">assessment_id</text>
+<text class="note" x="785" y="455" text-anchor="end">→ assessments</text>
+<text class="mk mk-fk" x="455" y="471">FK</text>
+<text class="col" x="479" y="471">on_behalf_of</text>
+<text class="note" x="785" y="471" text-anchor="end">→ users</text>
+<text class="col" x="479" y="487">outcome</text>
+<text class="note" x="785" y="487" text-anchor="end">APPROVE | FLAG | ROUTE | DENY</text>
+<text class="col" x="479" y="503">cited_clauses</text>
+<text class="note" x="785" y="503" text-anchor="end">text[]</text>
+<text class="col" x="479" y="519">deny_reason</text>
+<text class="note" x="785" y="519" text-anchor="end">no supporting clause found</text>
+<text class="col" x="479" y="535">status</text>
+<text class="note" x="785" y="535" text-anchor="end">draft_pending_confirmation</text>
+<text class="col" x="479" y="551">created_at</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="850" y="92" width="350" height="181" rx="6"/>
+<rect class="th h-ds" x="850" y="92" width="350" height="28" rx="6"/>
+<rect class="th h-ds" x="850" y="112" width="350" height="8"/>
+<text class="tname" x="862" y="111">documents</text>
+<text class="mk mk-pk" x="860" y="133">PK</text>
+<text class="col pk" x="884" y="133">document_id</text>
+<text class="note" x="1190" y="133" text-anchor="end">DOC-#####</text>
+<text class="mk mk-fk" x="860" y="149">FK</text>
+<text class="col" x="884" y="149">claim_id</text>
+<text class="note" x="1190" y="149" text-anchor="end">→ claims</text>
+<text class="mk mk-fk" x="860" y="165">FK</text>
+<text class="col" x="884" y="165">uploaded_by</text>
+<text class="note" x="1190" y="165" text-anchor="end">→ users</text>
+<text class="col" x="884" y="181">document_type</text>
+<text class="note" x="1190" y="181" text-anchor="end">7 types</text>
+<text class="col" x="884" y="197">ocr_status</text>
+<text class="note" x="1190" y="197" text-anchor="end">Completed | Pending | Failed</text>
+<text class="col" x="884" y="213">ocr_text</text>
+<text class="note" x="1190" y="213" text-anchor="end">null unless Completed</text>
+<text class="col" x="884" y="229">file_path</text>
+<text class="note" x="1190" y="229" text-anchor="end">PDF</text>
+<text class="col" x="884" y="245">upload_date</text>
+<text class="note" x="1190" y="245" text-anchor="end">date</text>
+<text class="col" x="884" y="261">page_count</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="40" y="652" width="250" height="117" rx="6"/>
+<rect class="th h-cs" x="40" y="652" width="250" height="28" rx="6"/>
+<rect class="th h-cs" x="40" y="672" width="250" height="8"/>
+<text class="tname" x="52" y="671">clause_index</text>
+<text class="mk mk-pk" x="50" y="693">PK</text>
+<text class="col pk" x="74" y="693">clause_id</text>
+<text class="note" x="280" y="693" text-anchor="end">→ policy_clauses</text>
+<text class="col" x="74" y="709">title</text>
+<text class="col" x="74" y="725">text</text>
+<text class="col" x="74" y="741">search</text>
+<text class="note" x="280" y="741" text-anchor="end">tsvector (GIN)</text>
+<text class="col" x="74" y="757">loaded_at</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="40" y="820" width="250" height="85" rx="6"/>
+<rect class="th h-cs" x="40" y="820" width="250" height="28" rx="6"/>
+<rect class="th h-cs" x="40" y="840" width="250" height="8"/>
+<text class="tname" x="52" y="839">clause_quarantine</text>
+<text class="mk mk-pk" x="50" y="861">PK</text>
+<text class="col pk" x="74" y="861">clause_id</text>
+<text class="note" x="280" y="861" text-anchor="end">→ policy_clauses</text>
+<text class="col" x="74" y="877">reason</text>
+<text class="note" x="280" y="877" text-anchor="end">guardrail rule hit</text>
+<text class="col" x="74" y="893">detected_at</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="340" y="652" width="250" height="133" rx="6"/>
+<rect class="th h-cs" x="340" y="652" width="250" height="28" rx="6"/>
+<rect class="th h-cs" x="340" y="672" width="250" height="8"/>
+<text class="tname" x="352" y="671">retrieval_log</text>
+<text class="mk mk-pk" x="350" y="693">PK</text>
+<text class="col pk" x="374" y="693">retrieval_id</text>
+<text class="col" x="374" y="709">run_id</text>
+<text class="note" x="580" y="709" text-anchor="end">→ assessments</text>
+<text class="col" x="374" y="725">agent</text>
+<text class="col" x="374" y="741">query</text>
+<text class="col" x="374" y="757">clause_ids</text>
+<text class="note" x="580" y="757" text-anchor="end">text[] returned</text>
+<text class="col" x="374" y="773">ts</text>
+</g>
+<g class="tbl">
+<rect class="tb view" x="340" y="836" width="250" height="85" rx="6"/>
+<rect class="th h-cs" x="340" y="836" width="250" height="28" rx="6"/>
+<rect class="th h-cs" x="340" y="856" width="250" height="8"/>
+<text class="tname" x="352" y="855">view · claim_queue</text>
+<text class="col" x="374" y="877">claim_id, status</text>
+<text class="note" x="580" y="877" text-anchor="end">claims</text>
+<text class="col" x="374" y="893">coverage, policy_end</text>
+<text class="note" x="580" y="893" text-anchor="end">policies</text>
+<text class="col" x="374" y="909">adjuster_name</text>
+<text class="note" x="580" y="909" text-anchor="end">users</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="640" y="652" width="260" height="197" rx="6"/>
+<rect class="th h-cs" x="640" y="652" width="260" height="28" rx="6"/>
+<rect class="th h-cs" x="640" y="672" width="260" height="8"/>
+<text class="tname" x="652" y="671">assessments</text>
+<text class="mk mk-pk" x="650" y="693">PK</text>
+<text class="col pk" x="674" y="693">assessment_id</text>
+<text class="mk mk-uq" x="650" y="709">UQ</text>
+<text class="col pk" x="674" y="709">run_id</text>
+<text class="note" x="890" y="709" text-anchor="end">uuid</text>
+<text class="mk mk-fk" x="650" y="725">FK</text>
+<text class="col" x="674" y="725">claim_id</text>
+<text class="note" x="890" y="725" text-anchor="end">→ claims</text>
+<text class="mk mk-fk" x="650" y="741">FK</text>
+<text class="col" x="674" y="741">on_behalf_of</text>
+<text class="note" x="890" y="741" text-anchor="end">→ users</text>
+<text class="col" x="674" y="757">outcome</text>
+<text class="note" x="890" y="757" text-anchor="end">4 outcomes</text>
+<text class="col" x="674" y="773">decision_source</text>
+<text class="note" x="890" y="773" text-anchor="end">model | fallback</text>
+<text class="col" x="674" y="789">code_facts</text>
+<text class="note" x="890" y="789" text-anchor="end">jsonb</text>
+<text class="col" x="674" y="805">agent_outputs</text>
+<text class="note" x="890" y="805" text-anchor="end">jsonb, typed</text>
+<text class="col" x="674" y="821">citations</text>
+<text class="note" x="890" y="821" text-anchor="end">text[]</text>
+<text class="col" x="674" y="837">models</text>
+<text class="note" x="890" y="837" text-anchor="end">jsonb</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="640" y="880" width="260" height="85" rx="6"/>
+<rect class="th h-cs" x="640" y="880" width="260" height="28" rx="6"/>
+<rect class="th h-cs" x="640" y="900" width="260" height="8"/>
+<text class="tname" x="652" y="899">idempotency_keys</text>
+<text class="mk mk-pk" x="650" y="921">PK</text>
+<text class="col pk" x="674" y="921">user_id + idem_key</text>
+<text class="note" x="890" y="921" text-anchor="end">retry-safe</text>
+<text class="col" x="674" y="937">request_hash</text>
+<text class="note" x="890" y="937" text-anchor="end">≠ payload → 409</text>
+<text class="mk mk-fk" x="650" y="953">FK</text>
+<text class="col" x="674" y="953">note_id</text>
+<text class="note" x="890" y="953" text-anchor="end">→ claim_notes</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="930" y="652" width="270" height="117" rx="6"/>
+<rect class="th h-cs" x="930" y="652" width="270" height="28" rx="6"/>
+<rect class="th h-cs" x="930" y="672" width="270" height="8"/>
+<text class="tname" x="942" y="671">users</text>
+<text class="mk mk-pk" x="940" y="693">PK</text>
+<text class="col pk" x="964" y="693">user_id</text>
+<text class="note" x="1190" y="693" text-anchor="end">alice … svc-pipeline</text>
+<text class="col" x="964" y="709">full_name</text>
+<text class="col" x="964" y="725">user_group</text>
+<text class="note" x="1190" y="725" text-anchor="end">4 groups</text>
+<text class="col" x="964" y="741">status</text>
+<text class="note" x="1190" y="741" text-anchor="end">active | suspended</text>
+<text class="col" x="964" y="757">test_only</text>
+<text class="note" x="1190" y="757" text-anchor="end">bool</text>
+</g>
+<g class="tbl">
+<rect class="tb " x="930" y="790" width="270" height="181" rx="6"/>
+<rect class="th h-cs" x="930" y="790" width="270" height="28" rx="6"/>
+<rect class="th h-cs" x="930" y="810" width="270" height="8"/>
+<text class="tname" x="942" y="809">audit_log</text>
+<text class="mk mk-pk" x="940" y="831">PK</text>
+<text class="col pk" x="964" y="831">audit_id</text>
+<text class="note" x="1190" y="831" text-anchor="end">insert-only</text>
+<text class="col" x="964" y="847">user_id</text>
+<text class="note" x="1190" y="847" text-anchor="end">from token</text>
+<text class="col" x="964" y="863">on_behalf_of</text>
+<text class="note" x="1190" y="863" text-anchor="end">human</text>
+<text class="col" x="964" y="879">actor</text>
+<text class="note" x="1190" y="879" text-anchor="end">human | agent</text>
+<text class="col" x="964" y="895">action</text>
+<text class="note" x="1190" y="895" text-anchor="end">get_claim, write_note …</text>
+<text class="col" x="964" y="911">resource_id</text>
+<text class="col" x="964" y="927">decision</text>
+<text class="note" x="1190" y="927" text-anchor="end">allow | deny | error</text>
+<text class="col" x="964" y="943">reason</text>
+<text class="note" x="1190" y="943" text-anchor="end">audit only</text>
+<text class="col" x="964" y="959">run_id</text>
+</g>
+      </svg>
+    </div>
+    <figcaption>Lines run from the "one" side to the "many" side (crow's foot). The green line is the load guardrail's clean path into the searchable index; the red dashed line is the injected bad chunk going to quarantine instead. The short dotted link marks a rule rather than a foreign key: a draft may only cite clause IDs that retrieval returned in the same run. Other foreign keys, such as <code>assigned_adjuster</code> and <code>on_behalf_of</code> to <code>users</code>, are listed in the tables to keep the drawing readable.</figcaption>
+  </figure>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--pa)"></i>policy_admin</span>
+    <span><i class="sw" style="background:var(--cm)"></i>claims_mgmt</span>
+    <span><i class="sw" style="background:var(--ds)"></i>doc_store</span>
+    <span><i class="sw" style="background:var(--cs)"></i>claimsense</span>
+    <span><b style="color:var(--warn);font:600 11px var(--mono)">PK</b> primary key · <b style="color:var(--cm);font:600 11px var(--mono)">FK</b> foreign key</span>
+    <span style="color:var(--warn)">amber note = sensitive or untrusted</span>
+    <span>dashed box = view</span>
+  </div>
+
+  <h2>Rules the schema enforces</h2>
+  <div class="notes">
+    <div><b>Bad chunk never loads</b>It lives in <code>policy_clauses</code> as the client system exposes it. The loader's guardrail sends each clause to exactly one of <code>clause_index</code> or <code>clause_quarantine</code>; agents can only search the index.</div>
+    <div><b>Pending documents have no text</b><code>ocr_text</code> must be null unless <code>ocr_status</code> is Completed (CLS-DOC-009).</div>
+    <div><b>Notes need citations</b>A claim note must cite clauses, unless it is a DENY with a reason such as "no supporting clause found".</div>
+    <div><b>Retries never double-write</b><code>idempotency_keys</code> returns the stored note for the same key and payload, and 409 for a different payload.</div>
+    <div><b>Not stored on purpose</b>Expected outcomes and labels stay out of the database; code facts are recomputed each run and saved inside <code>assessments</code>.</div>
+    <div><b>Two vehicle records, by design</b>Claims management and policy administration each keep their own VIN, vehicle and ACV, as separate client systems do. Payout uses the claim's ACV at the time of loss (CLS-COLL-001); code compares the two on every run, and a mismatch becomes evidence for a FLAG rather than a load error.</div>
+    <div><b>Every call is audited</b><code>audit_log</code> records the user, who acted (human or agent), on whose behalf, and allow or deny with the reason.</div>
+  </div>
+</div>

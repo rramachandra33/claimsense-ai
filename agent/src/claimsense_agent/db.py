@@ -3,7 +3,7 @@
 One contract, two backends:
 
   * **Postgres** (the live ClaimSense platform) via `psycopg`, read from
-    ``CLAIMSENSE_DB_URL`` (default ``postgresql://claimsense:claimsense@localhost:5432/claimsense``).
+    ``CLAIMSENSE_DB_URL`` (default ``postgresql://claimsense:claimsense@localhost:5433/claimsense``).
   * **Bundled JSON fixture** — the offline fallback. Used automatically when
     psycopg is not installed OR the DB is unreachable, so the demo *always* runs.
 
@@ -17,7 +17,7 @@ import os
 from importlib import resources
 from typing import Any
 
-DEFAULT_DB_URL = "postgresql://claimsense:claimsense@localhost:5432/claimsense"
+DEFAULT_DB_URL = "postgresql://claimsense:claimsense@localhost:5433/claimsense"
 
 
 class DisputeNotFound(Exception):
