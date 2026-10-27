@@ -27,6 +27,15 @@ def fetch_one(sql, params=None):
         return conn.execute(sql, params).fetchone()
 
 
+def connect():
+    """Open a connection for several statements that must succeed or fail together.
+
+    Use it as `with connect() as conn:` — psycopg commits at the end of the block, or rolls
+    everything back if an error is raised inside it.
+    """
+    return psycopg.connect(db_url(), row_factory=dict_row)
+
+
 def execute(sql, params=None):
     """Run an INSERT/UPDATE and commit."""
     with psycopg.connect(db_url()) as conn:

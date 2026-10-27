@@ -6,13 +6,18 @@ Every route except /health follows the same three steps, in this order:
   3. write the audit row  -> audit.log_audit (allowed and denied alike)
 Refusals never say why; the reason goes to the audit log only.
 """
+from uuid import UUID
+
 from fastapi import FastAPI, Header, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from .access import can_read_claim
 from .audit import log_audit
 from .auth import AuthError, InactiveUser, get_user
-from .db import fetch_all, fetch_one
+from .db import execute, fetch_all, fetch_one
+from .notes import NoteError, NoteRequest, check_note, write_note
 
 app = FastAPI(title="ClaimSense data API", version="0.1.0")
 
@@ -37,6 +42,15 @@ class ApiError(Exception):
 def handle_api_error(request: Request, error: ApiError):
     return JSONResponse(status_code=error.status,
                         content={"error": {"code": error.code, "message": error.message}})
+
+
+@app.exception_handler(RequestValidationError)
+def handle_bad_request(request: Request, error: RequestValidationError):
+    # FastAPI's own body/parameter checks, returned in the same error shape as everything else.
+    first = error.errors()[0]
+    where = ".".join(str(part) for part in first["loc"][1:])
+    return JSONResponse(status_code=400,
+                        content={"error": {"code": "invalid_argument", "message": f"{where}: {first['msg']}"}})
 
 
 def claim_not_available(claim_id):
@@ -168,9 +182,13 @@ def get_document(document_id: str, authorization: str = Header(default=None)):
 
 
 @app.get("/api/v1/clauses")
-def search_clauses(q: str = "", top_k: int = 4, authorization: str = Header(default=None)):
+def search_clauses(q: str = "", top_k: int = 4, run_id: UUID | None = None, agent: str = "unspecified",
+                   authorization: str = Header(default=None)):
     """Search the policy manual. Only claimsense.clause_index is searched, so a clause the
-    load-time guardrail quarantined can never be returned or cited."""
+    load-time guardrail quarantined can never be returned or cited.
+
+    When a pipeline run passes its run_id, the returned clause ids are saved in retrieval_log;
+    a draft may later cite only clauses retrieved in its own run."""
     user = require_user(authorization, "search_clauses", "clauses")
     q = q.strip()
     if len(q) < 3 or len(q) > 500:
@@ -188,6 +206,35 @@ def search_clauses(q: str = "", top_k: int = 4, authorization: str = Header(defa
                             ORDER BY score DESC, clause_id
                             LIMIT %s""", (q, top_k))
     clause_ids = [c["clause_id"] for c in clauses]
+    if run_id is not None:
+        execute("""INSERT INTO claimsense.retrieval_log (run_id, agent, query, clause_ids)
+                   VALUES (%s, %s, %s, %s)""", (run_id, agent, q, clause_ids))
     log_audit("search_clauses", "allow", user=user, resource_type="clauses",
-              reason=f"{len(clauses)} clause(s) returned", detail={"query": q, "clause_ids": clause_ids})
+              reason=f"{len(clauses)} clause(s) returned", run_id=run_id,
+              detail={"query": q, "clause_ids": clause_ids, "agent": agent})
     return {"query": q, "clauses": clauses, "count": len(clauses)}
+
+
+@app.post("/api/v1/claims/{claim_id}/notes", status_code=201)
+def create_note(claim_id: str, note: NoteRequest, authorization: str = Header(default=None),
+                idempotency_key: str = Header(default=None)):
+    """Save a validated draft decision as an assessment plus an append-only claim note."""
+    user = require_user(authorization, "write_note", "claim", claim_id)
+    load_claim_for(user, claim_id, "write_note")
+    if not idempotency_key or len(idempotency_key) > 200:
+        raise ApiError(400, "invalid_argument", "An Idempotency-Key header (up to 200 characters) is required.")
+    try:
+        check_note(note)
+        saved, replayed = write_note(user, claim_id, note, idempotency_key)
+    except NoteError as e:
+        log_audit("write_note", "deny", user=user, resource_type="claim", resource_id=claim_id,
+                  reason=f"{e.code}: {e.message}", detail={"run_id": note.run_id})
+        raise ApiError(e.status, e.code, e.message)
+    log_audit("write_note", "allow", user=user, resource_type="claim_note",
+              resource_id=str(saved["note_id"]), run_id=note.run_id,
+              reason="idempotent replay" if replayed else "note written",
+              detail={"claim_id": claim_id, "outcome": saved["outcome"]})
+    if replayed:
+        return JSONResponse(status_code=200, headers={"Idempotent-Replay": "true"},
+                            content={"note": jsonable_encoder(saved), "idempotent_replay": True})
+    return {"note": saved, "idempotent_replay": False}

@@ -34,6 +34,18 @@ make api-test                   # access tests (7 users x 20 claims and the refu
 | `GET /api/v1/claims/{id}/policy` | The claim's policy, reached only through the claim; never returns holder names |
 | `GET /api/v1/claims/{id}/documents` | The claim's document list (no text) |
 | `GET /api/v1/documents/{id}` | One document with its text; text is null unless OCR is Completed (CLS-DOC-009) |
-| `GET /api/v1/clauses?q=…&top_k=4` | Policy-manual search over `clause_index` only, so a quarantined clause can never come back; matches any word, best first |
+| `GET /api/v1/clauses?q=…&top_k=4&run_id=…&agent=…` | Policy-manual search over `clause_index` only, so a quarantined clause can never come back; matches any word, best first. With a `run_id`, what came back is saved in `retrieval_log` |
+| `POST /api/v1/claims/{id}/notes` | The one write: saves the assessment and its append-only claim note together. Needs an `Idempotency-Key` header. Called by pipeline code, never offered to agents as a tool |
 
-Next: the claim-note write with idempotency; then the MCP server.
+### The note write's rules
+
+- A note cites at least one clause, unless it is a DENY with a `deny_reason` (422 `citation_required`).
+- Every cited clause must have been returned by clause search in the same run (422 `citation_not_retrieved`).
+- Retries are safe: the same key and body return the stored note (200, `Idempotent-Replay: true`);
+  the same key with a different body gets 409 `idempotency_conflict`.
+- The assessment, note and idempotency key are written in one transaction: all or nothing.
+
+Not yet covered by a test: two identical requests arriving at the same instant (the code falls back to the
+replay/409 logic through the database's unique key).
+
+Next: the MCP server.
