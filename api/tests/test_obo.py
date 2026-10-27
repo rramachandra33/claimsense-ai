@@ -92,6 +92,7 @@ def test_no_agent_can_list_claims_or_write_notes():
     for name in ("reader", "coverage", "risk", "drafter"):
         agent = as_agent(obo_token(name).json()["token"])
         assert client.get("/api/v1/claims", headers=agent).status_code == 403
+        assert client.get(f"/api/v1/claims/{CLAIM}/notes", headers=agent).status_code == 403
         note = {"run_id": str(uuid.uuid4()), "outcome": "APPROVE", "summary": "x", "cited_clauses": ["CLS-COLL-001"]}
         headers = {**agent, "Idempotency-Key": "k-" + name}
         assert client.post(f"/api/v1/claims/{CLAIM}/notes", json=note, headers=headers).status_code == 403

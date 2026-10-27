@@ -47,3 +47,51 @@ export type DocumentRow = {
 export type DocumentFull = DocumentRow & { claim_id: string; ocr_text: string | null };
 
 export type Clause = { clause_id: string; title: string; text: string; score: number };
+
+export type Outcome = "APPROVE" | "FLAG" | "ROUTE" | "DENY";
+
+export type Signal = { outcome: Outcome; clause: string; reason: string };
+export type Gap = { clause: string; reason: string };
+
+/** One ClaimSense draft note with its assessment (GET /api/v1/claims/{id}/notes). */
+export type Note = {
+  note_id: number;
+  claim_id: string;
+  on_behalf_of: string;
+  outcome: Outcome;
+  summary: string;
+  cited_clauses: string[];
+  deny_reason: string | null;
+  status: string;
+  author: string;
+  created_at: string;
+  run_id: string;
+  decision_source: "model" | "deterministic_fallback";
+  code_facts: {
+    facts: Record<string, unknown> & {
+      in_force_at_loss: boolean;
+      net_payable_if_covered_usd: number | null;
+      deductible_usd: number | null;
+      repair_to_acv_ratio: number | null;
+    };
+    signals: Signal[];
+    documentation_gaps: Gap[];
+    provisional_precedence: Outcome[];
+  };
+  agent_outputs: Record<string, unknown> & { draft_problems?: string[] };
+  models: Record<string, string>;
+};
+
+/** What the runner returns for one run (POST /runs on the runner service). */
+export type RunResult = {
+  run_id: string;
+  claim_id: string;
+  status: "written" | "replayed" | "failed";
+  outcome: Outcome | null;
+  decision_source: string | null;
+  cited_clauses: string[];
+  problems: string[];
+  note_id: number | null;
+  brain: string;
+  duration_ms: number;
+};

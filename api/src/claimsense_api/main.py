@@ -307,6 +307,28 @@ class OboRequest(BaseModel):
     run_id: UUID
 
 
+@app.get("/api/v1/claims/{claim_id}/notes")
+def list_notes(claim_id: str, authorization: str = Header(default=None)):
+    """The claim's ClaimSense notes, newest first, each with its full assessment.
+
+    Anyone who may read the claim may read its notes. Agents may not: they never need past drafts.
+    """
+    user = require_user(authorization, "list_notes", "claim", claim_id)
+    if user["obo"]:
+        log_audit("list_notes", "deny", user=user, resource_type="claim", resource_id=claim_id,
+                  reason="agents may not read notes")
+        raise ApiError(403, "forbidden", "This agent is not allowed to do that.")
+    load_claim_for(user, claim_id, "list_notes")
+    notes = fetch_all("""SELECT n.note_id, n.claim_id, n.on_behalf_of, n.outcome, n.summary,
+                                n.cited_clauses, n.deny_reason, n.status, n.author, n.created_at,
+                                a.run_id, a.decision_source, a.code_facts, a.agent_outputs, a.models
+                           FROM claims_mgmt.claim_notes n
+                           JOIN claimsense.assessments a USING (assessment_id)
+                          WHERE n.claim_id = %s
+                          ORDER BY n.note_id DESC""", (claim_id,))
+    return {"claim_id": claim_id, "notes": notes, "count": len(notes)}
+
+
 @app.post("/api/v1/obo/token")
 def issue_obo_token(body: OboRequest, authorization: str = Header(default=None)):
     """Pipeline code asks for one agent's token for one claim and run, with the adjuster's token.

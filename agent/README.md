@@ -50,6 +50,17 @@ cd agent && uv run claimsense-agent claims --user bob   # the claims bob may rea
 
 Each run adds a new note (re-runs never overwrite). `make up` reloads the course data and clears them.
 
+## The runner (the console's Run assessment button)
+
+```bash
+make runner      # http://localhost:8100, needs make api
+```
+
+`POST /runs {"claim_id": ...}` with the adjuster's token runs the pipeline as that adjuster and
+returns the run result. The runner is a client of the data API like any other: it forwards the
+token and has no access rules or secrets of its own. The brain comes from `CLAIMSENSE_BRAIN`
+(default `mock`).
+
 ## Tests
 
 ```bash
@@ -71,6 +82,7 @@ database does (`make up`). They clean up the notes they write.
 ```
 src/claimsense_agent/
 ├── cli.py          run / claims commands
+├── runner.py       the runner service the console calls (POST /runs)
 ├── pipeline.py     the run: facts, four agents, draft checks, note write
 ├── facts.py        code facts and the outcome signals (same rules as scripts/import_course_fixtures.py)
 ├── schemas.py      typed outputs for each agent and for the run

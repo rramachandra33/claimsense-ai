@@ -42,16 +42,21 @@ class Tracer:
     trace_id: str = field(default_factory=lambda: "trace_" + uuid.uuid4().hex[:16])
     _depth: int = 0
     _t0: float = field(default_factory=time.perf_counter)
+    quiet: bool = False   # True for the runner service: time the run, print nothing
+
+    def out(self, text: str) -> None:
+        if not self.quiet:
+            print(text)
 
     # ---- pretty banner ------------------------------------------------------
     def banner(self, title: str, subtitle: str = "") -> None:
         bar = "═" * 64
-        print(f"\n{BOLD}{BLUE}╔{bar}╗{RESET}")
-        print(f"{BOLD}{BLUE}║{RESET} {BOLD}{title:<62}{RESET} {BOLD}{BLUE}║{RESET}")
+        self.out(f"\n{BOLD}{BLUE}╔{bar}╗{RESET}")
+        self.out(f"{BOLD}{BLUE}║{RESET} {BOLD}{title:<62}{RESET} {BOLD}{BLUE}║{RESET}")
         if subtitle:
-            print(f"{BOLD}{BLUE}║{RESET} {DIM}{subtitle:<62}{RESET} {BOLD}{BLUE}║{RESET}")
-        print(f"{BOLD}{BLUE}╚{bar}╝{RESET}")
-        print(f"{GREY}trace_id={self.trace_id}{RESET}")
+            self.out(f"{BOLD}{BLUE}║{RESET} {DIM}{subtitle:<62}{RESET} {BOLD}{BLUE}║{RESET}")
+        self.out(f"{BOLD}{BLUE}╚{bar}╝{RESET}")
+        self.out(f"{GREY}trace_id={self.trace_id}{RESET}")
 
     # ---- spans --------------------------------------------------------------
     @contextmanager
@@ -64,7 +69,7 @@ class Tracer:
             "handoff": f"{BLUE}➜{RESET}",
         }.get(kind, "•")
         indent = "  " * self._depth
-        print(f"\n{indent}{icon} {BOLD}{name}{RESET} {GREY}[{kind}] {span_id}{RESET}")
+        self.out(f"\n{indent}{icon} {BOLD}{name}{RESET} {GREY}[{kind}] {span_id}{RESET}")
         self._depth += 1
         start = time.perf_counter()
         try:
@@ -72,7 +77,7 @@ class Tracer:
         finally:
             self._depth -= 1
             dur = (time.perf_counter() - start) * 1000
-            print(f"{indent}  {GREY}└ {dur:6.1f} ms{RESET}")
+            self.out(f"{indent}  {GREY}└ {dur:6.1f} ms{RESET}")
 
     # ---- events inside a span ----------------------------------------------
     def event(self, msg: str, *, level: str = "info") -> None:
@@ -85,11 +90,11 @@ class Tracer:
             "block": f"{RED}⛔{RESET}",
             "cite": f"{GREEN}§{RESET}",
         }.get(level, "·")
-        print(f"{indent}  {tag} {msg}")
+        self.out(f"{indent}  {tag} {msg}")
 
     def kv(self, key: str, value: object) -> None:
         indent = "  " * self._depth
-        print(f"{indent}    {DIM}{key:<22}{RESET}{value}")
+        self.out(f"{indent}    {DIM}{key:<22}{RESET}{value}")
 
     def total_ms(self) -> float:
         return (time.perf_counter() - self._t0) * 1000

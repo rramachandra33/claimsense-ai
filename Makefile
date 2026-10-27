@@ -14,7 +14,7 @@ export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
 export CLAIMSENSE_CONSOLE_URL := $(CONSOLE)
 
-.PHONY: help up deps seed api api-test mcp-test token web web-dev agent eval test down clean doctor
+.PHONY: help up deps seed api api-test mcp-test token web web-dev agent runner eval test down clean doctor
 
 help: ## show this list
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -34,7 +34,7 @@ deps: ## install the console's node deps
 	@cd platform/web && { node -e "require.resolve('next')" >/dev/null 2>&1 || npm install --silent; }
 	@cd platform/web && node -e "require.resolve('next')" >/dev/null 2>&1 || \
 	  { echo "!! node deps still missing — run: cd platform/web && npm install"; exit 1; }
-	@cd platform/web && printf 'CLAIMSENSE_API_URL=http://localhost:8000\n' > .env.local
+	@cd platform/web && printf 'CLAIMSENSE_API_URL=http://localhost:8000\nCLAIMSENSE_RUNNER_URL=http://localhost:8100\n' > .env.local
 
 seed: ## rebuild the seed CSVs from data/course_fixtures and reload the database
 	cd platform/db && ./load.sh
@@ -59,6 +59,9 @@ web-dev: deps ## hot-reload the console instead (development)
 
 agent: ## assess a claim with the mock agents: make agent CLAIM=CLM-2024-1800 AS=alice (needs make api)
 	cd agent && uv run claimsense-agent run --claim $(CLAIM) --user $(AS) --brain mock
+
+runner: ## the runner service the console's Run assessment button calls (port 8100; needs make api)
+	cd agent && uv run uvicorn claimsense_agent.runner:app --port 8100
 
 eval: ## the evaluation suite (being rebuilt from the 20 course claims; not ready yet)
 	@echo "The evaluation suite is being rebuilt from the course claims (next step). For now: make test"

@@ -175,3 +175,23 @@ def test_writes_and_refusals_are_audited(run_id):
     results = [(r["decision"], r["reason"]) for r in rows]
     assert ("allow", "note written") in results
     assert any(d == "deny" and "citation_required" in reason for d, reason in results)
+
+
+# --- reading notes -----------------------------------------------------------------
+
+def test_notes_are_listed_newest_first_with_their_assessment(run_id):
+    retrieve(run_id, "policy period lapse expiration")
+    written = client.post(f"/api/v1/claims/{CLAIM}/notes", json=deny_note(run_id),
+                          headers=headers("david", "k-" + run_id)).json()["note"]
+    response = client.get(f"/api/v1/claims/{CLAIM}/notes", headers=headers("david"))
+    assert response.status_code == 200
+    newest = response.json()["notes"][0]
+    assert newest["note_id"] == written["note_id"]
+    assert newest["run_id"] == run_id
+    assert newest["decision_source"] == "model"
+    assert newest["cited_clauses"] == ["CLS-PER-006"]
+
+
+def test_cannot_read_notes_on_a_claim_you_cannot_read():
+    response = client.get(f"/api/v1/claims/{CLAIM}/notes", headers=headers("alice"))
+    assert response.status_code == 403

@@ -24,7 +24,12 @@ export function formatDateTime(value: string | Date | null | undefined): string 
 
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—";
-  const d = typeof value === "string" ? new Date(value) : value;
+  // A date-only string ("2024-02-14") is a calendar date. new Date() would read it as UTC midnight,
+  // which shows as the day before anywhere west of UTC, so build it as a local date instead.
+  const dateOnly = typeof value === "string" ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null;
+  const d = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("en-US", {
     year: "numeric",

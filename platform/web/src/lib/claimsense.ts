@@ -1,7 +1,11 @@
 import { getSession } from "./session";
+import type { RunResult } from "./types";
 
 /** Base URL of the ClaimSense data API (the Python service in api/). */
 const API_URL = process.env.CLAIMSENSE_API_URL ?? "http://localhost:8000";
+
+/** Base URL of the runner service that runs the four agents (agent/, `make runner`). */
+const RUNNER_URL = process.env.CLAIMSENSE_RUNNER_URL ?? "http://localhost:8100";
 
 export type ApiError = { code: string; message: string };
 
@@ -55,6 +59,36 @@ export async function devLogin(userId: string): Promise<ApiResult<DevLogin>> {
       ok: false,
       status: 503,
       error: { code: "api_unreachable", message: `The ClaimSense API at ${API_URL} is not reachable.` },
+    };
+  }
+}
+
+/**
+ * Ask the runner to assess one claim as the signed-in user. The runner forwards the user's token
+ * to the data API, which decides access; the console decides nothing itself.
+ */
+export async function runAssessment(claimId: string): Promise<ApiResult<RunResult>> {
+  const session = getSession();
+  try {
+    const response = await fetch(`${RUNNER_URL}/runs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(session ? { Authorization: `Bearer ${session.token}` } : {}),
+      },
+      body: JSON.stringify({ claim_id: claimId }),
+      cache: "no-store",
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      return { ok: false, status: response.status, error: body.error };
+    }
+    return { ok: true, status: response.status, data: body as RunResult };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      error: { code: "runner_unreachable", message: `The ClaimSense runner at ${RUNNER_URL} is not reachable. Start it with: make runner` },
     };
   }
 }

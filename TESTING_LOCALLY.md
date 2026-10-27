@@ -1,7 +1,8 @@
 # Testing ClaimSense locally (MacBook, no AWS needed)
 
 Everything built so far runs on this Mac: PostgreSQL (Docker, port 5433), the data API (port 8000),
-the MCP server (started per run over stdio) and the console (port 3100). Docker Desktop must be running.
+the runner (port 8100, runs the four agents), the MCP server (started per run over stdio) and the
+console (port 3100). Docker Desktop must be running.
 
 ## 1. Start
 
@@ -12,10 +13,16 @@ make up                                   # only if the database is not already 
 export CLAIMSENSE_JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 CLAIMSENSE_DEV_LOGIN=1 make api           # http://localhost:8000
 
-# Terminal 2: console
+# Terminal 2: runner (what the Run assessment button calls; mock agents, no AWS)
+cd ~/raju/CLAIMSENSE-AI
+make runner                               # http://localhost:8100/health
+
+# Terminal 3: console
 cd ~/raju/CLAIMSENSE-AI
 make web                                  # http://localhost:3100
 ```
+
+Order: database first; the API, runner and console in any order after that.
 
 ## 2. Test
 
@@ -32,10 +39,15 @@ make web                                  # http://localhost:3100
 
 The Policy manual page never shows `CLS-ADM-013`, the injected clause, whatever you search for.
 
+**Run assessment** (top of every claim page): click it to run the four agents and write a draft note.
+Try `/claims/CLM-2024-1800` as alice (APPROVE) and `/claims/CLM-2024-2822` as david (DENY). Each note
+shows its citations; "How this was reached" shows the code facts, the signals, and each agent's output.
+Every click adds a new note. If the runner is not running, the page says so.
+
 **B. API test page:** http://localhost:8000/docs. Paste a token into `authorization` as `Bearer <token>`.
 Get one with `make token USER=alice` (same `CLAIMSENSE_JWT_SECRET` as the API) or from `/api/v1/dev/login`.
 
-**C. Agent (OBO) tokens by hand** (Terminal 3):
+**C. Agent (OBO) tokens by hand** (another terminal):
 
 ```bash
 ALICE=$(curl -s -X POST localhost:8000/api/v1/dev/login -H 'Content-Type: application/json' \
@@ -58,13 +70,13 @@ The OBO token expires after 5 minutes; ask for a new one if you get 401.
 **D. Automated tests** (need only the database):
 
 ```bash
-make api-test     # 62 tests
+make api-test     # 64 tests
 make mcp-test     # 6 tests
-make test         # 19 tests: the agent pipeline end to end (starts its own API)
+make test         # 22 tests: the agent pipeline end to end (starts its own API)
 uv run --with pytest pytest platform/db/seed -q    # 4 tests
 ```
 
-**F. Run the four agents (mock brain, no AWS)** (Terminal 3, with `make api` running):
+**F. Run the four agents from the terminal** (mock brain, no AWS; with `make api` running):
 
 ```bash
 make agent CLAIM=CLM-2024-1800 AS=alice      # APPROVE, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004
@@ -76,7 +88,7 @@ cd agent && uv run claimsense-agent run --claim CLM-2024-1800 --user alice --dem
 ```
 
 Each run prints a trace (code facts, each agent, the draft check, the note write) and writes one note.
-The console does not show notes or a Run Assessment button yet; see them in the database:
+The notes appear on the claim page in the console. Or see them in the database:
 
 ```bash
 cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claimsense -c \

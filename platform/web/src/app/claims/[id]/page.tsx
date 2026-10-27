@@ -5,7 +5,9 @@ import { ApiErrorPanel, Field, Panel } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
 import { apiGet } from "@/lib/claimsense";
 import { formatDate, formatUsd } from "@/lib/format";
-import type { Claim, DocumentRow, Policy } from "@/lib/types";
+import type { Claim, DocumentRow, Note, Policy } from "@/lib/types";
+import { NotesList } from "./NotesList";
+import { RunAssessment } from "./RunAssessment";
 
 export const dynamic = "force-dynamic";
 
@@ -29,10 +31,22 @@ export default async function ClaimPage({ params }: { params: { id: string } }) 
   const claim = claimResult.data.claim;
   const policyResult = await apiGet<{ policy: Policy }>(`/api/v1/claims/${id}/policy`);
   const docsResult = await apiGet<{ documents: DocumentRow[] }>(`/api/v1/claims/${id}/documents`);
+  const notesResult = await apiGet<{ notes: Note[] }>(`/api/v1/claims/${id}/notes`);
 
   return (
     <AppShell session={session} title={`${claim.claim_id} · ${claim.incident_type}`} crumbs={crumbs}>
       <div className="grid gap-4 lg:grid-cols-3">
+        <Panel title="ClaimSense assessment" subtitle="Draft decisions for you to confirm. Nothing is paid or closed automatically." className="lg:col-span-3">
+          <RunAssessment claimId={claim.claim_id} />
+          <div className="mt-4 border-t border-claimsense-line pt-4">
+            {!notesResult.ok ? (
+              <ApiErrorPanel status={notesResult.status} message={notesResult.error.message} />
+            ) : (
+              <NotesList notes={notesResult.data.notes} />
+            )}
+          </div>
+        </Panel>
+
         <Panel title="Claim" subtitle="From claims management" className="lg:col-span-2" action={<ClaimStatusBadge status={claim.claim_status} />}>
           <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <Field label="Incident date">{formatDate(claim.incident_date)}</Field>

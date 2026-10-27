@@ -249,3 +249,21 @@ export function OcrBadge({ status }: { status: string }) {
     </span>
   );
 }
+
+// ---------------------------------------------------------------------------
+// ClaimSense: draft outcome (APPROVE / FLAG / ROUTE / DENY)
+// ---------------------------------------------------------------------------
+export function OutcomeBadge({ outcome }: { outcome: string }) {
+  const map: Record<string, string> = {
+    APPROVE: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    FLAG: "bg-amber-50 text-amber-800 ring-amber-200",
+    ROUTE: "bg-sky-50 text-sky-700 ring-sky-200",
+    DENY: "bg-rose-50 text-rose-700 ring-rose-200",
+  };
+  return (
+    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold tracking-wide ring-1 ring-inset",
+      map[outcome] ?? "bg-slate-100 text-slate-600 ring-slate-200")}>
+      {outcome}
+    </span>
+  );
+}

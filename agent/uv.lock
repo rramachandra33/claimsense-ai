@@ -146,8 +146,10 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "claimsense-mcp" },
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
+    { name = "uvicorn" },
 ]
 
 [package.optional-dependencies]
@@ -160,9 +162,11 @@ dev = [
 requires-dist = [
     { name = "claimsense-api", marker = "extra == 'dev'", editable = "../api" },
     { name = "claimsense-mcp", editable = "../mcp_server" },
+    { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "uvicorn", specifier = ">=0.30" },
 ]
 provides-extras = ["dev"]
 
