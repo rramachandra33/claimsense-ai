@@ -13,7 +13,7 @@ export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
 export CLAIMSENSE_CONSOLE_URL := $(CONSOLE)
 
-.PHONY: help up deps seed keys api api-test token web web-dev agent eval test down clean doctor
+.PHONY: help up deps seed keys api api-test mcp-test token web web-dev agent eval test down clean doctor
 
 help: ## show this list
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -46,6 +46,9 @@ api: ## run the ClaimSense data API on :8000 (needs CLAIMSENSE_JWT_SECRET; see a
 
 api-test: ## the data API's access tests (needs `make up` first)
 	cd api && uv run --extra dev pytest -q
+
+mcp-test: ## the MCP server's tool tests (needs `make up` first)
+	cd mcp_server && uv run --extra dev pytest -q
 
 token: ## print a dev token: make token USER=alice
 	cd api && uv run python scripts/mint_dev_token.py $(USER)
