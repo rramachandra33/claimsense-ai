@@ -1,121 +1,33 @@
-# ClaimSense Ops Console (`platform/web`)
+# ClaimSense console (`platform/web`)
 
-The bank's internal **dispute-ops web UI** — the platform P0 surface that the
-cohort logs into and explores. A Next.js 14 (App Router, TypeScript) app that
-reads the ClaimSense Postgres database directly via the `pg` driver.
+The adjuster console, a Next.js app adapted from the Week 15 sample's Ops Console (layout, sidebar,
+panels and styling kept; the bank pages and its built-in API removed).
 
-This is the "go explore the bank" moment from the platform design doc: an
-analyst's dispute queue full of red Reg E countdown timers, evidence scattered
-across systems, duplicate tickets, provisional-credit errors.
+**It never touches the database and never decides access.** Every page calls the ClaimSense data API
+(`api/`) with the signed-in user's token, server-side, and shows what the API returns, including its
+generic refusals.
 
 ## Pages
 
-| Route | What it shows |
+| Page | Shows |
 |---|---|
-| `/login` | Email-only sign-in. Looks up the analyst in `claimsense.analysts`, stores `analyst_id` + `scope` in an httpOnly cookie. Lists 3 sample seeded logins. |
-| `/` | **Dispute queue** (the hero). The `dispute_queue` view, ordered by `hours_to_deadline` ASC. RED/AMBER/GREEN Reg E countdown per row, BREACHED badge, merchant risk badges, summary stats (open / breached / % breached). Scoped to the analyst's dispute type. |
-| `/disputes/[id]` | Dispute detail: transaction, customer, evidence rows, linked tickets, provisional-credit info. **Surfaces `provisional_credit_error` prominently.** |
-| `/transactions` | Searchable, paginated transaction explorer. Filter by `account_id`. Always `LIMIT`ed; filters hit indexed columns — fast against millions of rows. |
-| `/customers/[id]` | Customer 360: profile, accounts, recent transactions, disputes. |
+| `/login` | Development sign-in by user id (Amazon Cognito replaces it in deployment) |
+| `/claims` | The claims you may work on (the API filters them by your role) |
+| `/claims/{id}` | The claim, its policy (no holder names) and its documents |
+| `/documents/{id}` | One document's text; a notice instead while OCR is pending (CLS-DOC-009) |
+| `/clauses` | Search the AutoSure policy manual, the same search the agents use |
 
-## Prerequisites
-
-- Node.js 18.18+ (tested on Node 20/25) and npm
-- The ClaimSense Postgres running with the `claimsense` schema + demo data
-
-## 1. Start the database (from `platform/db`)
+## Run locally
 
 ```bash
-cd ../db
-docker compose up -d        # Postgres 16 on localhost:5433
-./load.sh                   # schema + deterministic demo seed
+make up                                                     # database
+export CLAIMSENSE_JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+CLAIMSENSE_DEV_LOGIN=1 make api                             # data API on :8000, dev sign-in on
+make web                                                    # console on http://localhost:3100
 ```
 
-`./load.sh` regenerates the seed via `uv` and loads it. If you already have the
-CSVs in `platform/db/seed/data/` and don't want to regenerate, you can load them
-directly (explicit column lists handle defaulted columns):
-
-```bash
-cd ../db
-docker compose exec -T claimsense-db psql -U claimsense -d claimsense -v ON_ERROR_STOP=1 < schema.sql
-for t in customers accounts merchants transactions analysts disputes dispute_evidence tickets policy_chunks; do
-  cols=$(head -1 "seed/data/$t.csv")
-  docker compose exec -T claimsense-db psql -U claimsense -d claimsense \
-    -c "\copy claimsense.$t ($cols) FROM STDIN WITH (FORMAT csv, HEADER true)" < "seed/data/$t.csv"
-done
-```
-
-## 2. Configure & run the web app (from `platform/web`)
-
-```bash
-cp .env.example .env          # default points at the local Docker Postgres
-npm install
-npm run dev                   # http://localhost:3000
-```
-
-Open http://localhost:3000 → you'll be redirected to `/login`. Sign in with any
-seeded analyst email — the login page lists three samples, e.g.:
-
-- `analyst1@autosure.test` (scope **Type A** — card fraud / unauthorized)
-- `analyst2@autosure.test` (scope **Type B** — merchant / quality)
-
-No password is required for this sandbox (P0). The cookie just identifies which
-seeded analyst you are; Type A / Type B analysts see only their dispute type.
-
-## Production build
-
-```bash
-npm run build
-npm run start                 # serves on http://localhost:3000
-```
-
-All data pages render at **request time** (`export const dynamic = "force-dynamic"`),
-so `npm run build` never touches the database — the build is green even if
-Postgres is down.
-
-## Environment
-
-| Var | Default | Notes |
+| Variable | Default | Meaning |
 |---|---|---|
-| `CLAIMSENSE_DB_URL` | `postgresql://claimsense:claimsense@localhost:5433/claimsense` | Postgres connection string. For hosted Supabase, use the **session pooler** connection string. |
+| `CLAIMSENSE_API_URL` | `http://localhost:8000` | Where the data API runs |
 
-## Deploy (Vercel + Supabase)
-
-Point `CLAIMSENSE_DB_URL` at the Supabase Postgres **pooler** connection string and
-deploy to Vercel. The same code serves the local Docker DB and hosted Supabase —
-only the env var changes.
-
-## Security / correctness notes
-
-- **Poisoned policy chunk never reaches the UI.** No page queries
-  `claimsense.policy_chunks`, so the injection payload in the one poisoned chunk
-  cannot leak to screen.
-- **All queries are parameterized** (`$1`, `$2`, …) — no string interpolation of
-  user input. Path params (`[id]`) are additionally validated as numeric.
-- **Every query is `LIMIT`ed** and filters/sorts hit indexed columns
-  (`account_id`, `txn_ts`, `reg_e_due_at`, `dispute_type`, `status`), so the app
-  stays fast against the millions-of-rows `transactions` table.
-- **Scope enforcement** mirrors the W16 RLS lesson at the query layer:
-  `type_a` / `type_b` analysts only see their dispute type in the queue.
-
-## Layout
-
-```
-platform/web/
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx                 # root layout
-│   │   ├── globals.css                # Tailwind
-│   │   ├── login/                     # /login (page, client form, server action)
-│   │   ├── page.tsx                   # / dispute queue (hero)
-│   │   ├── disputes/[id]/page.tsx     # dispute detail
-│   │   ├── transactions/page.tsx      # transaction explorer
-│   │   ├── customers/[id]/page.tsx    # customer 360
-│   │   └── api/logout/route.ts        # POST sign-out
-│   ├── components/                    # Header, AppShell, badges
-│   └── lib/                           # db pool, queries, session, auth, format
-├── .env.example
-├── tailwind.config.ts
-├── next.config.mjs
-└── package.json
-```
+The session cookie is httpOnly and holds the API-issued token; page scripts cannot read it.

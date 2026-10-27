@@ -218,3 +218,34 @@ export function SegmentBadge({ segment }: { segment: string }) {
     </span>
   );
 }
+
+// ---------------------------------------------------------------------------
+// ClaimSense: claim status (from claims management; informational only)
+// ---------------------------------------------------------------------------
+export function ClaimStatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    Approved: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    "Pending Review": "bg-amber-50 text-amber-700 ring-amber-200",
+    "Under Investigation": "bg-rose-50 text-rose-700 ring-rose-200",
+    Escalated: "bg-sky-50 text-sky-700 ring-sky-200",
+  };
+  return (
+    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
+      map[status] ?? "bg-slate-100 text-slate-600 ring-slate-200")}>
+      {status}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ClaimSense: document OCR status
+// ---------------------------------------------------------------------------
+export function OcrBadge({ status }: { status: string }) {
+  const done = status === "Completed";
+  return (
+    <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
+      done ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-amber-50 text-amber-700 ring-amber-200")}>
+      {done ? "Readable" : `OCR ${status.toLowerCase()}`}
+    </span>
+  );
+}

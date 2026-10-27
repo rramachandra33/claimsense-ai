@@ -51,7 +51,11 @@ later change shows up as a diff against the original.
    and error responses are Python ports of the sample's `auth.ts`, `scope.ts`, `audit.ts` and
    `respond.ts`, with two deliberate changes: an unknown claim gets the same 403 as a forbidden one
    (the sample returned 404), and refusal messages never give the reason (the sample did).
-4. **Still bank-dispute domain (next):** the console, API routes and the agent's live database path
+4. **Console on the Python API (done):** the console keeps the sample's layout, sidebar, panels and
+   styling; its TypeScript API routes, database code, bank pages and charts were removed. Pages now
+   call the Python data API with the signed-in user's token (development sign-in through the API).
+   The `agent/` package is still the sample's dispute pipeline and is replaced when the agents are built.
+5. **Earlier note (superseded):** the console, API routes and the agent's live database path
    still expect the old Meridian tables, so they will not work against the new database until adapted
    (the agent's offline `--mock` path and tests still pass).
 4. **Earlier note on what remained:** tables, routes and logic are still disputes, Reg E rules and

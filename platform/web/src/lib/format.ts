@@ -105,3 +105,11 @@ export function formatCountdown(
   const rem = Math.round(h % 24);
   return rem > 0 ? `${days}d ${rem}h left` : `${days}d left`;
 }
+
+// ClaimSense amounts come from the API in whole dollars (NUMERIC in the database).
+export function formatUsd(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  const n = typeof value === "string" ? Number(value) : value;
+  if (Number.isNaN(n)) return "—";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+}

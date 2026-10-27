@@ -76,19 +76,16 @@ export function Empty({
   );
 }
 
-export function DbErrorPanel({ compact = false }: { compact?: boolean }) {
+/** Shows the data API's own refusal or error message (it never explains access refusals). */
+export function ApiErrorPanel({ status, message }: { status: number; message: string }) {
+  const refused = status === 401 || status === 403;
   return (
-    <div className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800">
-      <div className="font-semibold">Could not reach the ClaimSense database.</div>
-      {!compact ? (
-        <>
-          <p className="mt-1">
-            Start the local Postgres and load demo data, then reload:
-          </p>
-          <pre className="mt-2 overflow-x-auto rounded bg-rose-100 p-3 font-mono text-xs">
-            cd platform/db {"&&"} docker compose up -d {"&&"} ./load.sh
-          </pre>
-        </>
+    <div className={refused ? "rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
+                            : "rounded-lg border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800"}>
+      <div className="font-semibold">{refused ? "Not available" : "Something went wrong"}</div>
+      <p className="mt-1">{message}</p>
+      {status === 503 ? (
+        <pre className="mt-2 overflow-x-auto rounded bg-rose-100 p-3 font-mono text-xs">make up {"&&"} make api</pre>
       ) : null}
     </div>
   );

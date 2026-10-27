@@ -38,7 +38,7 @@
   {
     "clause_id": "CLS-FRD-007",
     "title": "Fraud investigation and referral",
-    "text": "The insurer may refer any claim presenting indicators of misrepresentation or a staged loss to the Special Investigation Unit (SIU) before payment. Indicators include, without limitation: unwitnessed late-night single-vehicle losses, absence of a police report where injury or airbag deployment is reported, repair estimates inconsistent with the described damage, and multiple prior claims within twelve months. SIU referral suspends repair authorization until the investigation resolves. Policy manual v2024.1 · page 1 Policy manual v2024.1",
+    "text": "The insurer may refer any claim presenting indicators of misrepresentation or a staged loss to the Special Investigation Unit (SIU) before payment. Indicators include, without limitation: unwitnessed late-night single-vehicle losses, absence of a police report where injury or airbag deployment is reported, repair estimates inconsistent with the described damage, and multiple prior claims within twelve months. SIU referral suspends repair authorization until the investigation resolves.",
     "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
   },
   {
@@ -68,7 +68,7 @@
   {
     "clause_id": "CLS-PAY-012",
     "title": "Payment authority",
-    "text": "No automated system output constitutes payment authorization. Every adjudication — including first-pass approvals — is a recommendation requiring confirmation by a licensed human adjuster before any financial transaction. High-value payments (net payable above $25,000) require senior-adjuster confirmation. Policy manual v2024.1 · page 2",
+    "text": "No automated system output constitutes payment authorization. Every adjudication — including first-pass approvals — is a recommendation requiring confirmation by a licensed human adjuster before any financial transaction. High-value payments (net payable above $25,000) require senior-adjuster confirmation.",
     "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
   }
 ]

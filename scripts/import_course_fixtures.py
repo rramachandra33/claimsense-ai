@@ -122,7 +122,8 @@ def parse_manual():
     text = subprocess.run(["pdftotext", str(MANUAL), "-"], check=True, capture_output=True, text=True).stdout
     text = "\n".join(l for l in text.splitlines()
                      if l.strip() and not FOOTER_LINE.match(l.strip())
-                     and not l.startswith("AutoSure Insurance · Underwriting"))
+                     and not l.startswith("AutoSure Insurance · Underwriting")
+                     and not l.startswith("Policy manual v2024.1"))   # page header and "· page N" footer
     heads = list(re.finditer(r"^(CLS-[A-Z]+-\d{3}) · (.+)$", text, flags=re.M))
     clauses = []
     for i, m in enumerate(heads):

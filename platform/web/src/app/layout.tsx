@@ -25,8 +25,8 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClaimSense Ops Console",
-  description: "ClaimSense Bank — internal dispute-operations console",
+  title: "ClaimSense",
+  description: "ClaimSense — AutoSure claims co-pilot console (synthetic data)",
 };
 
 export default function RootLayout({
