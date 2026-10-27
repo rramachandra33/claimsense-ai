@@ -1,0 +1,134 @@
+{
+  "access_rule": "Granted iff token is valid AND user.status == 'active' AND user.role in {adjuster, senior_adjuster, supervisor, siu_investigator} AND claim.region in user.regions. Evaluated in code before any agent runs. Unknown claim IDs are refused exactly like unauthorised ones.",
+  "users": [
+    {
+      "user_id": "u-adj-n1",
+      "name": "Mara Quillon",
+      "role": "adjuster",
+      "regions": [
+        "NORTH"
+      ],
+      "authority_limit": 15000,
+      "status": "active",
+      "adjuster_licence": "ADJ-SYN-1001"
+    },
+    {
+      "user_id": "u-adj-n2",
+      "name": "Tobias Wren",
+      "role": "adjuster",
+      "regions": [
+        "NORTH"
+      ],
+      "authority_limit": 15000,
+      "status": "active",
+      "adjuster_licence": "ADJ-SYN-1002"
+    },
+    {
+      "user_id": "u-adj-n3",
+      "name": "Lena Brooksby",
+      "role": "adjuster",
+      "regions": [
+        "NORTH"
+      ],
+      "authority_limit": 15000,
+      "status": "suspended",
+      "adjuster_licence": "ADJ-SYN-1003"
+    },
+    {
+      "user_id": "u-adj-s1",
+      "name": "Ravi Ostrander",
+      "role": "adjuster",
+      "regions": [
+        "SOUTH"
+      ],
+      "authority_limit": 15000,
+      "status": "active",
+      "adjuster_licence": "ADJ-SYN-2001"
+    },
+    {
+      "user_id": "u-adj-e1",
+      "name": "Beatrix Holm",
+      "role": "adjuster",
+      "regions": [
+        "EAST"
+      ],
+      "authority_limit": 15000,
+      "status": "active",
+      "adjuster_licence": "ADJ-SYN-3001"
+    },
+    {
+      "user_id": "u-adj-w1",
+      "name": "Kai Mendelson",
+      "role": "adjuster",
+      "regions": [
+        "WEST"
+      ],
+      "authority_limit": 15000,
+      "status": "active",
+      "adjuster_licence": "ADJ-SYN-4001"
+    },
+    {
+      "user_id": "u-sr-ne1",
+      "name": "Odette Farrant",
+      "role": "senior_adjuster",
+      "regions": [
+        "NORTH",
+        "EAST"
+      ],
+      "authority_limit": 50000,
+      "status": "active",
+      "adjuster_licence": "ADJ-SYN-5001"
+    },
+    {
+      "user_id": "u-siu-1",
+      "name": "Declan Ashgrove",
+      "role": "siu_investigator",
+      "regions": [
+        "NORTH",
+        "SOUTH",
+        "EAST",
+        "WEST"
+      ],
+      "authority_limit": 0,
+      "status": "active",
+      "adjuster_licence": null
+    },
+    {
+      "user_id": "u-sup-1",
+      "name": "Priyanka Vell",
+      "role": "supervisor",
+      "regions": [
+        "NORTH",
+        "SOUTH",
+        "EAST",
+        "WEST"
+      ],
+      "authority_limit": 100000,
+      "status": "active",
+      "adjuster_licence": "ADJ-SYN-9001"
+    },
+    {
+      "user_id": "u-aud-1",
+      "name": "Sven Harrowgate",
+      "role": "auditor",
+      "regions": [
+        "NORTH",
+        "SOUTH",
+        "EAST",
+        "WEST"
+      ],
+      "authority_limit": 0,
+      "status": "active",
+      "adjuster_licence": null
+    },
+    {
+      "user_id": "svc-pipeline",
+      "name": "Pipeline service account",
+      "role": "service",
+      "regions": [],
+      "authority_limit": 0,
+      "status": "active",
+      "adjuster_licence": null
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "2026-10-26",
+  "source": "Open questions 8 and 9, confirmed 26 Oct 2026 (docs/ClaimSense-AI-Open-Questions-Answers.pdf)",
+  "access_rule": [
+    "Every request: valid token, active user, identity taken only from the token; an unknown claim gets the same 403 as a forbidden one; every request is audited.",
+    "adjuster: read and assess only claims assigned to them; confirm own claims with net payable up to $25,000.",
+    "senior-adjuster: read and assess every claim; confirm any claim, and is the only role that may confirm net payable above $25,000 (CLS-PAY-012).",
+    "fraud-investigator: claims assigned to them plus claims with vendor fraud score >= 0.70 (provisional threshold); review only, never confirms.",
+    "total-loss-appraiser: claims assigned to them plus total-loss candidates (repair >= 75% of ACV, CLS-TL-005); review only, never confirms.",
+    "Test-only identities never own course claims and exist only for negative tests."
+  ],
+  "groups": ["adjuster", "senior-adjuster", "fraud-investigator", "total-loss-appraiser"],
+  "users": [
+    {"user_id": "alice", "name": "Alice Tran", "group": "adjuster", "status": "active", "test_only": false},
+    {"user_id": "david", "name": "David Okoro", "group": "adjuster", "status": "active", "test_only": false},
+    {"user_id": "bob", "name": "Bob Reyes", "group": "senior-adjuster", "status": "active", "test_only": false},
+    {"user_id": "carol", "name": "Carol Dimas", "group": "fraud-investigator", "status": "active", "test_only": false},
+    {"user_id": "eve", "name": "Eve Lindqvist", "group": "total-loss-appraiser", "status": "active", "test_only": false},
+    {"user_id": "frank", "name": "Frank Test (suspended)", "group": "adjuster", "status": "suspended", "test_only": true,
+     "purpose": "A suspended adjuster must be refused even with a valid token"},
+    {"user_id": "svc-pipeline", "name": "Pipeline service account", "group": null, "status": "active", "test_only": true,
+     "purpose": "A service account may never read claims for adjudication or confirm a decision"}
+  ]
+}

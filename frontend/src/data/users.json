@@ -1,0 +1,120 @@
+[
+ {
+  "user_id": "u-adj-n1",
+  "name": "Mara Quillon",
+  "role": "adjuster",
+  "regions": [
+   "NORTH"
+  ],
+  "status": "active",
+  "authority_limit": 15000
+ },
+ {
+  "user_id": "u-adj-n2",
+  "name": "Tobias Wren",
+  "role": "adjuster",
+  "regions": [
+   "NORTH"
+  ],
+  "status": "active",
+  "authority_limit": 15000
+ },
+ {
+  "user_id": "u-adj-n3",
+  "name": "Lena Brooksby",
+  "role": "adjuster",
+  "regions": [
+   "NORTH"
+  ],
+  "status": "suspended",
+  "authority_limit": 15000
+ },
+ {
+  "user_id": "u-adj-s1",
+  "name": "Ravi Ostrander",
+  "role": "adjuster",
+  "regions": [
+   "SOUTH"
+  ],
+  "status": "active",
+  "authority_limit": 15000
+ },
+ {
+  "user_id": "u-adj-e1",
+  "name": "Beatrix Holm",
+  "role": "adjuster",
+  "regions": [
+   "EAST"
+  ],
+  "status": "active",
+  "authority_limit": 15000
+ },
+ {
+  "user_id": "u-adj-w1",
+  "name": "Kai Mendelson",
+  "role": "adjuster",
+  "regions": [
+   "WEST"
+  ],
+  "status": "active",
+  "authority_limit": 15000
+ },
+ {
+  "user_id": "u-sr-ne1",
+  "name": "Odette Farrant",
+  "role": "senior_adjuster",
+  "regions": [
+   "NORTH",
+   "EAST"
+  ],
+  "status": "active",
+  "authority_limit": 50000
+ },
+ {
+  "user_id": "u-siu-1",
+  "name": "Declan Ashgrove",
+  "role": "siu_investigator",
+  "regions": [
+   "NORTH",
+   "SOUTH",
+   "EAST",
+   "WEST"
+  ],
+  "status": "active",
+  "authority_limit": 0
+ },
+ {
+  "user_id": "u-sup-1",
+  "name": "Priyanka Vell",
+  "role": "supervisor",
+  "regions": [
+   "NORTH",
+   "SOUTH",
+   "EAST",
+   "WEST"
+  ],
+  "status": "active",
+  "authority_limit": 100000
+ },
+ {
+  "user_id": "u-aud-1",
+  "name": "Sven Harrowgate",
+  "role": "auditor",
+  "regions": [
+   "NORTH",
+   "SOUTH",
+   "EAST",
+   "WEST"
+  ],
+  "status": "active",
+  "authority_limit": 0
+ },
+ {
+  "user_id": "svc-pipeline",
+  "name": "Pipeline service account",
+  "role": "service",
+  "regions": [],
+  "status": "active",
+  "authority_limit": 0
+ }
+]

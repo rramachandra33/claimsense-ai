@@ -1,0 +1,74 @@
+[
+  {
+    "clause_id": "CLS-COLL-001",
+    "title": "Collision coverage — insuring agreement",
+    "text": "Under Full Coverage policies, the insurer pays for direct and accidental loss to the covered vehicle caused by collision with another vehicle or object, or by upset of the vehicle, regardless of fault. Payment is limited to the lesser of the reasonable cost of repair or the actual cash value (ACV) of the vehicle immediately before the loss, reduced by the applicable collision deductible shown on the declarations page.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-COMP-002",
+    "title": "Comprehensive (other-than-collision) coverage",
+    "text": "Under Full Coverage policies, loss caused by events other than collision — including theft, vandalism, fire, flood, falling objects, glass breakage, and animal strikes — is covered under the comprehensive section, subject to the comprehensive deductible on the declarations page. Pothole impact is treated as collision, not comprehensive.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-LIAB-003",
+    "title": "Liability Only — scope and exclusion of own-vehicle damage",
+    "text": "A Liability Only policy covers bodily injury and property damage the insured becomes legally obligated to pay to third parties. It provides NO coverage for damage to the insured's own vehicle from any cause. First-party repair estimates, total-loss valuations, and rental reimbursement are excluded under Liability Only policies.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-DED-004",
+    "title": "Deductible application",
+    "text": "The deductible shown on the declarations page is subtracted from the covered loss amount before payment. The deductible applies once per occurrence, to first-party physical damage claims only. Deductibles are never applied by the adjudication system itself: the platform computes the net payable estimate deterministically and the adjuster confirms it.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-TL-005",
+    "title": "Total loss determination",
+    "text": "A vehicle is a total-loss candidate when the reasonable cost of repair equals or exceeds seventy-five percent (75%) of the vehicle's actual cash value (ACV) immediately before the loss. Total-loss candidates must be referred to a licensed total-loss appraiser for valuation before any repair authorization. Settlement on a total loss is ACV less the applicable deductible and salvage where retained.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-PER-006",
+    "title": "Policy period and lapse",
+    "text": "Coverage applies only to losses occurring during the policy period shown on the declarations page, from the effective date through the expiration date inclusive. A loss occurring after the expiration date is not covered even if a renewal was offered, unless the renewal premium was received before the loss. Administrative status fields do not extend coverage: the controlling facts are the policy period dates and the incident date.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-FRD-007",
+    "title": "Fraud investigation and referral",
+    "text": "The insurer may refer any claim presenting indicators of misrepresentation or a staged loss to the Special Investigation Unit (SIU) before payment. Indicators include, without limitation: unwitnessed late-night single-vehicle losses, absence of a police report where injury or airbag deployment is reported, repair estimates inconsistent with the described damage, and multiple prior claims within twelve months. SIU referral suspends repair authorization until the investigation resolves. Policy manual v2024.1 · page 1 Policy manual v2024.1",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-INJ-008",
+    "title": "Bodily injury reporting and routing",
+    "text": "Claims reporting bodily injury require a filed police report where required by law and route to an injury-qualified adjuster. A medical report present on a claim whose FNOL reports no injuries is an inconsistency that must be resolved before payment.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-DOC-009",
+    "title": "Duties after loss — documentation",
+    "text": "The claimant must submit a completed First Notice of Loss (FNOL), a repair estimate from a licensed shop, and reasonable proof of the loss. The insurer may delay adjudication while required documents remain unprocessed or unreadable. Estimates still pending document processing (OCR) cannot support payment authorization.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-EXC-010",
+    "title": "General exclusions",
+    "text": "No coverage applies to: loss while the vehicle is used for racing or speed contests; loss while used as a public or livery conveyance unless declared; intentional loss caused by any insured; wear and tear, freezing, or mechanical breakdown absent a covered collision; and loss occurring outside the policy territory.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-RNT-011",
+    "title": "Rental reimbursement",
+    "text": "Where the endorsement is present on a Full Coverage policy, reasonable rental costs are reimbursed while the covered vehicle is unusable due to a covered loss, up to the daily and per-occurrence limits on the declarations page. Not available under Liability Only policies.",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  },
+  {
+    "clause_id": "CLS-PAY-012",
+    "title": "Payment authority",
+    "text": "No automated system output constitutes payment authorization. Every adjudication — including first-pass approvals — is a recommendation requiring confirmation by a licensed human adjuster before any financial transaction. High-value payments (net payable above $25,000) require senior-adjuster confirmation. Policy manual v2024.1 · page 2",
+    "source": "AutoSure_Policy_Manual_CLS-001-012.pdf (v2024.1)"
+  }
+]

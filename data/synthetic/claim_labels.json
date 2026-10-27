@@ -1,0 +1,586 @@
+{
+  "CLM-2025-3001": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2026-3001": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3001": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3002": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3003": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3002": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3003": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3004": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3004": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3005": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2026-3002": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3006": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3005": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3007": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3006": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3007": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-2822": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3008": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3009": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3010": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2024-3008": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3011": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3012": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2024-3009": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2024-3010": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3013": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3014": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3015": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3016": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3017": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2024-3011": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3018": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2024-3012": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3019": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3020": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3021": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3022": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3023": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2026-3003": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3024": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2026-3004": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3025": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3026": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3027": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3028": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3013": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2024-3014": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3015": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3029": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3030": {
+    "outcome": "ROUTE",
+    "route_to": "coverage_review"
+  },
+  "CLM-2026-3005": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3016": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3031": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3017": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3032": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3033": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3034": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3035": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3036": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3018": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3037": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3019": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3020": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3038": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3039": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3021": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3040": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3022": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3041": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3042": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3023": {
+    "outcome": "ROUTE",
+    "route_to": "total_loss"
+  },
+  "CLM-2025-3043": {
+    "outcome": "ROUTE",
+    "route_to": "total_loss"
+  },
+  "CLM-2024-3024": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3025": {
+    "outcome": "ROUTE",
+    "route_to": "injury"
+  },
+  "CLM-2025-3044": {
+    "outcome": "ROUTE",
+    "route_to": "injury"
+  },
+  "CLM-2024-3026": {
+    "outcome": "ROUTE",
+    "route_to": "injury"
+  },
+  "CLM-2025-3045": {
+    "outcome": "ROUTE",
+    "route_to": "litigation"
+  },
+  "CLM-2024-3027": {
+    "outcome": "ROUTE",
+    "route_to": "large_loss"
+  },
+  "CLM-2025-3046": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3047": {
+    "outcome": "ROUTE",
+    "route_to": "document_request"
+  },
+  "CLM-2026-3006": {
+    "outcome": "ROUTE",
+    "route_to": "document_request"
+  },
+  "CLM-2024-3028": {
+    "outcome": "ROUTE",
+    "route_to": "liability"
+  },
+  "CLM-2024-3029": {
+    "outcome": "ROUTE",
+    "route_to": "total_loss"
+  },
+  "CLM-2024-3030": {
+    "outcome": "ROUTE",
+    "route_to": "injury"
+  },
+  "CLM-2024-3031": {
+    "outcome": "ROUTE",
+    "route_to": "coverage_review"
+  },
+  "CLM-2025-3048": {
+    "outcome": "ROUTE",
+    "route_to": "injury"
+  },
+  "CLM-2025-3049": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3032": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3033": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3050": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3051": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3052": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3053": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3054": {
+    "outcome": "ROUTE",
+    "route_to": "total_loss"
+  },
+  "CLM-2024-3034": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3035": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3055": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2024-3036": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3056": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3057": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3037": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3058": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2024-3038": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3059": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3060": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3061": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3062": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3063": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3064": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3065": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3066": {
+    "outcome": "ROUTE",
+    "route_to": "injury"
+  },
+  "CLM-2025-3067": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3068": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3069": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3070": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3039": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3071": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3040": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3041": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3072": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3073": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3042": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2026-3007": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3074": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3043": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3075": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3044": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3045": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3076": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3077": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3078": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3079": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3046": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3080": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3081": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3082": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3083": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2024-3047": {
+    "outcome": "ROUTE",
+    "route_to": "large_loss"
+  },
+  "CLM-2024-3048": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3084": {
+    "outcome": "APPROVE",
+    "route_to": null
+  },
+  "CLM-2025-3085": {
+    "outcome": "FLAG",
+    "route_to": null
+  },
+  "CLM-2025-3086": {
+    "outcome": "DENY",
+    "route_to": null
+  },
+  "CLM-2025-3087": {
+    "outcome": "ROUTE",
+    "route_to": "document_request"
+  },
+  "CLM-2024-3049": {
+    "outcome": "ROUTE",
+    "route_to": "document_request"
+  },
+  "CLM-2024-3050": {
+    "outcome": "ROUTE",
+    "route_to": "document_request"
+  },
+  "CLM-2025-3088": {
+    "outcome": "ROUTE",
+    "route_to": "document_request"
+  }
+}

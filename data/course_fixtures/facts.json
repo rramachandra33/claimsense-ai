@@ -1,0 +1,680 @@
+[
+  {
+    "claim_id": "CLM-2024-1800",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.1306,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 2700,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 5,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [],
+      "police_report_on_file": true,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-1873",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 1000,
+    "repair_to_acv_ratio": 0.4588,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 30200,
+    "senior_confirmation_required": true,
+    "documents": {
+      "count": 5,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": false,
+      "pending_ocr": [
+        "DOC-00007"
+      ],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": true
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-1946",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 1.2738,
+    "total_loss_candidate": true,
+    "net_payable_if_covered_usd": 16300,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 4,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [],
+      "police_report_on_file": true,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2019",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": false,
+    "deductible_usd": null,
+    "repair_to_acv_ratio": 0.2304,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": null,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 5,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [
+        "DOC-00016"
+      ],
+      "police_report_on_file": true,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2092",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 250,
+    "repair_to_acv_ratio": 0.1524,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 6150,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 5,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [
+        "DOC-00018"
+      ],
+      "police_report_on_file": true,
+      "medical_report_on_no_injury_claim": true
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2165",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.1474,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 3700,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 3,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2238",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": false,
+    "deductible_usd": null,
+    "repair_to_acv_ratio": 0.2889,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": null,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 4,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": true
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2311",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 1000,
+    "repair_to_acv_ratio": 0.7115,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 17500,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 4,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": true
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2384",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.1161,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 3100,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 2,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2457",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.8448,
+    "total_loss_candidate": true,
+    "net_payable_if_covered_usd": 24000,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 4,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": false,
+      "pending_ocr": [
+        "DOC-00038"
+      ],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2530",
+    "loss_category": "collision",
+    "in_force_at_loss": false,
+    "days_after_policy_end": 395,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.0836,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 2300,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 2,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2603",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 250,
+    "repair_to_acv_ratio": 0.4509,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 12150,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 3,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2676",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": false,
+    "deductible_usd": null,
+    "repair_to_acv_ratio": 0.672,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": null,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 5,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": false,
+      "pending_ocr": [
+        "DOC-00046",
+        "DOC-00048"
+      ],
+      "police_report_on_file": true,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2749",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 1000,
+    "repair_to_acv_ratio": 0.1486,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 4200,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 5,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [
+        "DOC-00051"
+      ],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2822",
+    "loss_category": "collision",
+    "in_force_at_loss": false,
+    "days_after_policy_end": 3,
+    "status_field_conflict": true,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.0969,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 2600,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 2,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2895",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.3755,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 8700,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 5,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [
+        "DOC-00058",
+        "DOC-00059"
+      ],
+      "police_report_on_file": true,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-2968",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 1000,
+    "repair_to_acv_ratio": 0.2088,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 13200,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 3,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [
+        "DOC-00063"
+      ],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-3041",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 500,
+    "repair_to_acv_ratio": 0.2857,
+    "total_loss_candidate": false,
+    "net_payable_if_covered_usd": 4300,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 3,
+      "fnol_count": 1,
+      "repair_estimate_on_file": true,
+      "repair_estimate_readable": true,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-3114",
+    "loss_category": "comprehensive",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": false,
+    "deductible_usd": null,
+    "repair_to_acv_ratio": 0.8377,
+    "total_loss_candidate": true,
+    "net_payable_if_covered_usd": null,
+    "senior_confirmation_required": false,
+    "documents": {
+      "count": 2,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  },
+  {
+    "claim_id": "CLM-2024-3187",
+    "loss_category": "collision",
+    "in_force_at_loss": true,
+    "days_after_policy_end": 0,
+    "status_field_conflict": false,
+    "coverage_purchased_for_loss": true,
+    "deductible_usd": 250,
+    "repair_to_acv_ratio": 0.9167,
+    "total_loss_candidate": true,
+    "net_payable_if_covered_usd": 38250,
+    "senior_confirmation_required": true,
+    "documents": {
+      "count": 3,
+      "fnol_count": 1,
+      "repair_estimate_on_file": false,
+      "repair_estimate_readable": false,
+      "pending_ocr": [],
+      "police_report_on_file": false,
+      "medical_report_on_no_injury_claim": false
+    },
+    "rule_sources": [
+      "CLS-PER-006",
+      "CLS-LIAB-003",
+      "CLS-COMP-002",
+      "CLS-DED-004",
+      "CLS-COLL-001",
+      "CLS-TL-005",
+      "CLS-PAY-012",
+      "CLS-DOC-009",
+      "CLS-INJ-008"
+    ]
+  }
+]

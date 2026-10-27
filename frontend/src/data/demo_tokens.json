@@ -1,0 +1,42 @@
+[
+ {
+  "label": "Adjuster NORTH",
+  "user_id": "u-adj-n1",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LWFkai1uMSIsInJvbGUiOiJhZGp1c3RlciIsInJlZ2lvbnMiOlsiTk9SVEgiXSwiaWF0IjoxNzY3MjI1NjAwLCJleHAiOjE4OTM0NTYwMDB9.nS3rjfzWCwjBdzwmYDrTmPYnGFsZAVDyMtQFZ231s6c"
+ },
+ {
+  "label": "Adjuster WEST",
+  "user_id": "u-adj-w1",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LWFkai13MSIsInJvbGUiOiJhZGp1c3RlciIsInJlZ2lvbnMiOlsiV0VTVCJdLCJpYXQiOjE3NjcyMjU2MDAsImV4cCI6MTg5MzQ1NjAwMH0.5KT3ya_VNfZC_tCeA2iPp_csbxPpUY5F2fDc5ovenmk"
+ },
+ {
+  "label": "Suspended adjuster",
+  "user_id": "u-adj-n3",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LWFkai1uMyIsInJvbGUiOiJhZGp1c3RlciIsInJlZ2lvbnMiOlsiTk9SVEgiXSwiaWF0IjoxNzY3MjI1NjAwLCJleHAiOjE4OTM0NTYwMDB9.T1Pk_iUIhvienkm0k2d7b2I76dKUJ9HjW4cUQ28i1I8"
+ },
+ {
+  "label": "Supervisor",
+  "user_id": "u-sup-1",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LXN1cC0xIiwicm9sZSI6InN1cGVydmlzb3IiLCJyZWdpb25zIjpbIk5PUlRIIiwiU09VVEgiLCJFQVNUIiwiV0VTVCJdLCJpYXQiOjE3NjcyMjU2MDAsImV4cCI6MTg5MzQ1NjAwMH0.XJrNW_2HNX3N69-17t-dGOqCThRM2ZzqJlrNgA9GYPo"
+ },
+ {
+  "label": "Auditor",
+  "user_id": "u-aud-1",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LWF1ZC0xIiwicm9sZSI6ImF1ZGl0b3IiLCJyZWdpb25zIjpbIk5PUlRIIiwiU09VVEgiLCJFQVNUIiwiV0VTVCJdLCJpYXQiOjE3NjcyMjU2MDAsImV4cCI6MTg5MzQ1NjAwMH0.uzSiGneweS3Gydg18RlSce9aEN7m0C9CRnsfF3sMhfs"
+ },
+ {
+  "label": "Service account",
+  "user_id": "svc-pipeline",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdmMtcGlwZWxpbmUiLCJyb2xlIjoic2VydmljZSIsInJlZ2lvbnMiOltdLCJpYXQiOjE3NjcyMjU2MDAsImV4cCI6MTg5MzQ1NjAwMH0.0rblLV3WidCuGAzpdc72Fg_PnJivgD4JUIC9vh1gUQw"
+ },
+ {
+  "label": "Expired token",
+  "user_id": "u-adj-n1",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LWFkai1uMSIsInJvbGUiOiJhZGp1c3RlciIsInJlZ2lvbnMiOlsiTk9SVEgiXSwiaWF0IjoxNzY3MjI1NjAwLCJleHAiOjE3MzU2ODk2MDB9.9uCPmfqzgKWPp2Ar3Q7xV8A6MzrkHwJjj0OGJLmoM5A"
+ },
+ {
+  "label": "Tampered token",
+  "user_id": "u-adj-w1",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1LWFkai13MSIsInJvbGUiOiJhZGp1c3RlciIsInJlZ2lvbnMiOlsiV0VTVCIsIk5PUlRIIl0sImlhdCI6MTc2NzIyNTYwMCwiZXhwIjoxODkzNDU2MDAwfQ.5KT3ya_VNfZC_tCeA2iPp_csbxPpUY5F2fDc5ovenmk"
+ }
+]

@@ -1,0 +1,4 @@
+{
+ "access_rule": "Granted iff token is valid AND user.status == 'active' AND user.role in {adjuster, senior_adjuster, supervisor, siu_investigator} AND claim.region in user.regions. Evaluated in code before any agent runs. Unknown claim IDs are refused exactly like unauthorised ones.",
+ "demo_secret": "claimsense-demo-secret-not-for-production"
+}

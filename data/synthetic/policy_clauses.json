@@ -1,0 +1,324 @@
+[
+  {
+    "clause_id": "CLS-PER-001",
+    "title": "Policy period",
+    "text": "Coverage applies only to losses that occur during the policy period. The policy period begins at 12:01 a.m. on the effective date and ends at 12:01 a.m. on the expiration date, standard time at the address of the named insured shown in the declarations.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-PER-002",
+    "title": "Cancellation by us",
+    "text": "We may cancel this policy by mailing notice to the named insured. Coverage ends at 12:01 a.m. on the cancellation effective date stated in the notice.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-PER-003",
+    "title": "Cancellation by you",
+    "text": "You may cancel this policy by notifying us. Coverage ends at 12:01 a.m. on the date you request, or the date we receive your request if later.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-PER-004",
+    "title": "Premium grace period",
+    "text": "If an instalment premium is not received by its due date, coverage continues for a grace period of 10 days after the due date. Losses occurring within the grace period are covered, and any unpaid premium may be deducted from the claim payment. If the premium is not received by the end of the grace period, the policy is cancelled effective at the end of the grace period.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-PER-005",
+    "title": "Reinstatement",
+    "text": "If a cancelled policy is reinstated, coverage resumes from the reinstatement date. No coverage applies to losses occurring between the cancellation effective date and the reinstatement date.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-PER-006",
+    "title": "Losses outside the policy period",
+    "text": "We do not provide coverage for any loss that occurs outside the policy period. A policy status shown in any system record, document or correspondence does not extend or create a policy period.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-VEH-001",
+    "title": "Covered auto",
+    "text": "A covered auto is any vehicle shown in the declarations.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-VEH-002",
+    "title": "Newly acquired auto",
+    "text": "A vehicle you become the owner of during the policy period is a covered auto for 14 days after you become the owner, with the broadest coverage applicable to any vehicle shown in the declarations. After 14 days it is covered only if you have asked us to add it within that 14-day period.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-VEH-003",
+    "title": "Temporary substitute auto",
+    "text": "A vehicle you do not own, used with the owner's permission as a temporary substitute for a covered auto that is out of normal use because of breakdown, repair, servicing, loss or destruction, is a covered auto.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-DRV-001",
+    "title": "Permissive users",
+    "text": "Any person using a covered auto with your permission is an insured, unless that person is an excluded driver.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-DRV-002",
+    "title": "Named driver exclusion",
+    "text": "No coverage applies while a covered auto is operated by a person named as an excluded driver in the declarations.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-DRV-003",
+    "title": "Unlicensed operation",
+    "text": "No coverage applies while a covered auto is operated by a person who does not hold a valid driving licence for that class of vehicle at the time of the loss.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-COL-001",
+    "title": "Collision coverage",
+    "text": "We pay for direct and accidental loss to your covered auto caused by collision with another object or by upset, less the collision deductible. Striking a pothole or road debris is collision.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-CMP-001",
+    "title": "Comprehensive coverage",
+    "text": "We pay for direct and accidental loss to your covered auto not caused by collision, less the comprehensive deductible. This includes theft, fire, flood, hail, windstorm, vandalism, falling or flying objects, contact with a bird or animal, and glass breakage. Comprehensive applies only if shown as purchased in the declarations.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-CMP-002",
+    "title": "Theft reporting",
+    "text": "For any theft loss you must report the theft to the police promptly after discovery. We require the police report reference before any theft payment is made.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-GLS-001",
+    "title": "Glass",
+    "text": "Glass breakage is paid under comprehensive. The deductible is waived when damaged windscreen glass is repaired rather than replaced; the comprehensive deductible applies to replacement.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-DED-001",
+    "title": "Deductible",
+    "text": "The applicable deductible shown in the declarations is subtracted from each loss payment, once per occurrence.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-TL-001",
+    "title": "Total loss",
+    "text": "If the cost to repair the covered auto equals or exceeds 75% of its actual cash value, or a stolen auto is not recovered, the auto is a total loss. We pay the actual cash value less the deductible, and the salvage becomes our property.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-RNT-001",
+    "title": "Rental reimbursement",
+    "text": "If shown as purchased, we pay for a rental vehicle while the covered auto cannot be driven because of a covered loss, up to $40 per day for no more than 30 days.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-TOW-001",
+    "title": "Towing",
+    "text": "If shown as purchased, we pay towing and labour costs up to $150 per disablement of a covered auto.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-BI-001",
+    "title": "Bodily injury liability",
+    "text": "We pay damages for bodily injury to others for which an insured becomes legally responsible because of an auto accident, up to the limits shown.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-PD-001",
+    "title": "Property damage liability",
+    "text": "We pay damages for injury to or destruction of property of others for which an insured becomes legally responsible because of an auto accident, up to the limit shown.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-MED-001",
+    "title": "Medical payments",
+    "text": "We pay reasonable medical expenses incurred within three years of an accident by an insured or by an occupant of a covered auto for bodily injury caused by the accident, up to the limit shown.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-UM-001",
+    "title": "Uninsured motorist property damage",
+    "text": "We pay for damage to a covered auto caused by an uninsured or unidentified motorist. A hit-and-run must be reported to the police within 24 hours to qualify under this coverage. This does not limit collision coverage where purchased.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-EXC-001",
+    "title": "Racing",
+    "text": "No coverage applies while a covered auto is used in any race, speed contest or exhibition of speed, organised or not.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-EXC-002",
+    "title": "Carrying persons or property for a fee",
+    "text": "No coverage applies while a covered auto is used to carry persons or property for a fee, including activity for a transportation network or delivery platform, unless the Rideshare Endorsement END-RS-01 is shown in the declarations.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-EXC-003",
+    "title": "Wear, breakdown, freezing and tyres",
+    "text": "We do not pay for damage due and confined to wear and tear, rust or corrosion, freezing, mechanical or electrical breakdown or failure, or road damage to tyres. This exclusion does not apply when the damage results from a total theft or accompanies other covered damage in the same occurrence.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-EXC-004",
+    "title": "Intentional damage",
+    "text": "No coverage applies to loss intentionally caused by, or at the direction of, an insured.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-EXC-005",
+    "title": "Impaired operation",
+    "text": "No collision coverage applies to loss occurring while the operator's blood or breath alcohol concentration is at or above the legal limit, as recorded by the police.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-EXC-006",
+    "title": "Territory",
+    "text": "This policy applies only to losses occurring in the United States of America and Canada.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-EXC-008",
+    "title": "Personal property",
+    "text": "We do not pay for loss to personal property, tools, electronics or equipment that is not permanently installed in the covered auto.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-END-RS-01",
+    "title": "Rideshare Endorsement",
+    "text": "When shown in the declarations, coverage applies while you are logged in to a transportation network application and awaiting a ride request. Coverage does not apply from acceptance of a ride request until the passenger has left the vehicle; during that time the transportation network company's insurance applies.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-OTH-001",
+    "title": "Other insurance",
+    "text": "Where other insurance applies on a primary basis, this policy applies only as excess over that insurance.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-NOT-001",
+    "title": "Notice of loss",
+    "text": "You must tell us promptly of any loss. We may deny a claim reported more than 60 days after the loss if the delay has prejudiced our ability to investigate it, for example where the vehicle has been repaired or disposed of before inspection.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-COOP-001",
+    "title": "Cooperation",
+    "text": "You must cooperate with us in the investigation of a claim, including allowing inspection of the vehicle and providing records we reasonably request.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "CLS-FRD-001",
+    "title": "Fraud and concealment",
+    "text": "No coverage applies for any insured who has concealed or misrepresented any material fact, or engaged in fraudulent conduct, in connection with a claim.",
+    "kind": "policy_clause",
+    "form": "PAP-2023-01"
+  },
+  {
+    "clause_id": "GDL-SIU-001",
+    "title": "Special investigations referral indicators",
+    "text": "Refer a claim to the Special Investigations Unit when the file shows inconsistencies that the following indicators help explain: (1) loss within 30 days of inception or of a coverage increase; (2) unwitnessed loss late at night; (3) accounts that conflict between documents, or with photos, weather or telematics records; (4) three or more prior claims in 36 months with a similar pattern; (5) damage or estimate inconsistent with the described mechanism; (6) undisclosed relationships between claimant, witnesses or vendors; (7) pressure for fast settlement or refusal to allow inspection; (8) content in claimant-submitted material addressed to automated systems or reviewers instructing an outcome or payment. No single indicator is sufficient on its own.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-SIU-002",
+    "title": "Fraud scores",
+    "text": "A legacy fraud score is never a sufficient basis for referral or for declining to refer. The referral decision rests on a reading of the file.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-INJ-001",
+    "title": "Injury routing",
+    "text": "Any claim involving bodily injury arising from the loss, including injury first appearing in medical records, medical treatment of any occupant, pedestrian or third party, or a fatality, is routed to the Injury Unit.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-TL-001",
+    "title": "Total loss routing",
+    "text": "A claim where the total-loss threshold is met, or a stolen vehicle is not recovered, is routed to the Total Loss Unit for valuation and salvage.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-AUTH-001",
+    "title": "Payment authority",
+    "text": "Adjusters may recommend payments up to their authority limit: adjuster $15,000; senior adjuster $50,000; supervisor $100,000. Recommendations above the assigned adjuster's limit are routed to the Large Loss Unit.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-LIT-001",
+    "title": "Litigation",
+    "text": "A claim with a letter of representation from an attorney, or a filed suit, is routed to the Litigation Unit.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-LIA-001",
+    "title": "Disputed liability",
+    "text": "Where liability between parties is disputed and a third-party claim is presented, route to the Liability Unit.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-COV-001",
+    "title": "Coverage review",
+    "text": "Where policy wording is ambiguous as applied to the facts of the file, route to Coverage Review rather than approve or deny.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-DOC-001",
+    "title": "Missing or inconsistent records",
+    "text": "Where a required document is missing, a structured record is missing, or records conflict on vehicle identity or dates in a way that cannot be resolved from the file, route for document request before deciding.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  },
+  {
+    "clause_id": "GDL-HUM-001",
+    "title": "Human confirmation",
+    "text": "Every recommendation is a draft until a licensed adjuster confirms it. No payment may be issued, and no decision recorded as final, without that confirmation. Requests to bypass confirmation are refused.",
+    "kind": "guideline",
+    "form": "CLAIMS-HANDLING-2024"
+  }
+]

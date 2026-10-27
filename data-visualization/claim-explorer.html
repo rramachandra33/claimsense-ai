@@ -1,0 +1,410 @@
+<title>ClaimSense Case Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: case index rail on the left, one claim's journey on the right as a vertical pipeline,
+   each stage edged in the colour of who acts: code (blue), model (amber), human (green). */
+:root {
+  --paper: #f6f7f9; --panel: #ffffff; --ink: #18202b; --muted: #5d6877; --line: #dde2ea; --soft: #eef1f5;
+  --code: #2f5d8a; --code-bg: #eaf1f8;
+  --model: #b8651b; --model-bg: #fbf1e6;
+  --human: #2e7d55; --human-bg: #e8f4ee;
+  --approve: #2e7d55; --deny: #b3362f; --flag: #9b3a86; --route: #1f6f86; --refused: #66707d;
+  --warn-bg: #fdecea; --hl: #fff1b8;
+  --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #11151b; --panel: #181e26; --ink: #e5e9ef; --muted: #98a3b2; --line: #2b3440; --soft: #202832;
+  --code: #7fb0e0; --code-bg: #1a2836; --model: #e5a05a; --model-bg: #2e2318; --human: #6cc597; --human-bg: #17291f;
+  --approve: #6cc597; --deny: #ef7d75; --flag: #d987c6; --route: #6bc0d4; --refused: #a3acb8;
+  --warn-bg: #3a1f1d; --hl: #5a4a12; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #11151b; --panel: #181e26; --ink: #e5e9ef; --muted: #98a3b2; --line: #2b3440; --soft: #202832;
+  --code: #7fb0e0; --code-bg: #1a2836; --model: #e5a05a; --model-bg: #2e2318; --human: #6cc597; --human-bg: #17291f;
+  --approve: #6cc597; --deny: #ef7d75; --flag: #d987c6; --route: #6bc0d4; --refused: #a3acb8;
+  --warn-bg: #3a1f1d; --hl: #5a4a12; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--sans); }
+.wrap { max-width: 1320px; margin: 0 auto; padding-inline: 20px; padding-block: 18px 40px; }
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 2px solid; }
+.sw.code { border-color: var(--code); background: var(--code-bg); }
+.sw.model { border-color: var(--model); background: var(--model-bg); }
+.sw.human { border-color: var(--human); background: var(--human-bg); }
+.sw.input { border-color: var(--line); background: var(--panel); }
+.grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* rail */
+.rail { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: flex; flex-direction: column; max-height: calc(100vh - 40px); }
+@media (max-width: 860px) { .rail { position: static; max-height: 60vh; } }
+.filters { padding: 12px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+.filters input, .filters select { width: 100%; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+.filters .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.filters label.ck { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.count { font-size: 12px; color: var(--muted); }
+.list { overflow-y: auto; flex: 1; }
+.item { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 4px 10px; align-items: center; width: 100%; text-align: left; padding: 9px 12px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.item:hover { background: var(--soft); }
+.item[aria-current="true"] { background: var(--code-bg); box-shadow: inset 3px 0 0 var(--code); }
+.item:focus-visible { outline: 2px solid var(--code); outline-offset: -2px; }
+.item .id { font: 600 12px var(--mono); color: var(--muted); }
+.item .t { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .fam { grid-column: 2 / 4; font-size: 11px; color: var(--muted); }
+.item .adv { color: var(--deny); font-size: 11px; font-weight: 600; }
+
+/* pills */
+.pill { display: inline-block; font: 600 11px var(--sans); letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.o-APPROVE { color: var(--approve); } .o-DENY { color: var(--deny); } .o-FLAG { color: var(--flag); }
+.o-ROUTE { color: var(--route); } .o-REFUSED { color: var(--refused); }
+.chip { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 4px; background: var(--soft); color: var(--muted); }
+.chip.warn { background: var(--warn-bg); color: var(--deny); }
+
+/* main */
+.head { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; margin-bottom: 14px; }
+.head h2 { margin: 4px 0 6px; font-size: 19px; text-wrap: balance; }
+.head .meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.head .why { margin: 10px 0 0; color: var(--muted); max-width: 75ch; }
+.verdict { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.verdict .big { font-size: 15px; padding: 4px 14px; }
+.pipeline { display: grid; gap: 12px; }
+.step { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.step.code { border-left-color: var(--code); } .step.model { border-left-color: var(--model); } .step.human { border-left-color: var(--human); }
+.step.stopped { opacity: 0.55; }
+.step h3 { margin: 0; font-size: 15px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.step h3 .n { font: 600 12px var(--mono); color: var(--muted); }
+.step h3 .who { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.code .who { color: var(--code); } .model .who { color: var(--model); } .human .who { color: var(--human); } .input .who { color: var(--muted); }
+.step .lead { color: var(--muted); margin: 4px 0 10px; font-size: 13px; max-width: 80ch; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; min-width: 0; }
+.card h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+dl.kv { display: grid; grid-template-columns: max-content minmax(0,1fr); gap: 3px 12px; margin: 0; font-size: 13px; }
+dl.kv dt { color: var(--muted); }
+.tp + .tp { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+dl.kv dd { margin: 0; font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.bad { color: var(--deny); font-weight: 600; }
+.good { color: var(--approve); font-weight: 600; }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.fact { border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; min-width: 0; }
+.fact.key { border-color: var(--code); background: var(--code-bg); }
+.fact.alert { border-color: var(--deny); background: var(--warn-bg); }
+.fact .k { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.fact .v { font: 600 13px var(--mono); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.checks { display: grid; gap: 6px; }
+.check { display: grid; grid-template-columns: 18px minmax(0,1fr) auto; gap: 8px; align-items: start; font-size: 13px; }
+.check .mark { color: var(--code); font-weight: 700; }
+.doc { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; min-width: 0; }
+.doc summary { cursor: pointer; padding: 8px 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+.doc summary:focus-visible { outline: 2px solid var(--code); }
+.doc pre { margin: 0; padding: 10px 12px; border-top: 1px solid var(--line); font: 12px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow-y: auto; background: var(--soft); }
+mark { background: var(--hl); color: inherit; padding: 0 2px; border-radius: 2px; }
+.clause { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
+.clause .cid { font: 600 12px var(--mono); }
+.clause p { margin: 4px 0 0; font-size: 13px; }
+pre.json { margin: 0; font: 12px/1.5 var(--mono); background: var(--soft); border-radius: 6px; padding: 10px 12px; overflow-x: auto; }
+.stop { font-size: 13px; padding: 10px 12px; border-radius: 6px; background: var(--warn-bg); color: var(--deny); font-weight: 600; }
+.empty { padding: 30px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .item { transition: background 0.12s; } }
+</style>
+
+<div id="root"><div class="wrap"><p class="empty">Loading the 150 evaluation cases…</p></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+const { useState, useEffect, useMemo } = React;
+const html = htm.bind(React.createElement);
+const OUTCOMES = ["APPROVE", "DENY", "FLAG", "ROUTE", "REFUSED"];
+const ALLOWED_ROLES = ["adjuster", "senior_adjuster", "supervisor", "siu_investigator"];
+const KEY_FACTS = ["in_force_at_loss", "status_field_consistent", "total_loss_threshold_met", "exceeds_assigned_authority", "payout_if_covered", "minutes_after_term_end", "linked_entity_hits", "prior_claims_36m_same_party", "third_party_recovery_candidate"];
+const outcomeOf = c => c.expected.outcome || "REFUSED";
+const money = v => v == null ? "—" : "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2 });
+
+function fmt(v) {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "boolean") return v ? "true" : "false";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+function factTone(k, v) {
+  if (k === "in_force_at_loss" && v === false) return "alert";
+  if (k === "status_field_consistent" && v === false) return "alert";
+  if (k === "exceeds_assigned_authority" && v === true) return "alert";
+  if (k === "total_loss_threshold_met" && v === true) return "alert";
+  if (k === "reported_before_loss" && v === true) return "alert";
+  if (k === "vehicle_listed_on_policy" && v === false) return "alert";
+  if (k === "coverage_purchased" && v === false) return "alert";
+  if ((k === "linked_entity_hits" || k.startsWith("prior_claims")) && v > 0) return "alert";
+  if (k === "minutes_after_term_end" && v > 0) return "alert";
+  if (k === "third_party_uninsured_or_unidentified" && v === true) return "alert";
+  if (KEY_FACTS.includes(k)) return "key";
+  return "";
+}
+
+function Highlight({ text, terms }) {
+  const t = (terms || []).filter(Boolean);
+  if (!t.length) return text;
+  const esc = t.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const parts = text.split(new RegExp("(" + esc.join("|") + ")", "g"));
+  return parts.map((p, i) => t.includes(p) ? html`<mark key=${i} title="Must never appear in the response">${p}</mark>` : p);
+}
+
+function accessCheck(c, data) {
+  const req = c.request, user = data.userById[req.user_id];
+  const claim = c.claim_id ? data.claims[c.claim_id] : null;
+  const isConfirm = req.path.endsWith("/confirm");
+  const rows = [];
+  const tokenOk = req.auth === "valid";
+  rows.push({ label: "Token is valid", detail: "auth = " + req.auth, ok: tokenOk });
+  if (!tokenOk) return { rows, stoppedAt: "token" };
+  rows.push({ label: "User is active", detail: user ? `${user.user_id} · ${user.status}` : "unknown user", ok: !!user && user.status === "active" });
+  if (isConfirm) {
+    rows.push({ label: "User holds an adjuster licence (needed to confirm)", detail: user ? (user.adjuster_licence || "no licence") : "—", ok: !!(user && user.adjuster_licence) });
+  } else {
+    rows.push({ label: "Role may adjudicate", detail: user ? user.role : "—", ok: !!user && ALLOWED_ROLES.includes(user.role) });
+  }
+  if (req.body && req.body.acting_as) rows.push({ label: "Identity comes from the token only", detail: `body.acting_as = "${req.body.acting_as}" is ignored`, ok: true, note: true });
+  const pathOk = /^\/claims\/CLM-\d{4}-\d{4}\/(adjudicate|confirm)$/.test(req.path);
+  if (!claim || !pathOk) {
+    rows.push({ label: "Claim exists at a normalised path", detail: req.path, ok: false });
+  } else {
+    rows.push({ label: "Claim region is in the user's regions", detail: `${claim.region} in [${user ? user.regions.join(", ") : ""}]`, ok: !!user && user.regions.includes(claim.region) });
+  }
+  return { rows };
+}
+
+function Step({ n, who, title, lead, stopped, children }) {
+  const whoLabel = { code: "Code", model: "Model", human: "Human", input: "Input data" }[who];
+  return html`<section class=${"step " + who + (stopped ? " stopped" : "")}>
+    <h3><span class="n">${n}</span>${title}<span class="who">${whoLabel}</span></h3>
+    ${lead && html`<p class="lead">${lead}</p>`}
+    ${children}
+  </section>`;
+}
+
+function KV({ rows }) {
+  return html`<dl class="kv">${rows.map(([k, v, cls]) => html`<${React.Fragment} key=${k}><dt>${k}</dt><dd class=${cls || ""}>${v}</dd><//>`)}</dl>`;
+}
+
+function CaseView({ c, data }) {
+  const e = c.expected, granted = e.access === "granted";
+  const claim = c.claim_id ? data.claims[c.claim_id] : null;
+  const pol = claim ? data.policies[claim.policy_id] : null;
+  const docs = claim ? data.docs[claim.claim_id] || [] : [];
+  const f = e.deterministic_facts || {};
+  const access = accessCheck(c, data);
+  const allOk = access.rows.every(r => r.ok);
+  const status = e.http_status || (e.http_status_any_of || []).join(" / ");
+  const cites = [...(e.must_cite || []).map(id => [id, "must"]), ...(e.should_cite || []).map(id => [id, "should"])];
+  const out = outcomeOf(c);
+  const hist = pol ? data.history.filter(h => h.policy_id === pol.policy_id) : [];
+
+  const hard = granted ? [
+    ["HTTP status", String(status)], ["Audit record", `${e.audit.result} · ${e.audit.user_id} · ${e.audit.action} · ${e.audit.resource}`],
+    ["Deterministic facts match exactly", `${Object.keys(f).length} fields`], ["Payout equals code figure", money(f.payout_if_covered)],
+    ["Decision source", e.decision_source], ["No payment, status pending", `${e.final_status} · payment_issued=${e.payment_issued}`],
+  ] : [
+    ["HTTP status", String(status)], ["Audit record", `${e.audit.result} · ${e.audit.user_id} · ${e.audit.action} · ${e.audit.resource || "—"}`],
+    ["No claim data in the response", "response_contains_claim_data = false"],
+  ];
+  if ((e.must_not_contain || []).length) hard.push(["Must not contain", e.must_not_contain.join(" · ")]);
+  const scored = granted ? [["Outcome", e.outcome + (e.route_to ? " → " + e.route_to : "")], ["Must cite (and retrieved)", (e.must_cite || []).join(", ") || "—"], ["Should cite", (e.should_cite || []).join(", ") || "—"]] : [];
+
+  return html`<div>
+    <div class="head">
+      <div class="meta">
+        <span class="chip" style=${{ fontFamily: "var(--mono)" }}>${c.case_id}</span>
+        <span class="chip">${c.family}</span>
+        <span class="chip">${c.split}</span>
+        ${c.milestone1_seed && html`<span class="chip">Milestone 1 seed</span>`}
+        ${c.adversarial && html`<span class="chip warn">adversarial</span>`}
+      </div>
+      <h2>${c.title}</h2>
+      <div class="verdict">
+        <span class=${"pill big o-" + out}>${out}${e.route_to ? " → " + e.route_to : ""}</span>
+        ${claim && html`<span class="chip" style=${{ fontFamily: "var(--mono)" }}>${claim.claim_id}</span>`}
+      </div>
+      <p class="why">${e.rationale}</p>
+    </div>
+
+    <div class="pipeline">
+      <${Step} n="1" who="input" title="Records in the three client systems"
+        lead=${claim ? "What the adjuster used to gather by hand. Note that the policy status field can be wrong." : "This request does not name a real claim."}>
+        ${claim && html`<div class="cols">
+          <div class="card"><h4>Claims management</h4><${KV} rows=${[
+            ["claim", claim.claim_id], ["region", claim.region], ["assigned to", claim.assigned_adjuster],
+            ["loss at", claim.loss_at], ["reported", claim.reported_at], ["loss type", claim.loss_type],
+            ["vehicle", claim.vehicle_description], ["driver", claim.driver.name + " (" + claim.driver.relationship + ")"],
+            ["estimate", money(claim.repair_estimate)], ["ACV", money(claim.valuation.acv)],
+            ["legacy fraud score", String(claim.legacy_fraud_score)],
+          ]} /></div>
+          <div class="card"><h4>Policy administration</h4><${KV} rows=${[
+            ["policy", pol.policy_id], ["insured", pol.named_insured.name], ["term", pol.term_start + " → " + pol.term_end],
+            ["status field", pol.status_field, f.status_field_consistent === false ? "bad" : ""],
+            ["events", pol.events.length ? pol.events.map(ev => ev.type + " " + (ev.effective_date || "")).join("; ") : "none"],
+            ["coverages", Object.keys(pol.coverages).join(", ")],
+            ["excluded drivers", pol.excluded_drivers.map(d => d.name).join(", ") || "none"],
+            ["endorsements", pol.endorsements.join(", ") || "none"],
+          ]} /></div>
+          <div class="card"><h4>Document store · history</h4><${KV} rows=${[
+            ["documents", String(docs.length)], ["doc types", [...new Set(docs.map(d => d.type))].join(", ") || "none"],
+            ["prior claims (this policy)", String(hist.length)],
+            ["narrative", claim.fnol_narrative || "(empty)"],
+          ]} /></div>
+          ${(claim.third_parties.length > 0 || claim.witnesses.length > 0) && html`<div class="card"><h4>Other parties (claims management)</h4>
+            ${claim.third_parties.map(tp => html`<div class="tp" key=${tp.third_party_id}><${KV} rows=${[
+              ["party", tp.party_role.replace(/_/g, " ") + (tp.name ? " · " + tp.name : "")],
+              ...(tp.vehicle ? [["vehicle", tp.vehicle + " · " + tp.plate]] : []),
+              ["insurance", tp.insurance_status === "insured" ? tp.insurer + " · " + tp.policy_number : tp.insurance_status.replace(/_/g, " "),
+                tp.insurance_status === "uninsured" || tp.insurance_status === "unidentified" ? "bad" : ""],
+              ["at fault", (tp.at_fault === true ? "yes" : tp.at_fault === false ? "no (our insured)" : "not determined") + " · " + tp.fault_source.replace(/_/g, " ")],
+              ...(tp.injury_claimed ? [["injury claimed", "yes", "bad"]] : []),
+              ...(tp.property_damage_claimed ? [["property claim", money(tp.property_damage_claimed)]] : []),
+              ...(tp.occupants ? [["occupants", String(tp.occupants)]] : []),
+              ...(tp.represented_by_attorney ? [["attorney", "represented", "bad"]] : []),
+            ]} /></div>`)}
+            ${claim.witnesses.length > 0 && html`<div class="tp"><${KV} rows=${claim.witnesses.map(w => ["witness", w.name + (w.phone ? " · " + w.phone : "")])} /></div>`}
+          </div>`}
+        </div>`}
+      <//>
+
+      <${Step} n="2" who="input" title="The request arrives">
+        <pre class="json">${JSON.stringify(c.request, null, 2)}</pre>
+      <//>
+
+      <${Step} n="3" who="code" title="Access check, before any agent runs"
+        lead="Identity and entitlement are decided in code. The model is never asked who may see a claim.">
+        <div class="checks">${access.rows.map((r, i) => html`<div class="check" key=${i}>
+          <span class=${"mark " + (r.ok ? "good" : "bad")}>${r.ok ? "✓" : "✕"}</span>
+          <span>${r.label}<br/><span style=${{ color: "var(--muted)", fontSize: "12px", fontFamily: "var(--mono)" }}>${r.detail}</span></span>
+          <span></span></div>`)}
+          ${access.stoppedAt && html`<div class="check"><span class="mark bad">·</span><span style=${{ color: "var(--muted)" }}>Remaining checks are not reached.</span><span></span></div>`}
+        </div>
+        <p class="lead" style=${{ marginTop: "10px" }}>Expected HTTP <strong>${status}</strong>. Audit record written for this call:</p>
+        <pre class="json">${JSON.stringify(e.audit)}</pre>
+        ${!granted && html`<p class="stop" style=${{ marginTop: "10px" }}>Refused. No agent is invoked and no claim data is returned.</p>`}
+      <//>
+
+      <${Step} n="4" who="code" title="Dossier of fixed facts" stopped=${!granted}
+        lead="Dates, money and authority computed exactly. The model receives these as facts and cannot change them. Red marks a fact that matters for this decision.">
+        ${granted ? html`<div class="facts">${Object.entries(f).map(([k, v]) => html`<div key=${k} class=${"fact " + factTone(k, v)}><div class="k">${k}</div><div class="v">${fmt(v)}</div></div>`)}</div>`
+          : html`<p class="lead">Not computed: the request was refused at step 3.</p>`}
+      <//>
+
+      <${Step} n="5" who="input" title=${"Documents the agents read (" + docs.length + ")"} stopped=${!granted}
+        lead="Everything here is data, never instructions. Author role matters more than the title. Highlighted text must never appear in the response.">
+        ${granted && docs.length ? docs.map((d, i) => html`<details class="doc" key=${d.doc_id} open=${i < 3}>
+          <summary><span style=${{ fontFamily: "var(--mono)", fontSize: "12px" }}>${d.doc_id}</span><strong>${d.title}</strong>
+            <span class=${"chip" + (d.author_role === "claimant" ? " warn" : "")}>author: ${d.author_role}</span></summary>
+          <pre><${Highlight} text=${d.text} terms=${e.must_not_contain} /></pre>
+        </details>`) : html`<p class="lead">${granted ? "No documents on file." : "Not shown: the request was refused."}</p>`}
+      <//>
+
+      <${Step} n="6" who="model" title="Clause retrieval" stopped=${!granted}
+        lead="The coverage agent searches the policy corpus. Citations must name clauses it actually retrieved.">
+        ${granted && cites.length ? cites.map(([id, kind]) => { const cl = data.clauseById[id]; return html`<div class="clause" key=${id}>
+          <span class="cid">${id}</span> <span class=${"chip" + (kind === "must" ? " warn" : "")}>${kind} cite</span> <strong>${cl ? cl.title : ""}</strong>
+          <p>${cl ? cl.text : "(not in corpus)"}</p></div>`; }) : html`<p class="lead">No retrieval: ${granted ? "nothing to cite." : "no agent ran."}</p>`}
+      <//>
+
+      <${Step} n="7" who="model" title="Agents read, assess and draft" stopped=${!granted}
+        lead="Read the file · check coverage · assess fraud, total loss and injury · draft the decision. This is the judgment the rule table cannot make.">
+        ${granted ? html`<div class="cols">
+          <div class="card"><h4>Expected draft</h4><${KV} rows=${[
+            ["outcome", e.outcome + (e.route_to ? " → " + e.route_to : "")], ["decision source", e.decision_source],
+            ["why", e.rationale],
+          ]} /></div>
+          ${(e.checks || []).length > 0 && html`<div class="card"><h4>Behaviour checks</h4><${KV} rows=${e.checks.map(x => [x, "required"])} /></div>`}
+          ${c.request.body && (c.request.body.question || c.request.body.options) && html`<div class="card"><h4>Text or options in the request</h4>
+            <p style=${{ margin: 0, fontSize: "13px" }}>Treated as input to read, not as authority. ${c.request.body.options ? "Options such as auto-finalise or override are ignored or rejected." : ""}</p></div>`}
+        </div>` : html`<p class="lead">No agent ran.</p>`}
+      <//>
+
+      <${Step} n="8" who="human" title="Licensed adjuster confirms" stopped=${!granted}
+        lead="The system only recommends. Confirmation is a separate, audited action by a licensed human.">
+        ${granted ? html`<${KV} rows=${[
+          ["final status", e.final_status], ["requires confirmation", String(e.requires_adjuster_confirmation)],
+          ["payment issued", String(e.payment_issued), "good"], ["payout if confirmed", e.outcome === "APPROVE" ? money(f.payout_if_covered) : "none (" + e.outcome + ")"],
+        ]} />` : html`<p class="lead">Nothing to confirm.</p>`}
+      <//>
+
+      <${Step} n="9" who="code" title="How the eval gate checks this case"
+        lead="Hard failures block the image push in CI. Scored items count toward accuracy targets.">
+        <div class="cols">
+          <div class="card"><h4>Hard fail if wrong</h4><${KV} rows=${hard} /></div>
+          ${scored.length > 0 && html`<div class="card"><h4>Scored</h4><${KV} rows=${scored} /></div>`}
+        </div>
+      <//>
+    </div>
+  </div>`;
+}
+
+function App() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [sel, setSel] = useState(() => (/^#?(EV-\d{3})$/.exec(location.hash) || [])[1] || "EV-017");
+  const [q, setQ] = useState("");
+  const [fam, setFam] = useState("");
+  const [oc, setOc] = useState("");
+  const [adv, setAdv] = useState(false);
+
+  useEffect(() => {
+    fetch("data.json").then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(d => {
+      d.userById = Object.fromEntries(d.users.users.map(u => [u.user_id, u]));
+      d.clauseById = Object.fromEntries(d.clauses.map(x => [x.clause_id, x]));
+      setData(d);
+    }).catch(e => setErr("Could not load the case data (" + e.message + "). Reload the page to try again."));
+  }, []);
+
+  const families = useMemo(() => data ? [...new Set(data.cases.map(c => c.family))] : [], [data]);
+  const shown = useMemo(() => !data ? [] : data.cases.filter(c =>
+    (!fam || c.family === fam) && (!oc || outcomeOf(c) === oc) && (!adv || c.adversarial) &&
+    (!q || (c.case_id + " " + c.title + " " + (c.claim_id || "")).toLowerCase().includes(q.toLowerCase()))), [data, q, fam, oc, adv]);
+
+  if (err) return html`<div class="wrap"><p class="empty">${err}</p></div>`;
+  if (!data) return html`<div class="wrap"><p class="empty">Loading the 150 evaluation cases…</p></div>`;
+  const cur = data.cases.find(c => c.case_id === sel) || data.cases[0];
+  const pick = id => { setSel(id); try { history.replaceState(null, "", "#" + id); } catch (e) {} window.scrollTo({ top: 0 }); };
+
+  return html`<div class="wrap">
+    <header class="top">
+      <div><h1>ClaimSense Case Explorer</h1>
+        <div class="sub">150 evaluation cases on synthetic data. Pick a case to follow it from request to adjuster confirmation.</div></div>
+      <div class="legend"><span><i class="sw code"></i>Code</span><span><i class="sw model"></i>Model judgment</span><span><i class="sw human"></i>Human confirmation</span><span><i class="sw input"></i>Input data</span></div>
+    </header>
+    <div class="grid">
+      <aside class="rail">
+        <div class="filters">
+          <input id="q" type="search" placeholder="Search case, title or claim ID" value=${q} onInput=${e => setQ(e.target.value)} aria-label="Search cases" />
+          <div class="row">
+            <select id="fam" value=${fam} onChange=${e => setFam(e.target.value)} aria-label="Family"><option value="">All families</option>${families.map(x => html`<option key=${x} value=${x}>${x}</option>`)}</select>
+            <select id="oc" value=${oc} onChange=${e => setOc(e.target.value)} aria-label="Outcome"><option value="">All outcomes</option>${OUTCOMES.map(x => html`<option key=${x} value=${x}>${x}</option>`)}</select>
+          </div>
+          <div class="row" style=${{ alignItems: "center" }}>
+            <label class="ck"><input id="adv" type="checkbox" checked=${adv} onChange=${e => setAdv(e.target.checked)} />Adversarial only</label>
+            <span class="count" style=${{ textAlign: "right" }}>${shown.length} of ${data.cases.length}</span>
+          </div>
+        </div>
+        <div class="list">
+          ${shown.map(c => html`<button class="item" key=${c.case_id} aria-current=${c.case_id === cur.case_id ? "true" : "false"} onClick=${() => pick(c.case_id)}>
+            <span class="id">${c.case_id}</span><span class="t" title=${c.title}>${c.title}</span><span class=${"pill o-" + outcomeOf(c)}>${outcomeOf(c)}</span>
+            <span class="fam">${c.family}${c.adversarial ? html` · <span class="adv">adversarial</span>` : ""}</span>
+          </button>`)}
+          ${!shown.length && html`<p class="empty">No cases match these filters.</p>`}
+        </div>
+      </aside>
+      <main style=${{ minWidth: 0 }}><${CaseView} key=${cur.case_id} c=${cur} data=${data} /></main>
+    </div>
+  </div>`;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
