@@ -6,6 +6,7 @@ Every route except /health follows the same three steps, in this order:
   3. write the audit row  -> audit.log_audit (allowed and denied alike)
 Refusals never say why; the reason goes to the audit log only.
 """
+import os
 from uuid import UUID
 
 from fastapi import FastAPI, Header, Request
@@ -15,8 +16,10 @@ from fastapi.responses import JSONResponse
 
 from .access import can_read_claim
 from .audit import log_audit
-from .auth import AuthError, InactiveUser, get_user
+from .auth import AuthError, InactiveUser, get_user, make_dev_token
 from .db import execute, fetch_all, fetch_one
+from pydantic import BaseModel
+
 from .notes import NoteError, NoteRequest, check_note, write_note
 
 app = FastAPI(title="ClaimSense data API", version="0.1.0")
@@ -80,6 +83,29 @@ def require_user(authorization, action, resource_type=None, resource_id=None):
 def health():
     row = fetch_one("SELECT count(*) AS claims FROM claims_mgmt.claims")
     return {"status": "ok", "claims": row["claims"]}
+
+
+class DevLoginRequest(BaseModel):
+    user_id: str
+
+
+@app.post("/api/v1/dev/login")
+def dev_login(body: DevLoginRequest):
+    """Development only: issue a dev token for a known user, so the console can sign in.
+
+    Off unless CLAIMSENSE_DEV_LOGIN=1. In a deployment, Amazon Cognito's sign-in replaces it.
+    The usual checks still apply when the token is used (a suspended user is refused then).
+    """
+    if os.environ.get("CLAIMSENSE_DEV_LOGIN") != "1":
+        raise ApiError(404, "not_found", "Not found.")
+    user = fetch_one("SELECT user_id, full_name, user_group FROM claimsense.users WHERE user_id = %s",
+                     (body.user_id,))
+    if user is None:
+        log_audit("dev_login", "deny", reason=f"unknown user {body.user_id}")
+        raise ApiError(401, "unauthenticated", "Unknown user.")
+    log_audit("dev_login", "allow", user=user)
+    return {"token": make_dev_token(user["user_id"], user["user_group"]),
+            "user_id": user["user_id"], "full_name": user["full_name"], "group": user["user_group"]}
 
 
 @app.get("/api/v1/me")

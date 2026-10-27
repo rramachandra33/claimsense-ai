@@ -2,37 +2,29 @@ import { cookies } from "next/headers";
 
 const COOKIE_NAME = "claimsense_session";
 
+/**
+ * The signed-in user. The token is the one the ClaimSense data API issued; the console never
+ * decides access itself, it only forwards this token. The cookie is httpOnly, so page scripts
+ * cannot read it.
+ */
 export type Session = {
-  analystId: number;
-  email: string;
+  token: string;
+  userId: string;
   fullName: string;
-  scope: string; // type_a | type_b | all
-  role: string; // analyst | lead | admin
+  group: string | null;
 };
 
-/**
- * Reads the httpOnly session cookie. Returns null if missing/invalid.
- * The cookie is a small JSON blob — for P0 there is no signing/password;
- * it just identifies which seeded analyst is "logged in".
- */
 export function getSession(): Session | null {
   const raw = cookies().get(COOKIE_NAME)?.value;
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<Session>;
-    // Coerce analystId: BIGINT may serialize as a string; accept number or numeric string.
-    const analystId = Number(parsed.analystId);
-    if (
-      Number.isFinite(analystId) &&
-      typeof parsed.email === "string" &&
-      typeof parsed.scope === "string"
-    ) {
+    if (typeof parsed.token === "string" && typeof parsed.userId === "string") {
       return {
-        analystId,
-        email: parsed.email,
-        fullName: parsed.fullName ?? parsed.email,
-        scope: parsed.scope,
-        role: parsed.role ?? "analyst",
+        token: parsed.token,
+        userId: parsed.userId,
+        fullName: parsed.fullName ?? parsed.userId,
+        group: parsed.group ?? null,
       };
     }
   } catch {
@@ -47,12 +39,10 @@ export function setSession(session: Session): void {
     sameSite: "lax",
     path: "/",
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 8, // 8h shift
+    maxAge: 60 * 60 * 8, // matches the 8-hour dev token
   });
 }
 
 export function clearSession(): void {
   cookies().delete(COOKIE_NAME);
 }
-
-export const SESSION_COOKIE = COOKIE_NAME;

@@ -1,39 +1,31 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { findAnalystByEmail } from "@/lib/queries";
+import { devLogin } from "@/lib/claimsense";
 import { setSession } from "@/lib/session";
 
 export async function loginAction(
   _prevState: { error: string | null },
   formData: FormData
 ): Promise<{ error: string | null }> {
-  const email = String(formData.get("email") ?? "").trim();
-  if (!email) {
-    return { error: "Enter your analyst email." };
+  const userId = String(formData.get("userId") ?? "").trim();
+  if (!userId) {
+    return { error: "Enter a user id, for example alice." };
   }
 
-  let analyst;
-  try {
-    analyst = await findAnalystByEmail(email);
-  } catch {
-    return {
-      error:
-        "Could not reach the ClaimSense database. Is Postgres running? (see README)",
-    };
-  }
-
-  if (!analyst) {
-    return { error: `No analyst found for "${email}".` };
+  const result = await devLogin(userId);
+  if (!result.ok) {
+    if (result.status === 404) {
+      return { error: "Development sign-in is off. Start the API with CLAIMSENSE_DEV_LOGIN=1." };
+    }
+    return { error: result.error?.message ?? "Sign-in failed." };
   }
 
   setSession({
-    analystId: analyst.analyst_id,
-    email: analyst.email,
-    fullName: analyst.full_name,
-    scope: analyst.scope,
-    role: analyst.role,
+    token: result.data.token,
+    userId: result.data.user_id,
+    fullName: result.data.full_name,
+    group: result.data.group,
   });
-
-  redirect("/");
+  redirect("/claims");
 }

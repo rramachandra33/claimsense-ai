@@ -16,25 +16,21 @@ function SubmitButton() {
   );
 }
 
-export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
+export function LoginForm() {
   const [state, formAction] = useFormState(loginAction, { error: null });
   return (
     <form action={formAction} className="space-y-4">
       <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-slate-700"
-        >
-          Analyst email
+        <label htmlFor="userId" className="block text-sm font-medium text-slate-700">
+          User id
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          defaultValue={defaultEmail}
-          placeholder="analyst1@autosure.test"
-          className="mt-1 w-full rounded-lg border border-claimsense-line px-3 py-2 text-sm shadow-sm focus:border-claimsense-primary focus:outline-none focus:ring-1 focus:ring-claimsense-primary"
+          id="userId"
+          name="userId"
+          type="text"
+          autoComplete="username"
+          defaultValue="alice"
+          className="mt-1 w-full rounded-lg border border-claimsense-line px-3 py-2 font-mono text-sm shadow-sm focus:border-claimsense-primary focus:outline-none focus:ring-1 focus:ring-claimsense-primary"
         />
       </div>
       {state.error ? (

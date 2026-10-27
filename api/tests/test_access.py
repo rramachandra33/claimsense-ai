@@ -115,3 +115,21 @@ def test_refusals_are_audited_with_the_reason():
                        ORDER BY audit_id DESC LIMIT 1""")
     assert row["decision"] == "deny"
     assert "carol" in row["reason"]              # the full reason is kept, but only in the audit log
+
+
+def test_dev_login_is_off_unless_enabled(monkeypatch):
+    monkeypatch.delenv("CLAIMSENSE_DEV_LOGIN", raising=False)
+    assert client.post("/api/v1/dev/login", json={"user_id": "alice"}).status_code == 404
+
+
+def test_dev_login_issues_a_working_token(monkeypatch):
+    monkeypatch.setenv("CLAIMSENSE_DEV_LOGIN", "1")
+    response = client.post("/api/v1/dev/login", json={"user_id": "alice"})
+    assert response.status_code == 200
+    token = response.json()["token"]
+    me = client.get("/api/v1/me", headers={"Authorization": f"Bearer {token}"})
+    assert me.json()["user_id"] == "alice"
+    assert client.post("/api/v1/dev/login", json={"user_id": "mallory"}).status_code == 401
+    # A suspended user still gets a token, but the API refuses it on use.
+    frank = client.post("/api/v1/dev/login", json={"user_id": "frank"}).json()["token"]
+    assert client.get("/api/v1/claims", headers={"Authorization": f"Bearer {frank}"}).status_code == 403

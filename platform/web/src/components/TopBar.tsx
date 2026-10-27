@@ -39,7 +39,7 @@ export function TopBar({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search disputes, customers, txns…"
+            placeholder="Search claims…"
             className="h-9 w-72 rounded-lg border border-claimsense-line bg-claimsense-bg/60 pl-9 pr-3 text-sm text-claimsense-ink placeholder:text-slate-400 focus:border-claimsense-primary focus:bg-white focus:outline-none focus:ring-1 focus:ring-claimsense-primary"
           />
         </div>
