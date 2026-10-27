@@ -21,6 +21,8 @@ def jwt_secret():
     secret = os.environ.get("CLAIMSENSE_JWT_SECRET")
     if not secret:
         raise RuntimeError("CLAIMSENSE_JWT_SECRET is not set (see api/.env.example)")
+    if len(secret) < 32:
+        raise RuntimeError("CLAIMSENSE_JWT_SECRET must be at least 32 characters long")
     return secret
 
 

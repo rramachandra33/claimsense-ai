@@ -31,5 +31,9 @@ make api-test                   # access tests (7 users x 20 claims and the refu
 | `GET /api/v1/me` | The calling user |
 | `GET /api/v1/claims` | Only the claims the caller may read |
 | `GET /api/v1/claims/{id}` | One claim, after the access check |
+| `GET /api/v1/claims/{id}/policy` | The claim's policy, reached only through the claim; never returns holder names |
+| `GET /api/v1/claims/{id}/documents` | The claim's document list (no text) |
+| `GET /api/v1/documents/{id}` | One document with its text; text is null unless OCR is Completed (CLS-DOC-009) |
+| `GET /api/v1/clauses?q=…&top_k=4` | Policy-manual search over `clause_index` only, so a quarantined clause can never come back; matches any word, best first |
 
-Next: policy, documents and clause search; the claim-note write with idempotency; then the MCP server.
+Next: the claim-note write with idempotency; then the MCP server.
