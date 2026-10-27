@@ -46,7 +46,12 @@ later change shows up as a diff against the original.
    reset, `\copy`, sanity counts). The local database now uses host port 5433 so it can run beside a
    local PostgreSQL on 5432. `api.sql`, `mint-key.mjs` and the `keys` target are legacy Meridian API-key
    pieces, no longer part of `make up`; they go when the API moves to Cognito.
-3. **Still bank-dispute domain (next):** the console, API routes and the agent's live database path
+3. **Data API as a Python service (in progress):** by decision, the gatekeeper is a new Python
+   (FastAPI) service in `api/`, not the sample's TypeScript API. Its `auth.py`, `access.py`, `audit.py`
+   and error responses are Python ports of the sample's `auth.ts`, `scope.ts`, `audit.ts` and
+   `respond.ts`, with two deliberate changes: an unknown claim gets the same 403 as a forbidden one
+   (the sample returned 404), and refusal messages never give the reason (the sample did).
+4. **Still bank-dispute domain (next):** the console, API routes and the agent's live database path
    still expect the old Meridian tables, so they will not work against the new database until adapted
    (the agent's offline `--mock` path and tests still pass).
 4. **Earlier note on what remained:** tables, routes and logic are still disputes, Reg E rules and

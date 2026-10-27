@@ -13,7 +13,7 @@ export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
 export CLAIMSENSE_CONSOLE_URL := $(CONSOLE)
 
-.PHONY: help up deps seed keys web web-dev agent eval test down clean doctor
+.PHONY: help up deps seed keys api api-test token web web-dev agent eval test down clean doctor
 
 help: ## show this list
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -40,6 +40,15 @@ seed: ## rebuild the seed CSVs from data/course_fixtures and reload the database
 
 keys: deps ## (legacy Meridian API keys; to be replaced by Cognito) mint an analyst key pair
 	@cd platform/db && node mint-key.mjs --demo
+
+api: ## run the ClaimSense data API on :8000 (needs CLAIMSENSE_JWT_SECRET; see api/.env.example)
+	cd api && uv run uvicorn claimsense_api.main:app --app-dir src --port 8000
+
+api-test: ## the data API's access tests (needs `make up` first)
+	cd api && uv run --extra dev pytest -q
+
+token: ## print a dev token: make token USER=alice
+	cd api && uv run python scripts/mint_dev_token.py $(USER)
 
 web: deps ## build + serve the Ops Console on :$(PORT)
 	cd platform/web && npm run build && PORT=$(PORT) npm run start
