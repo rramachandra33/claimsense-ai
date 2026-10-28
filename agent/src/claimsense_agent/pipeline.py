@@ -54,6 +54,16 @@ async def run_agent(client, claim_id, run_id, agent, agent_function, *inputs, **
     return output, tools
 
 
+def drop_unretrieved(output, retrieved):
+    """A coverage or risk output keeps only the clauses a search returned in this run. Returns the
+    output and the clauses dropped, so the drafter is never offered a clause that was not retrieved."""
+    kept = [c for c in output.cited_clauses if c in retrieved]
+    dropped = [c for c in output.cited_clauses if c not in retrieved]
+    if dropped:
+        output = output.model_copy(update={"cited_clauses": kept})
+    return output, dropped
+
+
 def check_draft(draft, signals, gaps, retrieved):
     """The code checks on a draft. Returns a list of problems; empty means the draft passes."""
     problems = []
@@ -147,7 +157,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
             t.event(f"gap: {g['reason']} ({g['clause']})", level="warn")
 
     # ---- code retrieves the clauses behind its own rules, so they can always be cited ----------
-    outputs, retrieved, usage = {}, [], {}
+    outputs, retrieved, usage, citation_problems = {}, [], {}, []
     with tracer.span("rule clauses", kind="tool") as t:
         for clause in rule_clauses(facts, signals, gaps):
             if client.retrieve_clause(clause, run_id):
@@ -167,6 +177,14 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
                                 f"({tools.usage['requests']} model calls)")
         return output
 
+    def check_citations(agent, t):
+        """Code check: the agent cites only clauses that were retrieved in this run."""
+        outputs[agent], dropped = drop_unretrieved(outputs[agent], retrieved)
+        for clause in dropped:
+            problem = f"{agent} agent cited {clause}, which no clause search returned in this run; removed"
+            citation_problems.append(problem)
+            t.event(problem, level="block")
+
     try:
         with tracer.span("reader", kind="agent") as t:
             await run_step("reader")
@@ -174,11 +192,13 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
 
         with tracer.span("coverage", kind="agent") as t:
             await run_step("coverage", facts)
+            check_citations("coverage", t)
             t.kv("covered", outputs["coverage"].covered)
             t.kv("cites", outputs["coverage"].cited_clauses)
 
         with tracer.span("risk", kind="agent") as t:
             await run_step("risk")
+            check_citations("risk", t)
             t.kv("refer to SIU", outputs["risk"].refer_to_siu)
 
         with tracer.span("drafter", kind="agent") as t:
@@ -234,6 +254,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
         "models": models_for(brain),
     }
     note["agent_outputs"]["draft_problems"] = problems
+    note["agent_outputs"]["citation_problems"] = citation_problems
     note["agent_outputs"]["personal_details_removed_from_note"] = redacted
     totals = usage_summary(usage)
     note["agent_outputs"]["usage"] = totals
@@ -251,7 +272,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
     result.outcome = draft.outcome
     result.decision_source = decision_source
     result.cited_clauses = draft.cited_clauses
-    result.problems = problems
+    result.problems = citation_problems + problems
     result.input_tokens = totals["input_tokens"]
     result.output_tokens = totals["output_tokens"]
     result.cost_usd = totals["cost_usd"]

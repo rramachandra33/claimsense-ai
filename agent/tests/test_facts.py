@@ -11,8 +11,8 @@ import pytest
 from claimsense_agent import api
 from claimsense_agent.facts import (code_outcome, compute_facts, documentation_gaps, locations_match,
                                     outcome_signals)
-from claimsense_agent.pipeline import check_draft, fallback_draft, unknown_clauses
-from claimsense_agent.schemas import DraftOutput
+from claimsense_agent.pipeline import check_draft, drop_unretrieved, fallback_draft, unknown_clauses
+from claimsense_agent.schemas import CoverageOutput, DraftOutput
 
 FIXTURES = Path(__file__).resolve().parents[2] / "data" / "course_fixtures"
 EVALS = Path(__file__).resolve().parents[2] / "evals"
@@ -78,6 +78,14 @@ def test_a_clean_draft_passes():
 def test_citing_a_clause_that_was_not_retrieved_fails():
     problems = check_draft(draft("ROUTE", ["CLS-TL-005"]), ROUTE_SIGNAL, [], ["CLS-COLL-001"])
     assert problems == ["cites CLS-TL-005, which no clause search returned in this run"]
+
+
+def test_coverage_keeps_only_retrieved_citations():
+    coverage = CoverageOutput(covered=True, reasoning="x", cited_clauses=["CLS-COLL-001", "CLS-PAY-012"])
+    kept, dropped = drop_unretrieved(coverage, ["CLS-COLL-001", "CLS-PER-006"])
+    assert kept.cited_clauses == ["CLS-COLL-001"]
+    assert dropped == ["CLS-PAY-012"]
+    assert coverage.cited_clauses == ["CLS-COLL-001", "CLS-PAY-012"]      # the original is unchanged
 
 
 def test_an_uncited_draft_fails_unless_it_is_a_deny_with_a_reason():

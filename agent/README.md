@@ -21,6 +21,10 @@ A draft that fails a check is replaced by code's own decision (`decision_source:
 deterministic_fallback`). Two cases are always DENY: the draft cites a clause that does not exist in
 the policy manual (a made-up citation), or no clause can be cited at all (open question 3).
 
+The coverage and risk agents' citations are checked too, as soon as each agent finishes: a clause
+that no search returned in the run is removed from its output (and listed in the run's problems and
+the note's `citation_problems`), so the drafter is never offered it.
+
 ## Brains
 
 * `mock` (default): deterministic stand-ins in `agents/mock.py`. They make the same tool calls a

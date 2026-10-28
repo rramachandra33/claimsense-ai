@@ -50,6 +50,22 @@ def test_each_agent_acted_for_alice_with_its_own_token(live_api):
     assert denied == []       # no agent tried anything outside its scopes
 
 
+def test_coverage_citations_that_were_not_retrieved_are_removed(live_api, monkeypatch):
+    from claimsense_agent.agents import mock
+    real_coverage = mock.coverage
+
+    async def coverage_citing_an_unretrieved_clause(tools, claim_id, facts):
+        output = await real_coverage(tools, claim_id, facts)
+        return output.model_copy(update={"cited_clauses": output.cited_clauses + ["CLS-PAY-012"]})
+
+    monkeypatch.setattr(mock, "coverage", coverage_citing_an_unretrieved_clause)
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    assert result.problems == ["coverage agent cited CLS-PAY-012, which no clause search returned "
+                               "in this run; removed"]
+    assert result.outcome == "APPROVE" and result.decision_source == "model"
+    assert "CLS-PAY-012" not in result.cited_clauses
+
+
 def test_lapsed_policy_is_denied(live_api):
     result = assess(live_api, "david", "adjuster", "CLM-2024-2822")
     assert result.outcome == "DENY"
