@@ -1,0 +1,89 @@
+# CI: tests and the evaluation gate on every push and pull request; on main, the images are built
+# and pushed to Amazon ECR only if every test and the gate passed.
+#
+# AWS access is GitHub OIDC: no AWS keys are stored in GitHub. The role below trusts only pushes to
+# main of this repository (deploy/ci/setup_github_oidc.sh creates it and the ECR repositories).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ROLE_ARN: arn:aws:iam::579409466114:role/claimsense-github-ci
+  CLAIMSENSE_DB_URL: postgresql://claimsense:claimsense@localhost:5433/claimsense
+  CLAIMSENSE_JWT_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+
+jobs:
+  test-and-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.29"
+
+      # The same database and seed job as make stack (this also builds the seed image).
+      - name: Database and course data
+        run: |
+          docker compose up --detach --wait db
+          docker compose run --build --rm seed
+
+      - name: Seed builder and guardrail tests
+        run: uv run --with pytest pytest platform/db/seed -q
+      - name: Data API tests
+        working-directory: api
+        run: uv run --extra dev pytest -q
+      - name: MCP server tests
+        working-directory: mcp_server
+        run: uv run --extra dev pytest -q
+      - name: Agent pipeline tests
+        working-directory: agent
+        run: uv run --extra dev pytest -q
+
+      # The gate: the 60 cases on the mock brain (free, no AWS); fails below a 90% pass rate.
+      - name: Evaluation gate
+        working-directory: agent
+        run: uv run --extra dev claimsense-agent eval --brain mock --min-pass 0.9
+      - name: Keep the evaluation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals/results/
+          if-no-files-found: ignore
+
+  push-images:
+    needs: test-and-eval              # a failing test or gate means no image is pushed
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      id-token: write                 # for the OIDC token GitHub exchanges for AWS credentials
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push (tagged with the commit and latest)
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
+        run: |
+          build_and_push() {   # name, dockerfile, context
+            image="$REGISTRY/claimsense-$1"
+            docker build -f "$2" -t "$image:$TAG" -t "$image:latest" "$3"
+            docker push --all-tags "$image"
+          }
+          build_and_push api    api/Dockerfile              api
+          build_and_push runner agent/Dockerfile            .
+          build_and_push web    platform/web/Dockerfile     platform/web
+          build_and_push seed   platform/db/Dockerfile.seed .
