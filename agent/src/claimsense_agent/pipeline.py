@@ -11,7 +11,9 @@ checked by code before anything is written:
   * APPROVE is not allowed when code found a reason not to approve
 
 A draft that fails a check is replaced by code's own decision (decision_source
-"deterministic_fallback"). If no clause can be cited at all, the outcome is DENY (open question 3).
+"deterministic_fallback"). Two cases are always DENY:
+  * the draft cites a clause that does not exist in the policy manual (a made-up citation)
+  * no clause can be cited at all (open question 3)
 The note is then written once, by code, with the adjuster's token and an Idempotency-Key.
 """
 import uuid
@@ -63,6 +65,25 @@ def check_draft(draft, signals, gaps, retrieved):
         reasons = [s["reason"] for s in signals] + [g["reason"] for g in gaps]
         problems.append("APPROVE, but code found: " + "; ".join(reasons))
     return problems
+
+
+def unknown_clauses(client, cited, retrieved):
+    """Cited clauses that are not in the policy manual at all. Only clauses no search returned
+    in this run are looked up: anything a search returned exists."""
+    unknown = []
+    for clause in cited:
+        if clause not in retrieved and not client.clause_exists(clause):
+            unknown.append(clause)
+    return unknown
+
+
+def made_up_citation_deny(unknown):
+    """The draft cited clauses that do not exist, so none of it can be trusted: DENY for review."""
+    ids = ", ".join(unknown)
+    return DraftOutput(outcome="DENY", cited_clauses=[],
+                       deny_reason=f"the draft cited {ids}, which is not in the policy manual",
+                       summary=f"Draft DENY by code: the agents' draft cited {ids}, which does not exist "
+                               "in the policy manual, so the draft cannot be relied on. Needs adjuster review.")
 
 
 def fallback_draft(facts, signals, gaps, retrieved):
@@ -151,8 +172,16 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
     with tracer.span("check draft", kind="guardrail") as t:
         draft = outputs["drafter"]
         problems = check_draft(draft, signals, gaps, retrieved)
+        unknown = unknown_clauses(client, draft.cited_clauses, retrieved)
         decision_source = "model"
-        if problems:
+        if unknown:
+            problems.append(f"cites {', '.join(unknown)}, which does not exist in the policy manual")
+            for p in problems:
+                t.event(p, level="block")
+            draft = made_up_citation_deny(unknown)
+            decision_source = "deterministic_fallback"
+            t.event("made-up citation: replaced by DENY", level="warn")
+        elif problems:
             for p in problems:
                 t.event(p, level="block")
             draft = fallback_draft(facts, signals, gaps, retrieved)

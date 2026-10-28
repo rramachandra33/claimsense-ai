@@ -70,9 +70,9 @@ The OBO token expires after 5 minutes; ask for a new one if you get 401.
 **D. Automated tests** (need only the database):
 
 ```bash
-make api-test     # 64 tests
+make api-test     # 67 tests
 make mcp-test     # 6 tests
-make test         # 22 tests: the agent pipeline end to end (starts its own API)
+make test         # 23 tests: the agent pipeline end to end (starts its own API)
 uv run --with pytest pytest platform/db/seed -q    # 4 tests
 ```
 
@@ -84,7 +84,7 @@ make agent CLAIM=CLM-2024-2822 AS=david      # DENY: loss 3 days after the polic
 make agent CLAIM=CLM-2024-1873 AS=alice      # run failed: claim not available (carol's claim)
 make agent CLAIM=CLM-2024-1873 AS=bob        # FLAG (provisional precedence: FLAG and ROUTE both signalled)
 cd agent && uv run claimsense-agent run --claim CLM-2024-1800 --user alice --demo-bad-draft
-                                             # a bad draft is replaced: decision_source deterministic_fallback
+                                             # cites made-up CLS-XXX-999: DENY, decision_source deterministic_fallback
 ```
 
 Each run prints a trace (code facts, each agent, the draft check, the note write) and writes one note.

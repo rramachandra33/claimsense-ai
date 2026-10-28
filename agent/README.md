@@ -14,11 +14,12 @@ code facts → reader → coverage → risk → drafter → check the draft → 
 | 2 · Coverage | agent | its own OBO token, through MCP | checks coverage and searches the policy manual for the clauses to cite |
 | 3 · Risk | agent | its own OBO token, through MCP | fraud indicators (CLS-FRD-007), searches for the fraud clause |
 | 4 · Drafter | agent | its own OBO token, through MCP | drafts the outcome, summary and citations |
-| Check the draft | pipeline code | none | citations retrieved in this run, a citation or a DENY reason, no APPROVE against code's findings |
+| Check the draft | pipeline code | the adjuster's token, for clause lookups | citations retrieved in this run and real, a citation or a DENY reason, no APPROVE against code's findings |
 | Write the note | pipeline code | the adjuster's token, with an `Idempotency-Key` | one assessment and one append-only claim note |
 
 A draft that fails a check is replaced by code's own decision (`decision_source:
-deterministic_fallback`). If no clause can be cited, the outcome is DENY (open question 3).
+deterministic_fallback`). Two cases are always DENY: the draft cites a clause that does not exist in
+the policy manual (a made-up citation), or no clause can be cited at all (open question 3).
 
 ## Brains
 
@@ -44,7 +45,7 @@ make agent CLAIM=CLM-2024-1800 AS=alice             # APPROVE
 make agent CLAIM=CLM-2024-2822 AS=david             # DENY: loss 3 days after the policy ended
 make agent CLAIM=CLM-2024-1873 AS=alice             # refused: carol's claim
 cd agent && uv run claimsense-agent run --claim CLM-2024-1800 --user alice --demo-bad-draft
-                                                    # the code checks replace a bad draft
+                                                    # a made-up citation (CLS-XXX-999): DENY
 cd agent && uv run claimsense-agent claims --user bob   # the claims bob may read
 ```
 

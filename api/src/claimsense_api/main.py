@@ -272,6 +272,22 @@ def search_clauses(q: str = "", top_k: int = 4, run_id: UUID | None = None, agen
     return {"query": q, "clauses": clauses, "count": len(clauses)}
 
 
+@app.get("/api/v1/clauses/{clause_id}")
+def get_clause(clause_id: str, authorization: str = Header(default=None)):
+    """One clause of the policy manual, if it exists. Like search, this reads clause_index only,
+    so a quarantined clause answers 404 exactly like one that never existed. Pipeline code uses
+    this to tell a made-up citation from a real clause."""
+    user = require_user(authorization, "get_clause", "clause", clause_id)
+    check_agent(user, "clauses:search", "get_clause", resource_type="clause")
+    clause = fetch_one("SELECT clause_id, title, text FROM claimsense.clause_index WHERE clause_id = %s",
+                       (clause_id,))
+    log_audit("get_clause", "allow", user=user, resource_type="clause", resource_id=clause_id,
+              reason="found" if clause else "no such clause")
+    if clause is None:
+        raise ApiError(404, "not_found", "No such clause in the policy manual.")
+    return {"clause": clause}
+
+
 @app.post("/api/v1/claims/{claim_id}/notes", status_code=201)
 def create_note(claim_id: str, note: NoteRequest, authorization: str = Header(default=None),
                 idempotency_key: str = Header(default=None)):

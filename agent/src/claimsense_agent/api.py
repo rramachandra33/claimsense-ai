@@ -82,6 +82,16 @@ class ApiClient:
         documents = self.get(f"/api/v1/claims/{claim_id}/documents")["documents"]
         return claim, policy, documents
 
+    def clause_exists(self, clause_id):
+        """True if the clause is in the loaded policy manual (a quarantined clause counts as absent)."""
+        try:
+            self.get(f"/api/v1/clauses/{clause_id}")
+            return True
+        except ApiError as e:
+            if e.status == 404:
+                return False
+            raise
+
     def obo_token(self, claim_id, agent, run_id):
         body = {"claim_id": claim_id, "agent": agent, "run_id": run_id}
         return self.post("/api/v1/obo/token", body)["token"]

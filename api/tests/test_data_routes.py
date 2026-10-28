@@ -122,3 +122,18 @@ def test_search_is_audited_with_what_came_back():
     assert row["decision"] == "allow"
     assert row["detail"]["query"] == "pothole"
     assert "CLS-COMP-002" in row["detail"]["clause_ids"]
+
+
+# --- one clause ----------------------------------------------------------------
+
+def test_a_real_clause_can_be_looked_up():
+    response = get("/api/v1/clauses/CLS-PER-006", "alice")
+    assert response.status_code == 200
+    assert response.json()["clause"]["title"] == "Policy period and lapse"
+
+
+@pytest.mark.parametrize("clause_id", ["CLS-XXX-999", "CLS-ADM-013"])
+def test_made_up_and_quarantined_clauses_do_not_exist(clause_id):
+    response = get(f"/api/v1/clauses/{clause_id}", "alice")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "not_found"

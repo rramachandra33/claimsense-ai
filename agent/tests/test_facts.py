@@ -10,7 +10,7 @@ import pytest
 
 from claimsense_agent import api
 from claimsense_agent.facts import code_outcome, compute_facts, documentation_gaps, outcome_signals
-from claimsense_agent.pipeline import check_draft, fallback_draft
+from claimsense_agent.pipeline import check_draft, fallback_draft, unknown_clauses
 from claimsense_agent.schemas import DraftOutput
 
 FIXTURES = Path(__file__).resolve().parents[2] / "data" / "course_fixtures"
@@ -138,3 +138,24 @@ def test_note_write_does_not_retry_a_refusal(monkeypatch):
         client.write_note("CLM-1", {"run_id": "r"}, idempotency_key="key-1", sleep=lambda s: None)
     assert refused.value.code == "idempotency_conflict"
     assert len(attempts) == 1
+
+
+# --- made-up citations ---------------------------------------------------------------
+
+class FakeClient:
+    """Answers clause lookups from a fixed list, like the API's GET /api/v1/clauses/{id}."""
+    def __init__(self, manual):
+        self.manual = manual
+        self.looked_up = []
+
+    def clause_exists(self, clause_id):
+        self.looked_up.append(clause_id)
+        return clause_id in self.manual
+
+
+def test_only_clauses_missing_from_the_manual_count_as_made_up():
+    client = FakeClient(manual=["CLS-COLL-001", "CLS-EXC-010"])
+    cited = ["CLS-COLL-001", "CLS-EXC-010", "CLS-XXX-999"]
+    # CLS-EXC-010 is real but was not retrieved: a normal check failure, not a made-up citation
+    assert unknown_clauses(client, cited, retrieved=["CLS-COLL-001"]) == ["CLS-XXX-999"]
+    assert client.looked_up == ["CLS-EXC-010", "CLS-XXX-999"]      # retrieved clauses are not looked up

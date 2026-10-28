@@ -27,7 +27,7 @@ def build_parser():
     run.add_argument("--user", help="sign in as this user (development login)")
     run.add_argument("--brain", choices=BRAINS, default="mock", help="mock (default) or bedrock")
     run.add_argument("--demo-bad-draft", action="store_true",
-                     help="make the drafter return a bad draft, to show the code checks replace it")
+                     help="make the drafter cite a made-up clause (CLS-XXX-999), to show the code checks deny it")
 
     claims = sub.add_parser("claims", help="list the claims this user may read")
     claims.add_argument("--user", help="sign in as this user (development login)")

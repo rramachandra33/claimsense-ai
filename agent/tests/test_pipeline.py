@@ -66,12 +66,18 @@ def test_adjuster_cannot_assess_someone_elses_claim(live_api):
     assert issued == []       # no agent token was ever issued
 
 
-def test_bad_draft_is_replaced_by_codes_decision(live_api):
+def test_draft_citing_a_made_up_clause_is_denied(live_api):
+    """The demo bad draft is an APPROVE citing CLS-XXX-999, which is not in the manual."""
+    from claimsense_api.db import fetch_one
     result = assess(live_api, "alice", "adjuster", "CLM-2024-1800", demo_bad_draft=True)
     assert result.status == "written"
+    assert result.outcome == "DENY"
     assert result.decision_source == "deterministic_fallback"
-    assert result.problems == ["cites CLS-XXX-999, which no clause search returned in this run"]
-    assert "CLS-XXX-999" not in result.cited_clauses
+    assert result.problems == ["cites CLS-XXX-999, which no clause search returned in this run",
+                               "cites CLS-XXX-999, which does not exist in the policy manual"]
+    assert result.cited_clauses == []
+    note = fetch_one("SELECT deny_reason FROM claims_mgmt.claim_notes WHERE note_id = %s", (result.note_id,))
+    assert note["deny_reason"] == "the draft cited CLS-XXX-999, which is not in the policy manual"
 
 
 def test_precedence_case_uses_the_provisional_order(live_api):
