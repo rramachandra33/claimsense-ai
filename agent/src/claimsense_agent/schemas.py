@@ -50,3 +50,6 @@ class RunResult(BaseModel):
     cited_clauses: list[str] = []
     problems: list[str] = []            # why a draft was replaced, or why the run failed
     note_id: int | None = None
+    input_tokens: int = 0               # model tokens across the four agents (0 for the mock brain)
+    output_tokens: int = 0
+    cost_usd: float | None = 0          # None if a model is missing from pricing.PRICES

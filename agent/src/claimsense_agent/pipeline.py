@@ -22,6 +22,7 @@ from .api import ApiError
 from .brain import agents_for, models_for
 from .facts import (PROVISIONAL_PRECEDENCE, code_outcome, compute_facts, documentation_gaps,
                     outcome_signals)
+from .pricing import usage_summary
 from .redact import redact
 from .schemas import DraftOutput, RunResult
 from .tools import AgentFailed, ToolRefused, open_tools
@@ -37,8 +38,9 @@ APPROVE_CLAUSES = {
 async def run_agent(client, claim_id, run_id, agent, agent_function, *inputs, **options):
     """Get the agent's OBO token, start its MCP server with it, and run the agent.
 
-    Returns (output, clause ids its searches returned). A refusal or failure is raised only after
-    the MCP session has closed, so it arrives as itself, not wrapped by the session.
+    Returns (output, the agent's tools: what its searches returned and its token usage). A refusal
+    or failure is raised only after the MCP session has closed, so it arrives as itself, not
+    wrapped by the session.
     """
     token = client.obo_token(claim_id, agent, run_id)
     error = None
@@ -49,7 +51,7 @@ async def run_agent(client, claim_id, run_id, agent, agent_function, *inputs, **
             error = e
     if error:
         raise error
-    return output, tools.retrieved
+    return output, tools
 
 
 def check_draft(draft, signals, gaps, retrieved):
@@ -140,29 +142,36 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
             t.event(f"gap: {g['reason']} ({g['clause']})", level="warn")
 
     # ---- the four agents, in order ------------------------------------------------------------
-    outputs, retrieved = {}, []
+    outputs, retrieved, usage = {}, [], {}
+
+    async def run_step(agent, *inputs, **options):
+        """Run one agent; keep its output, the clauses its searches returned, and its token usage."""
+        output, tools = await run_agent(client, claim_id, run_id, agent, agents[agent], *inputs, **options)
+        outputs[agent] = output
+        retrieved.extend(tools.retrieved)
+        if tools.usage:
+            usage[agent] = tools.usage
+            tracer.kv("tokens", f"{tools.usage['input_tokens']:,} in / {tools.usage['output_tokens']:,} out "
+                                f"({tools.usage['requests']} model calls)")
+        return output
+
     try:
         with tracer.span("reader", kind="agent") as t:
-            outputs["reader"], _ = await run_agent(client, claim_id, run_id, "reader", agents["reader"])
+            await run_step("reader")
             t.event(outputs["reader"].summary)
 
         with tracer.span("coverage", kind="agent") as t:
-            outputs["coverage"], found = await run_agent(client, claim_id, run_id, "coverage",
-                                                         agents["coverage"], facts)
-            retrieved += found
+            await run_step("coverage", facts)
             t.kv("covered", outputs["coverage"].covered)
             t.kv("cites", outputs["coverage"].cited_clauses)
 
         with tracer.span("risk", kind="agent") as t:
-            outputs["risk"], found = await run_agent(client, claim_id, run_id, "risk", agents["risk"])
-            retrieved += found
+            await run_step("risk")
             t.kv("refer to SIU", outputs["risk"].refer_to_siu)
 
         with tracer.span("drafter", kind="agent") as t:
-            outputs["drafter"], _ = await run_agent(
-                client, claim_id, run_id, "drafter", agents["drafter"],
-                facts, outputs["reader"], outputs["coverage"], outputs["risk"],
-                demo_bad_draft=demo_bad_draft)
+            await run_step("drafter", facts, outputs["reader"], outputs["coverage"], outputs["risk"],
+                           demo_bad_draft=demo_bad_draft)
             t.kv("outcome", outputs["drafter"].outcome)
             t.kv("cites", outputs["drafter"].cited_clauses)
     except (ToolRefused, AgentFailed, ApiError) as e:
@@ -214,6 +223,8 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
     }
     note["agent_outputs"]["draft_problems"] = problems
     note["agent_outputs"]["personal_details_removed_from_note"] = redacted
+    totals = usage_summary(usage)
+    note["agent_outputs"]["usage"] = totals
     with tracer.span("write note", kind="tool") as t:
         try:
             response = client.write_note(claim_id, note, idempotency_key=run_id)
@@ -229,4 +240,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
     result.decision_source = decision_source
     result.cited_clauses = draft.cited_clauses
     result.problems = problems
+    result.input_tokens = totals["input_tokens"]
+    result.output_tokens = totals["output_tokens"]
+    result.cost_usd = totals["cost_usd"]
     return result

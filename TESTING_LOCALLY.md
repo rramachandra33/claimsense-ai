@@ -72,7 +72,7 @@ The OBO token expires after 5 minutes; ask for a new one if you get 401.
 ```bash
 make api-test     # 67 tests
 make mcp-test     # 6 tests
-make test         # 34 tests (+1 Bedrock test, opt-in): the agent pipeline end to end (starts its own API)
+make test         # 38 tests (+1 Bedrock test, opt-in): the agent pipeline end to end (starts its own API)
 uv run --with pytest pytest platform/db/seed -q    # 4 tests
 ```
 

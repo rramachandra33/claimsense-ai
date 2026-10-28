@@ -44,6 +44,7 @@ class AgentTools:
         self.agent = agent
         self.calls = []        # (tool name, arguments, "ok" or the refusal)
         self.retrieved = []    # clause ids returned by search_clauses, in order
+        self.usage = None      # tokens the agent's model used (set by model-backed agents)
 
     async def call(self, tool, **arguments):
         result = await self.session.call_tool(tool, arguments)

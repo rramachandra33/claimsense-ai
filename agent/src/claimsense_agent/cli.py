@@ -59,8 +59,10 @@ def run_command(args):
     colour = {"APPROVE": GREEN, "DENY": RED}.get(result.outcome, YELLOW)
     print(f"\n{BOLD}outcome: {colour}{result.outcome}{RESET}  ({result.decision_source}; "
           f"cites {', '.join(result.cited_clauses) or 'none'})")
+    cost = "unknown" if result.cost_usd is None else f"${result.cost_usd:.4f}"
     print(f"{GREY}note {result.note_id} {result.status} · run_id={result.run_id} · "
-          f"{tracer.total_ms():.0f} ms{RESET}")
+          f"{tracer.total_ms():.0f} ms · {result.input_tokens:,} tokens in / "
+          f"{result.output_tokens:,} out · {cost}{RESET}")
     print(json.dumps(result.model_dump(), indent=2))
     return 0
 

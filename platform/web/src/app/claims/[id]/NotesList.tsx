@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { OutcomeBadge } from "@/components/badges";
 import { Empty } from "@/components/ui";
-import { formatDateTime, formatUsd } from "@/lib/format";
+import { formatCost, formatDateTime, formatUsd } from "@/lib/format";
 import type { Note } from "@/lib/types";
+
+// The order the pipeline runs the agents in.
+const AGENT_ORDER = ["reader", "coverage", "risk", "drafter"];
 
 function ClauseLink({ id }: { id: string }) {
   return (
@@ -24,7 +27,9 @@ function SourceTag({ source }: { source: Note["decision_source"] }) {
 function NoteCard({ note }: { note: Note }) {
   const facts = note.code_facts.facts;
   const problems = note.agent_outputs.draft_problems ?? [];
-  const models = Array.from(new Set(Object.values(note.models))).join(", ");
+  const models = Array.from(new Set(Object.values(note.models).map((m) => m.split("/").pop()))).join(", ");
+  const usage = note.agent_outputs.usage;
+  const modelUsage = usage && Object.keys(usage.agents).length > 0 ? usage : null;
 
   return (
     <article className="rounded-lg border border-claimsense-line p-4">
@@ -89,9 +94,36 @@ function NoteCard({ note }: { note: Note }) {
             <h3 className="mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-400 first:mt-0">Agent outputs</h3>
             <pre className="mt-1 max-h-72 overflow-auto rounded bg-claimsense-bg p-2 font-mono text-[11px] leading-relaxed text-slate-700">
               {JSON.stringify(
-                Object.fromEntries(Object.entries(note.agent_outputs).filter(([k]) => k !== "draft_problems")),
+                Object.fromEntries(Object.entries(note.agent_outputs).filter(([k]) => !["draft_problems", "usage"].includes(k))),
                 null, 2)}
             </pre>
+            {modelUsage ? (
+              <>
+                <h3 className="mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-400">Model usage</h3>
+                <table className="mt-1 w-full text-xs">
+                  <thead className="text-left text-slate-500">
+                    <tr><th className="py-0.5">Agent</th><th>Model</th><th className="text-right">Tokens in</th><th className="text-right">Out</th><th className="text-right">Cost</th></tr>
+                  </thead>
+                  <tbody className="tabular-nums">
+                    {AGENT_ORDER.filter((a) => modelUsage.agents[a]).map((agent) => [agent, modelUsage.agents[agent]] as const).map(([agent, u]) => (
+                      <tr key={agent}>
+                        <td className="py-0.5">{agent}</td>
+                        <td className="text-slate-500">{u.model.includes("haiku") ? "Haiku 4.5" : u.model.includes("sonnet") ? "Sonnet 4.5" : u.model.split("/").pop()}</td>
+                        <td className="text-right">{u.input_tokens.toLocaleString()}</td>
+                        <td className="text-right">{u.output_tokens.toLocaleString()}</td>
+                        <td className="text-right">{formatCost(u.cost_usd)}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-t border-claimsense-line font-semibold">
+                      <td className="py-0.5" colSpan={2}>Total</td>
+                      <td className="text-right">{modelUsage.input_tokens.toLocaleString()}</td>
+                      <td className="text-right">{modelUsage.output_tokens.toLocaleString()}</td>
+                      <td className="text-right">{formatCost(modelUsage.cost_usd)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </>
+            ) : null}
             <p className="mt-2 text-[11px] text-slate-400">Brain: {models} · run {note.run_id}</p>
           </div>
         </div>

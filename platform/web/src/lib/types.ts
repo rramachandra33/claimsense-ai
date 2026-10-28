@@ -78,8 +78,16 @@ export type Note = {
     documentation_gaps: Gap[];
     provisional_precedence: Outcome[];
   };
-  agent_outputs: Record<string, unknown> & { draft_problems?: string[] };
+  agent_outputs: Record<string, unknown> & { draft_problems?: string[]; usage?: Usage };
   models: Record<string, string>;
+};
+
+/** Model tokens and cost of one run, per agent and in total (empty for the mock brain). */
+export type Usage = {
+  agents: Record<string, { model: string; requests: number; input_tokens: number; output_tokens: number; cost_usd: number | null }>;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number | null;
 };
 
 /** What the runner returns for one run (POST /runs on the runner service). */
@@ -94,4 +102,7 @@ export type RunResult = {
   note_id: number | null;
   brain: string;
   duration_ms: number;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number | null;
 };

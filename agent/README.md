@@ -41,6 +41,13 @@ the policy manual (a made-up citation), or no clause can be cited at all (open q
   make runner BRAIN=bedrock          # the console's Run assessment button then uses Claude
   ```
 
+### Tokens and cost
+
+Every run records each agent's model, model calls and tokens, priced from `pricing.py` (AWS
+on-demand prices for the `us.` profiles, us-east-1). The CLI prints the total, the runner returns
+it, and the console shows a per-agent table under "How this was reached". Measured on three
+course claims: about $0.06–0.08 and 23–33k input tokens per assessment.
+
 ### Personal details
 
 The note goes into the client's claims system, so code removes street addresses, phone numbers
@@ -116,6 +123,7 @@ src/claimsense_agent/
 ├── tools.py        one agent's MCP session (its OBO token)
 ├── brain.py        mock or bedrock
 ├── redact.py       removes addresses, phones and emails from the note
+├── pricing.py      token prices per model and the cost of a run
 ├── trace.py        on-screen trace (from the Week 15 sample)
 ├── agents/mock.py     the four mock agents
 └── agents/bedrock.py  the four Claude agents (Bedrock, Agents SDK)

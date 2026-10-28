@@ -118,3 +118,9 @@ export function formatUsd(value: number | string | null | undefined): string {
   if (Number.isNaN(n)) return "—";
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
+
+/** A model cost in dollars, to a tenth of a cent: $0.0773. null means the price is unknown. */
+export function formatCost(usd: number | null | undefined): string {
+  if (usd === null || usd === undefined) return "cost unknown";
+  return `$${usd.toFixed(4)}`;
+}

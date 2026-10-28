@@ -26,6 +26,7 @@ from agents import Agent, ModelSettings, Runner, function_tool, set_tracing_disa
 from agents.extensions.models.litellm_model import LitellmModel  # noqa: E402
 
 from ..facts import documentation_gaps, outcome_signals  # noqa: E402
+from ..pricing import cost_usd  # noqa: E402
 from ..schemas import CoverageOutput, DraftOutput, ReaderOutput, RiskOutput  # noqa: E402
 from ..tools import AgentFailed, ToolRefused  # noqa: E402
 from . import mock  # noqa: E402
@@ -106,7 +107,8 @@ def make_tools(tools, names):
 
 
 async def run_model(agent_name, instructions, tool_names, output_type, prompt, tools):
-    """Run one Claude agent to its typed output. Any model or SDK failure becomes AgentFailed."""
+    """Run one Claude agent to its typed output, and record its token usage on `tools`.
+    Any model or SDK failure becomes AgentFailed."""
     agent = Agent(
         name=agent_name,
         instructions=COMMON_RULES + "\n" + instructions,
@@ -119,6 +121,11 @@ async def run_model(agent_name, instructions, tool_names, output_type, prompt, t
         result = await Runner.run(agent, prompt, max_turns=MAX_TURNS)
     except Exception as e:      # throttling, expired credentials, a malformed answer, too many turns
         raise AgentFailed(f"{agent_name}: {type(e).__name__}: {str(e)[:300]}")
+    usage = result.context_wrapper.usage
+    model = MODELS[agent_name]
+    tools.usage = {"model": model, "requests": usage.requests,
+                   "input_tokens": usage.input_tokens, "output_tokens": usage.output_tokens,
+                   "cost_usd": cost_usd(model, usage.input_tokens, usage.output_tokens)}
     return result.final_output
 
 

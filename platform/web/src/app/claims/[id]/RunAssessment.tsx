@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import { Play } from "lucide-react";
 import { OutcomeBadge } from "@/components/badges";
+import { formatCost } from "@/lib/format";
 import { runAssessmentAction, type RunState } from "./actions";
 
 function RunButton() {
@@ -55,6 +56,7 @@ export function RunAssessment({ claimId }: { claimId: string }) {
             Note {result.note_id} {result.status === "replayed" ? "already existed" : "written"} ·{" "}
             {result.decision_source === "deterministic_fallback" ? "decided by code (the draft failed a check)" : `drafted by the ${result.brain} agents`} ·{" "}
             {(result.duration_ms / 1000).toFixed(1)} s
+            {result.brain !== "mock" ? ` · ${formatCost(result.cost_usd)}` : ""}
           </span>
         </div>
       ) : null}
