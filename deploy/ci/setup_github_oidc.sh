@@ -15,8 +15,14 @@ GITHUB_REPO="rramachandra33/claimsense-ai"
 ROLE="claimsense-github-ci"
 IMAGES=(api runner web seed)
 
+# The start of the OIDC token's "sub" claim. This repository uses GitHub's immutable form
+# (owner@id/name@id), so a deleted-and-recreated repo of the same name cannot assume the role.
+# Read it from GitHub when gh is available; otherwise set GITHUB_SUB_PREFIX.
+SUB_PREFIX="${GITHUB_SUB_PREFIX:-$(gh api "repos/$GITHUB_REPO/actions/oidc/customization/sub" --jq .sub_claim_prefix)}"
+
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 echo "==> account $ACCOUNT, region $REGION, as $(aws sts get-caller-identity --query Arn --output text)"
+echo "    trusting $SUB_PREFIX:ref:refs/heads/main"
 
 echo "==> 1. GitHub OIDC provider"
 PROVIDER_ARN="arn:aws:iam::$ACCOUNT:oidc-provider/token.actions.githubusercontent.com"
@@ -53,7 +59,7 @@ TRUST=$(cat <<JSON
    "Action": "sts:AssumeRoleWithWebIdentity",
    "Condition": {"StringEquals": {
      "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-     "token.actions.githubusercontent.com:sub": "repo:$GITHUB_REPO:ref:refs/heads/main"}}}]}
+     "token.actions.githubusercontent.com:sub": "$SUB_PREFIX:ref:refs/heads/main"}}}]}
 JSON
 )
 PUSH=$(cat <<JSON

@@ -13,7 +13,9 @@
 
 GitHub gives the job a short-lived identity token; AWS exchanges it for temporary credentials of
 the role `claimsense-github-ci`. The role's trust policy accepts only pushes to `main` of
-`rramachandra33/claimsense-ai`, and its only permission is pushing to the four
+`rramachandra33/claimsense-ai`, identified by GitHub's immutable owner and repository ids
+(`repo:rramachandra33@20261454/claimsense-ai@1435070108`, read from GitHub by the script), and its
+only permission is pushing to the four
 `claimsense-*` ECR repositories.
 
 One-time set-up, with an identity that can manage IAM and ECR (not the Bedrock-only `claimsense`
