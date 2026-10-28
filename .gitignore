@@ -25,3 +25,6 @@ dist/
 
 # Generated seed CSVs (rebuilt by platform/db/seed/build_seed.py)
 platform/db/seed/data/
+
+# evaluation run outputs (keep a run by copying it out, or commit it deliberately)
+evals/results/

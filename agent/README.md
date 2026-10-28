@@ -89,6 +89,13 @@ returns the run result. The runner is a client of the data API like any other: i
 token and has no access rules or secrets of its own. The brain comes from `CLAIMSENSE_BRAIN`
 (default `mock`).
 
+## Evaluation
+
+`make eval` runs the 60 cases in `evals/cases.json` through the real pipeline and scores them
+(`evaluate.py`; see `evals/README.md`). On the mock brain it is free and is the CI gate (pass rate
+0.9); `make eval BRAIN=bedrock` runs them on Claude. The run starts its own API, puts each changed
+claim on a temporary copy, and removes everything it wrote.
+
 ## Tests
 
 ```bash
@@ -124,6 +131,8 @@ src/claimsense_agent/
 ├── brain.py        mock or bedrock
 ├── redact.py       removes addresses, phones and emails from the note
 ├── pricing.py      token prices per model and the cost of a run
+├── evaluate.py     the evaluation run: cases, temporary claims, scoring, the report
+├── local_api.py    starts the data API in-process (tests and evaluation)
 ├── trace.py        on-screen trace (from the Week 15 sample)
 ├── agents/mock.py     the four mock agents
 └── agents/bedrock.py  the four Claude agents (Bedrock, Agents SDK)

@@ -137,3 +137,14 @@ def test_made_up_and_quarantined_clauses_do_not_exist(clause_id):
     response = get(f"/api/v1/clauses/{clause_id}", "alice")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "not_found"
+
+
+def test_looking_up_a_clause_in_a_run_records_it_as_retrieved():
+    import uuid
+    from claimsense_api.db import execute, fetch_all
+    run_id = str(uuid.uuid4())
+    assert get(f"/api/v1/clauses/CLS-PAY-012?run_id={run_id}", "alice").status_code == 200
+    assert get(f"/api/v1/clauses/CLS-XXX-999?run_id={run_id}", "alice").status_code == 404
+    rows = fetch_all("SELECT agent, clause_ids FROM claimsense.retrieval_log WHERE run_id = %s", (run_id,))
+    assert rows == [{"agent": "code", "clause_ids": ["CLS-PAY-012"]}]     # only the real clause
+    execute("DELETE FROM claimsense.retrieval_log WHERE run_id = %s", (run_id,))

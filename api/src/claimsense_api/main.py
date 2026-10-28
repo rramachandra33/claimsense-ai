@@ -273,16 +273,26 @@ def search_clauses(q: str = "", top_k: int = 4, run_id: UUID | None = None, agen
 
 
 @app.get("/api/v1/clauses/{clause_id}")
-def get_clause(clause_id: str, authorization: str = Header(default=None)):
+def get_clause(clause_id: str, run_id: UUID | None = None, agent: str = "code",
+               authorization: str = Header(default=None)):
     """One clause of the policy manual, if it exists. Like search, this reads clause_index only,
-    so a quarantined clause answers 404 exactly like one that never existed. Pipeline code uses
-    this to tell a made-up citation from a real clause."""
+    so a quarantined clause answers 404 exactly like one that never existed.
+
+    Pipeline code uses this to tell a made-up citation from a real clause, and, with a run_id, to
+    retrieve the clauses behind its own rules: a clause found this way is saved in retrieval_log
+    for that run, so it can be cited."""
     user = require_user(authorization, "get_clause", "clause", clause_id)
     check_agent(user, "clauses:search", "get_clause", resource_type="clause")
+    if user["obo"]:
+        run_id = user["obo"]["run_id"]
+        agent = user["obo"]["agent"]
     clause = fetch_one("SELECT clause_id, title, text FROM claimsense.clause_index WHERE clause_id = %s",
                        (clause_id,))
+    if clause and run_id is not None:
+        execute("""INSERT INTO claimsense.retrieval_log (run_id, agent, query, clause_ids)
+                   VALUES (%s, %s, %s, %s)""", (run_id, agent, f"clause {clause_id}", [clause_id]))
     log_audit("get_clause", "allow", user=user, resource_type="clause", resource_id=clause_id,
-              reason="found" if clause else "no such clause")
+              reason="found" if clause else "no such clause", run_id=run_id)
     if clause is None:
         raise ApiError(404, "not_found", "No such clause in the policy manual.")
     return {"clause": clause}

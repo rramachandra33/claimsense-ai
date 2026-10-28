@@ -31,6 +31,13 @@ def build_parser():
 
     claims = sub.add_parser("claims", help="list the claims this user may read")
     claims.add_argument("--user", help="sign in as this user (development login)")
+
+    ev = sub.add_parser("eval", help="run the evaluation cases (evals/cases.json) and score them")
+    ev.add_argument("--brain", choices=BRAINS, default="mock", help="mock (default) or bedrock")
+    ev.add_argument("--cases", help="only these case ids, comma-separated, e.g. EV-001,EV-021")
+    ev.add_argument("--family", help="only one family: baseline, variation, attack, access, token")
+    ev.add_argument("--min-pass", type=float, default=0.9,
+                    help="pass rate needed for exit code 0 (the CI gate), default 0.9")
     return parser
 
 
@@ -50,7 +57,7 @@ def run_command(args):
     tracer.banner(f"ClaimSense assessment — {args.claim}",
                   f"as {me['user_id']} ({me['group']}) · brain: {args.brain} · API: {api_url()}")
     result = asyncio.run(run_assessment(client, args.claim, brain=args.brain, tracer=tracer,
-                                        demo_bad_draft=args.demo_bad_draft))
+                                        bad_citation="CLS-XXX-999" if args.demo_bad_draft else None))
     if result.status == "failed":
         print(f"\n{RED}{BOLD}run failed{RESET}")
         for problem in result.problems:
@@ -79,6 +86,10 @@ def main(argv=None):
     try:
         if args.command == "run":
             return run_command(args)
+        if args.command == "eval":
+            from .evaluate import run_suite      # needs the dev extra (the API package)
+            case_ids = args.cases.split(",") if args.cases else None
+            return run_suite(args.brain, case_ids, args.family, args.min_pass)
         return claims_command(args)
     except ApiError as e:
         print(f"{RED}API refused: {e}{RESET}")

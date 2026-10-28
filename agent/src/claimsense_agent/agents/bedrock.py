@@ -25,7 +25,7 @@ import litellm  # noqa: E402
 from agents import Agent, ModelSettings, Runner, function_tool, set_tracing_disabled  # noqa: E402
 from agents.extensions.models.litellm_model import LitellmModel  # noqa: E402
 
-from ..facts import documentation_gaps, outcome_signals  # noqa: E402
+from ..facts import documentation_gaps, outcome_signals, rule_clauses  # noqa: E402
 from ..pricing import cost_usd  # noqa: E402
 from ..schemas import CoverageOutput, DraftOutput, ReaderOutput, RiskOutput  # noqa: E402
 from ..tools import AgentFailed, ToolRefused  # noqa: E402
@@ -33,6 +33,7 @@ from . import mock  # noqa: E402
 
 litellm.modify_params = True          # Bedrock is strict about message order; let litellm fix it up
 litellm.suppress_debug_info = True
+litellm.num_retries = 3               # retry transient errors (503 service unavailable, throttling)
 # The Agents SDK's built-in tracing uploads runs to OpenAI. Claim data must not leave AWS.
 set_tracing_disabled(True)
 
@@ -215,17 +216,19 @@ async def risk(tools, claim_id):
                            RiskOutput, prompt, tools)
 
 
-async def drafter(tools, claim_id, facts, reader_out, coverage_out, risk_out, demo_bad_draft=False):
-    if demo_bad_draft:
+async def drafter(tools, claim_id, facts, reader_out, coverage_out, risk_out, bad_citation=None):
+    if bad_citation:
         return await mock.drafter(tools, claim_id, facts, reader_out, coverage_out, risk_out,
-                                  demo_bad_draft=True)
+                                  bad_citation=bad_citation)
 
     # Code works out the signals (it owns the rules); the model weighs them with the agents' work.
     claim = (await tools.call("get_claim", claim_id=claim_id))["claim"]
     signals = outcome_signals(claim, facts)
     gaps = documentation_gaps(facts)
+    # Citable: what the coverage and risk agents found, and the clauses behind code's own rules
+    # (pipeline code retrieved those at the start of the run).
     allowed = []
-    for clause in coverage_out.cited_clauses + risk_out.cited_clauses:
+    for clause in coverage_out.cited_clauses + risk_out.cited_clauses + rule_clauses(facts, signals, gaps):
         if clause not in allowed:
             allowed.append(clause)
 

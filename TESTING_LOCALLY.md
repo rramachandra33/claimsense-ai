@@ -76,7 +76,14 @@ make test         # 38 tests (+1 Bedrock test, opt-in): the agent pipeline end t
 uv run --with pytest pytest platform/db/seed -q    # 4 tests
 ```
 
-**G. Claude instead of the mock agents (Bedrock; a few cents and about 40 s a run)**
+**E. The evaluation suite** (60 cases; only the database is needed, it starts its own API):
+
+```bash
+make eval                    # mock: about 2 minutes, free; expect 58/60 (2 proposed rules fail by design)
+make eval BRAIN=bedrock      # Claude: about 30 minutes and $3.50
+```
+
+**F. Claude instead of the mock agents (Bedrock; a few cents and about 40 s a run)**
 
 ```bash
 aws sts get-caller-identity --profile claimsense   # must show user/rramachandra33; if expired:
@@ -88,7 +95,7 @@ make runner BRAIN=bedrock                          # then Run assessment in the 
 Claude may APPROVE CLM-2024-1800 or FLAG it: the FNOL and the police report give different loss
 locations, and the police report says "single vehicle". Addresses in a note show as `[address]`.
 
-**F. Run the four agents from the terminal** (mock brain, no AWS; with `make api` running):
+**G. Run the four agents from the terminal** (mock brain, no AWS; with `make api` running):
 
 ```bash
 make agent CLAIM=CLM-2024-1800 AS=alice      # APPROVE, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004
@@ -107,7 +114,7 @@ cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claims
   "SELECT note_id, claim_id, outcome, cited_clauses, created_at FROM claims_mgmt.claim_notes ORDER BY note_id DESC LIMIT 10;"
 ```
 
-**E. See the audit trail:**
+**H. See the audit trail:**
 
 ```bash
 cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claimsense -c \

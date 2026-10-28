@@ -69,7 +69,7 @@ def test_adjuster_cannot_assess_someone_elses_claim(live_api):
 def test_draft_citing_a_made_up_clause_is_denied(live_api):
     """The demo bad draft is an APPROVE citing CLS-XXX-999, which is not in the manual."""
     from claimsense_api.db import fetch_one
-    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800", demo_bad_draft=True)
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800", bad_citation="CLS-XXX-999")
     assert result.status == "written"
     assert result.outcome == "DENY"
     assert result.decision_source == "deterministic_fallback"

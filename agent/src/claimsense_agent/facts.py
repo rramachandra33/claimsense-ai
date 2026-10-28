@@ -98,6 +98,7 @@ def compute_facts(claim, policy, documents):
                                    and claim["vehicle_model"] == policy["vehicle_model"]),
         "acv_differs_from_policy_usd": to_number(acv - to_decimal(policy["vehicle_acv_usd"])),
         "coverage_purchased_for_loss": coverage_purchased,
+        "liability_only_policy": policy["coverage_type"] == "Liability Only",
         "deductible_usd": to_number(deductible) if deductible is not None else None,
         "repair_to_acv_ratio": float(ratio) if ratio is not None else None,
         "total_loss_candidate": ratio is not None and ratio >= TOTAL_LOSS_RATIO,       # CLS-TL-005
@@ -138,7 +139,15 @@ def outcome_signals(claim, facts):
         signals.append({"outcome": "DENY", "clause": "CLS-PER-006",
                         "reason": f"loss {facts['days_after_policy_end']} days after policy end"})
     if facts["coverage_purchased_for_loss"] is False:
-        signals.append({"outcome": "DENY", "clause": "CLS-LIAB-003",
+        # Liability Only has no own-vehicle cover at all (CLS-LIAB-003); a Full Coverage policy without
+        # the cover for this loss falls under that cover's own clause.
+        if facts["liability_only_policy"]:
+            clause = "CLS-LIAB-003"
+        elif facts["loss_category"] == "comprehensive":
+            clause = "CLS-COMP-002"
+        else:
+            clause = "CLS-COLL-001"
+        signals.append({"outcome": "DENY", "clause": clause,
                         "reason": f"no {facts['loss_category']} cover on this policy"})
     if facts["total_loss_candidate"]:
         signals.append({"outcome": "ROUTE", "clause": "CLS-TL-005",
@@ -166,6 +175,23 @@ def documentation_gaps(facts):
     if docs["medical_report_on_no_injury_claim"]:
         gaps.append({"clause": "CLS-INJ-008", "reason": "medical report on a no-injury FNOL"})
     return gaps
+
+
+def rule_clauses(facts, signals, gaps):
+    """The clauses behind code's own rules for this claim: what an APPROVE rests on (the insuring
+    clause, the policy period, the deductible) and the clause behind each signal and gap.
+
+    Pipeline code retrieves these in every run, so a draft can always cite the rules code applied,
+    whatever the agents chose to search for.
+    """
+    insuring = {"collision": "CLS-COLL-001", "comprehensive": "CLS-COMP-002"}.get(facts["loss_category"])
+    candidates = [insuring, "CLS-PER-006", "CLS-DED-004"]
+    candidates += [s["clause"] for s in signals] + [g["clause"] for g in gaps]
+    clauses = []
+    for clause in candidates:
+        if clause and clause not in clauses:
+            clauses.append(clause)
+    return clauses
 
 
 def code_outcome(signals, gaps):

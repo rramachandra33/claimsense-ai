@@ -27,9 +27,21 @@ CLAIM = "CLM-2024-1800"            # alice's claim
 OTHER_ALICE_CLAIM = "CLM-2024-2092"
 
 
+RUN_IDS = []      # every run id a test asked a token for; their clause searches are removed after
+
+
+@pytest.fixture(autouse=True)
+def remove_searches():
+    yield
+    for run_id in RUN_IDS:
+        execute("DELETE FROM claimsense.retrieval_log WHERE run_id = %s", (run_id,))
+    RUN_IDS.clear()
+
+
 def obo_token(agent, claim_id=CLAIM, run_id=None):
     """Ask for an agent token the way pipeline code will."""
     body = {"claim_id": claim_id, "agent": agent, "run_id": run_id or str(uuid.uuid4())}
+    RUN_IDS.append(body["run_id"])
     return client.post("/api/v1/obo/token", json=body, headers=ALICE)
 
 

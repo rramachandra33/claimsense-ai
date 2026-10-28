@@ -92,6 +92,16 @@ class ApiClient:
                 return False
             raise
 
+    def retrieve_clause(self, clause_id, run_id):
+        """Look a clause up within a run, so it counts as retrieved there. False if it does not exist."""
+        try:
+            self.get(f"/api/v1/clauses/{clause_id}", params={"run_id": run_id, "agent": "code"})
+            return True
+        except ApiError as e:
+            if e.status == 404:
+                return False
+            raise
+
     def obo_token(self, claim_id, agent, run_id):
         body = {"claim_id": claim_id, "agent": agent, "run_id": run_id}
         return self.post("/api/v1/obo/token", body)["token"]

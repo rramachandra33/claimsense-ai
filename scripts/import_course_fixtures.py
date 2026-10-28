@@ -171,6 +171,7 @@ def facts_for(c, p, docs):
         "vehicle_matches_policy": all(c[k] == p[k] for k in ("vehicle_year", "vehicle_make", "vehicle_model")),
         "acv_differs_from_policy_usd": num(str(acv - dec(p["vehicle_acv_usd"]))),
         "coverage_purchased_for_loss": coverage_purchased,
+        "liability_only_policy": p["coverage_type"] == "Liability Only",
         "deductible_usd": num(str(deductible)) if deductible is not None else None,
         "repair_to_acv_ratio": float(ratio) if ratio is not None else None,
         "total_loss_candidate": bool(ratio is not None and ratio >= TOTAL_LOSS_RATIO),  # CLS-TL-005
@@ -197,7 +198,15 @@ def outcome_signals(c, f):
     if not f["in_force_at_loss"]:
         s.append(("DENY", f"loss {f['days_after_policy_end']} days after policy end (CLS-PER-006)"))
     if f["coverage_purchased_for_loss"] is False:
-        s.append(("DENY", f"no {f['loss_category']} cover on this policy (CLS-LIAB-003)"))
+        # Liability Only has no own-vehicle cover at all (CLS-LIAB-003); a Full Coverage policy without
+        # the cover for this loss falls under that cover's own clause (CLS-COLL-001 / CLS-COMP-002).
+        if f["liability_only_policy"]:
+            clause = "CLS-LIAB-003"
+        elif f["loss_category"] == "comprehensive":
+            clause = "CLS-COMP-002"
+        else:
+            clause = "CLS-COLL-001"
+        s.append(("DENY", f"no {f['loss_category']} cover on this policy ({clause})"))
     if f["total_loss_candidate"]:
         s.append(("ROUTE", f"repair/ACV {f['repair_to_acv_ratio']} ≥ 0.75, total-loss appraiser (CLS-TL-005)"))
     if c["injuries_reported"]:

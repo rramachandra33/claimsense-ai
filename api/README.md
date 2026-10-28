@@ -35,7 +35,7 @@ make api-test                   # access tests (7 users x 20 claims and the refu
 | `GET /api/v1/claims/{id}/documents` | The claim's document list (no text) |
 | `GET /api/v1/documents/{id}` | One document with its text; text is null unless OCR is Completed (CLS-DOC-009) |
 | `GET /api/v1/clauses?q=…&top_k=4&run_id=…&agent=…` | Policy-manual search over `clause_index` only, so a quarantined clause can never come back; matches any word, best first. With a `run_id`, what came back is saved in `retrieval_log` |
-| `GET /api/v1/clauses/{id}` | One clause, if it is in the loaded manual; a made-up or quarantined id gets 404 |
+| `GET /api/v1/clauses/{id}?run_id=…` | One clause, if it is in the loaded manual; a made-up or quarantined id gets 404. With a `run_id`, the clause is saved in `retrieval_log` for that run (how pipeline code retrieves the clauses behind its own rules) |
 | `POST /api/v1/obo/token` | Pipeline code asks, with the adjuster's token, for one agent's short-lived token (see below) |
 | `GET /api/v1/claims/{id}/notes` | The claim's ClaimSense notes, newest first, each with its assessment (code facts, agent outputs). Not for agents |
 | `POST /api/v1/claims/{id}/notes` | The one write: saves the assessment and its append-only claim note together. Needs an `Idempotency-Key` header. Called by pipeline code, never offered to agents as a tool |

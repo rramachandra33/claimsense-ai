@@ -21,7 +21,7 @@ import uuid
 from .api import ApiError
 from .brain import agents_for, models_for
 from .facts import (PROVISIONAL_PRECEDENCE, code_outcome, compute_facts, documentation_gaps,
-                    outcome_signals)
+                    outcome_signals, rule_clauses)
 from .pricing import usage_summary
 from .redact import redact
 from .schemas import DraftOutput, RunResult
@@ -116,7 +116,7 @@ def fallback_draft(facts, signals, gaps, retrieved):
                        deny_reason=reason_text if outcome == "DENY" else None)
 
 
-async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_draft=False):
+async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citation=None):
     """Run the four agents on one claim and write the draft note. Returns a RunResult."""
     tracer = tracer or Tracer()
     run_id = str(uuid.uuid4())
@@ -141,8 +141,15 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
         for g in gaps:
             t.event(f"gap: {g['reason']} ({g['clause']})", level="warn")
 
-    # ---- the four agents, in order ------------------------------------------------------------
+    # ---- code retrieves the clauses behind its own rules, so they can always be cited ----------
     outputs, retrieved, usage = {}, [], {}
+    with tracer.span("rule clauses", kind="tool") as t:
+        for clause in rule_clauses(facts, signals, gaps):
+            if client.retrieve_clause(clause, run_id):
+                retrieved.append(clause)
+        t.kv("retrieved by code", retrieved)
+
+    # ---- the four agents, in order ------------------------------------------------------------
 
     async def run_step(agent, *inputs, **options):
         """Run one agent; keep its output, the clauses its searches returned, and its token usage."""
@@ -171,7 +178,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
 
         with tracer.span("drafter", kind="agent") as t:
             await run_step("drafter", facts, outputs["reader"], outputs["coverage"], outputs["risk"],
-                           demo_bad_draft=demo_bad_draft)
+                           bad_citation=bad_citation)
             t.kv("outcome", outputs["drafter"].outcome)
             t.kv("cites", outputs["drafter"].cited_clauses)
     except (ToolRefused, AgentFailed, ApiError) as e:

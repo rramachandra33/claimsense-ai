@@ -7,7 +7,7 @@ a key or AWS, so a full run is free, fast and repeatable.
 The mock agents cite a clause only when their own clause search returned it, exactly as a real
 agent must.
 """
-from ..facts import code_outcome, documentation_gaps, fraud_indicators, outcome_signals
+from ..facts import code_outcome, documentation_gaps, fraud_indicators, outcome_signals, rule_clauses
 from ..schemas import CoverageOutput, DraftOutput, ReaderOutput, RiskOutput
 
 SUMMARY_LIMIT = 1000   # the note's summary limit in the API
@@ -117,20 +117,21 @@ async def risk(tools, claim_id):
     return RiskOutput(refer_to_siu=bool(indicators), indicators=indicators, cited_clauses=cited)
 
 
-async def drafter(tools, claim_id, facts, reader_out, coverage_out, risk_out, demo_bad_draft=False):
+async def drafter(tools, claim_id, facts, reader_out, coverage_out, risk_out, bad_citation=None):
     """4 · Draft the decision from the other agents' work and the code facts."""
     claim = (await tools.call("get_claim", claim_id=claim_id))["claim"]
 
-    if demo_bad_draft:
-        # A deliberately bad draft, to show the pipeline's checks replacing it.
-        return DraftOutput(outcome="APPROVE", summary="Approve in full.", cited_clauses=["CLS-XXX-999"])
+    if bad_citation:
+        # A deliberately bad draft (demos and evaluation cases): APPROVE, citing the given clause.
+        return DraftOutput(outcome="APPROVE", summary="Approve in full.", cited_clauses=[bad_citation])
 
     signals = outcome_signals(claim, facts)
     gaps = documentation_gaps(facts)
     outcome = code_outcome(signals, gaps)
     # Cite what supports the outcome: for APPROVE the coverage clauses, otherwise the clause behind
-    # each point raised. Only clauses the coverage and risk agents' searches returned can be cited.
-    found = coverage_out.cited_clauses + risk_out.cited_clauses
+    # each point raised. Only retrieved clauses can be cited: what the coverage and risk agents'
+    # searches returned, and the clauses behind code's rules (pipeline code retrieved those).
+    found = coverage_out.cited_clauses + risk_out.cited_clauses + rule_clauses(facts, signals, gaps)
     if outcome == "APPROVE":
         wanted = coverage_out.cited_clauses
     else:
