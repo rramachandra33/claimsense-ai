@@ -81,6 +81,7 @@ uv run --with pytest pytest platform/db/seed -q    # 4 tests
 ```bash
 make eval                    # mock: about 2 minutes, free; expect 58/60 (2 proposed rules fail by design)
 make eval BRAIN=bedrock      # Claude: about 30 minutes and $3.50
+CLAIMSENSE_LOCATION_CHECK=1 make eval   # with the loss-location check on: expect 60/60
 ```
 
 **F. Claude instead of the mock agents (Bedrock; a few cents and about 40 s a run)**
@@ -92,8 +93,10 @@ make agent CLAIM=CLM-2024-1800 AS=alice BRAIN=bedrock
 make runner BRAIN=bedrock                          # then Run assessment in the console uses Claude
 ```
 
-Claude may APPROVE CLM-2024-1800 or FLAG it: the FNOL and the police report give different loss
-locations, and the police report says "single vehicle". Addresses in a note show as `[address]`.
+CLM-2024-1800's FNOL and police report give different loss locations (so does every police report
+in the course data). By default that is not a reason to FLAG, and Claude is told so; with
+`CLAIMSENSE_LOCATION_CHECK=1` code compares the two locations and a mismatch is a FLAG
+(CLS-FRD-007). Addresses in a note show as `[address]`.
 
 **G. Run the four agents from the terminal** (mock brain, no AWS; with `make api` running):
 

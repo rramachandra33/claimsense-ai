@@ -42,6 +42,16 @@ def test_precedence_pending_accepts_any_signalled_outcome():
         "outcome ROUTE, expected one of DENY, FLAG"]
 
 
+def test_the_location_check_switches_expectations(monkeypatch):
+    location_case = {"case_id": "EV-999", "expect": {"outcome": "APPROVE"},
+                     "with_location_check": {"outcome": "FLAG"}}
+    result = {"status": "written", "outcome": "FLAG"}
+    monkeypatch.delenv("CLAIMSENSE_LOCATION_CHECK", raising=False)
+    assert score(location_case, result) == ["outcome FLAG, expected APPROVE"]
+    monkeypatch.setenv("CLAIMSENSE_LOCATION_CHECK", "1")
+    assert score(location_case, result) == []
+
+
 def test_a_crashed_case_always_fails():
     result = {"status": "error", "problems": ["KeyError: 'x'"]}
     assert score(case(), result) == ["the case crashed: KeyError: 'x'"]

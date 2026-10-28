@@ -25,7 +25,7 @@ import litellm  # noqa: E402
 from agents import Agent, ModelSettings, Runner, function_tool, set_tracing_disabled  # noqa: E402
 from agents.extensions.models.litellm_model import LitellmModel  # noqa: E402
 
-from ..facts import documentation_gaps, outcome_signals, rule_clauses  # noqa: E402
+from ..facts import documentation_gaps, location_check_on, outcome_signals, rule_clauses  # noqa: E402
 from ..pricing import cost_usd  # noqa: E402
 from ..schemas import CoverageOutput, DraftOutput, ReaderOutput, RiskOutput  # noqa: E402
 from ..tools import AgentFailed, ToolRefused  # noqa: E402
@@ -197,6 +197,19 @@ Write:
 - deny_reason: one sentence for a DENY; null otherwise."""
 
 
+# With the location check off (the default), the FNOL and police report disagreeing on where the
+# loss happened, or on how many vehicles were involved, is not a reason to FLAG: in the course data
+# every police report disagrees with its FNOL. With CLAIMSENSE_LOCATION_CHECK=1, code checks the
+# locations and signals FLAG itself.
+LOCATION_CHECK_OFF = """
+Do not treat a different loss location, or a different number of vehicles, between the FNOL and the
+police report as a fraud indicator or a reason to FLAG. You may mention it."""
+
+
+def with_location_rule(instructions):
+    return instructions if location_check_on() else instructions + "\n" + LOCATION_CHECK_OFF
+
+
 async def reader(tools, claim_id):
     prompt = f"Claim id: {claim_id}"
     return await run_model("reader", READER, ["get_claim", "list_documents", "get_document"],
@@ -211,7 +224,7 @@ async def coverage(tools, claim_id, facts):
 
 async def risk(tools, claim_id):
     prompt = f"Claim id: {claim_id}"
-    return await run_model("risk", RISK,
+    return await run_model("risk", with_location_rule(RISK),
                            ["get_claim", "list_documents", "get_document", "search_clauses"],
                            RiskOutput, prompt, tools)
 
@@ -240,7 +253,7 @@ async def drafter(tools, claim_id, facts, reader_out, coverage_out, risk_out, ba
               f"Coverage agent:\n{as_json(coverage_out.model_dump())}\n\n"
               f"Risk agent:\n{as_json(risk_out.model_dump())}\n\n"
               f"Allowed clause ids to cite: {', '.join(allowed) or 'none'}")
-    draft = await run_model("drafter", DRAFTER, ["get_claim"], DraftOutput, prompt, tools)
+    draft = await run_model("drafter", with_location_rule(DRAFTER), ["get_claim"], DraftOutput, prompt, tools)
     if len(draft.summary) > SUMMARY_LIMIT:
         draft.summary = draft.summary[:SUMMARY_LIMIT - 1] + "…"
     return draft

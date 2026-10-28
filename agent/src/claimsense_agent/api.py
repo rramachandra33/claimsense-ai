@@ -82,6 +82,13 @@ class ApiClient:
         documents = self.get(f"/api/v1/claims/{claim_id}/documents")["documents"]
         return claim, policy, documents
 
+    def document_text(self, documents, document_type):
+        """The text of the first readable document of this type, or None."""
+        for doc in documents:
+            if doc["document_type"] == document_type and doc["ocr_status"] == "Completed":
+                return self.get(f"/api/v1/documents/{doc['document_id']}")["document"]["ocr_text"]
+        return None
+
     def clause_exists(self, clause_id):
         """True if the clause is in the loaded policy manual (a quarantined clause counts as absent)."""
         try:

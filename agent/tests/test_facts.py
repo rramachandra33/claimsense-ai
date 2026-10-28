@@ -9,7 +9,8 @@ import httpx
 import pytest
 
 from claimsense_agent import api
-from claimsense_agent.facts import code_outcome, compute_facts, documentation_gaps, outcome_signals
+from claimsense_agent.facts import (code_outcome, compute_facts, documentation_gaps, locations_match,
+                                    outcome_signals)
 from claimsense_agent.pipeline import check_draft, fallback_draft, unknown_clauses
 from claimsense_agent.schemas import DraftOutput
 
@@ -159,3 +160,22 @@ def test_only_clauses_missing_from_the_manual_count_as_made_up():
     # CLS-EXC-010 is real but was not retrieved: a normal check failure, not a made-up citation
     assert unknown_clauses(client, cited, retrieved=["CLS-COLL-001"]) == ["CLS-XXX-999"]
     assert client.looked_up == ["CLS-EXC-010", "CLS-XXX-999"]      # retrieved clauses are not looked up
+
+
+def test_locations_match_compares_the_location_lines():
+    fnol = "Type of loss  Parking lot collision\nLocation  3032 Washington Ave, Houston, TX 77044\n"
+    police = "Time  20:50\nLocation  4291 Montrose Blvd, Houston, TX 77081\n"
+    assert locations_match(fnol, police) is False
+    assert locations_match(fnol, "Location  3032 WASHINGTON AVE, Houston, TX 77044") is True
+    assert locations_match(fnol, None) is None
+    assert locations_match(fnol, "no location line") is None
+
+
+def test_a_location_mismatch_is_a_flag_only_when_the_check_has_set_the_fact():
+    claim, policy, docs = next(c for c in course_claims() if c[0]["claim_id"] == "CLM-2024-1800")
+    facts = compute_facts(claim, policy, docs)
+    assert outcome_signals(claim, facts) == []
+    facts["loss_locations_match"] = False
+    assert outcome_signals(claim, facts) == [{
+        "outcome": "FLAG", "clause": "CLS-FRD-007",
+        "reason": "fraud indicators: FNOL and police report give different loss locations"}]

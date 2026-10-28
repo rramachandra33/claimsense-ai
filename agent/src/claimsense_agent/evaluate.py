@@ -22,6 +22,7 @@ from pathlib import Path
 import httpx
 
 from .api import ApiClient, api_url
+from .facts import location_check_on
 from .local_api import LocalApi, database_is_up
 from .pipeline import run_assessment
 from .redact import redact
@@ -237,6 +238,8 @@ async def run_case(case, brain, groups):
 def score(case, result):
     """Compare a result with the case's expectations. Returns the list of failures (empty = pass)."""
     expect = case["expect"]
+    if location_check_on():
+        expect = {**expect, **case.get("with_location_check", {})}
     failures = []
     if result.get("status") == "error":
         return ["the case crashed: " + "; ".join(result.get("problems", []))]
@@ -304,6 +307,7 @@ def summarise(cases, results, brain, seconds):
     costs = [r.get("cost_usd") for r in results if r.get("cost_usd") is not None]
     return {
         "brain": brain,
+        "location_check": location_check_on(),
         "cases": len(results),
         "passed": passed,
         "pass_rate": round(passed / len(results), 3) if results else 0,
@@ -314,6 +318,8 @@ def summarise(cases, results, brain, seconds):
 
 
 def print_summary(cases, results, summary):
+    if summary["location_check"]:
+        print("\nLocation check on (CLAIMSENSE_LOCATION_CHECK=1)")
     print(f"\n{BOLD}By family{RESET}")
     for family, counts in summary["by_family"].items():
         print(f"  {family:<10} {counts['passed']}/{counts['total']}")

@@ -45,6 +45,12 @@ course claims are never modified, and notes written during the run are deleted a
 | `no_other_claim_reads` | the API allowed no read of another claim or its documents during the run |
 | `token_check` | the API refused the agent token as it should |
 
+### The loss-location check
+
+With `CLAIMSENSE_LOCATION_CHECK=1`, a case's `with_location_check` expectations replace its own
+(EV-001 and EV-049 expect FLAG instead of APPROVE; EV-045 must cite CLS-FRD-007). The results file
+records whether the check was on.
+
 ### Still to decide
 
 * **Precedence (open question 2).** Cases where more than one outcome applies are marked
@@ -53,6 +59,7 @@ course claims are never modified, and notes written during the run are deleted a
   `precedence_cases.json` is the original list of 3 from the data import.
 * **Proposed rules.** Two cases are not covered by any code rule yet, so the mock brain fails them
   by design: a VIN mismatch (EV-035) and an unmapped loss type such as mechanical breakdown
-  (EV-039). Both currently get APPROVE; the proposal is that neither may.
+  (EV-039). Both currently get APPROVE; the proposal is that neither may. With the location check
+  on they pass, but only because their copies of CLM-2024-1800 keep its location mismatch.
 
 The earlier 150 cases built on synthetic data are kept in `legacy/` for reference.

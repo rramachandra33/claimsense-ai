@@ -21,7 +21,7 @@ import uuid
 from .api import ApiError
 from .brain import agents_for, models_for
 from .facts import (PROVISIONAL_PRECEDENCE, code_outcome, compute_facts, documentation_gaps,
-                    outcome_signals, rule_clauses)
+                    location_check_on, locations_match, outcome_signals, rule_clauses)
 from .pricing import usage_summary
 from .redact import redact
 from .schemas import DraftOutput, RunResult
@@ -132,6 +132,11 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
             result.problems.append(f"claim not available ({e.status} {e.code})")
             return result
         facts = compute_facts(claim, policy, documents)
+        if location_check_on():
+            facts["loss_locations_match"] = locations_match(
+                client.document_text(documents, "FNOL_FORM"),
+                client.document_text(documents, "POLICE_REPORT"))
+            t.kv("loss locations match", facts["loss_locations_match"])
         signals = outcome_signals(claim, facts)
         gaps = documentation_gaps(facts)
         t.kv("in force at loss", facts["in_force_at_loss"])

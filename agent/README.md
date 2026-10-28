@@ -89,6 +89,13 @@ returns the run result. The runner is a client of the data API like any other: i
 token and has no access rules or secrets of its own. The brain comes from `CLAIMSENSE_BRAIN`
 (default `mock`).
 
+## The loss-location check (off by default)
+
+`CLAIMSENSE_LOCATION_CHECK=1` makes code compare the `Location` line of the FNOL with the police
+report's (`facts.locations_match`). A mismatch is a FLAG under CLS-FRD-007. Off, there is no such
+signal and the Claude risk and drafter agents are told not to FLAG for it: in the course data every
+police report (CLM-2024-1800, 1946, 2019, 2092) gives a different location from its FNOL.
+
 ## Evaluation
 
 `make eval` runs the 60 cases in `evals/cases.json` through the real pipeline and scores them

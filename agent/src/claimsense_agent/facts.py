@@ -8,6 +8,8 @@ logic as `scripts/import_course_fixtures.py`; a test checks both give the same f
 signalled is still open (open question 2): PROVISIONAL_PRECEDENCE is a placeholder so runs can
 finish, and the reproducing claims are in `evals/precedence_cases.json`.
 """
+import os
+import re
 from datetime import date
 from decimal import Decimal
 
@@ -132,6 +134,27 @@ def fraud_indicators(claim):
     return found
 
 
+def location_check_on():
+    """CLAIMSENSE_LOCATION_CHECK=1 turns on the loss-location check. Off by default: in the course
+    data every police report gives a different location from the FNOL."""
+    return os.environ.get("CLAIMSENSE_LOCATION_CHECK") == "1"
+
+
+def loss_location(text):
+    """The "Location" line of an FNOL or a police report, or None."""
+    match = re.search(r"^Location\s+(.+)$", text or "", re.MULTILINE)
+    return match.group(1).strip() if match else None
+
+
+def locations_match(fnol_text, police_text):
+    """False when the FNOL and the police report give different loss locations; None when either
+    location is missing."""
+    fnol, police = loss_location(fnol_text), loss_location(police_text)
+    if fnol is None or police is None:
+        return None
+    return fnol.lower() == police.lower()
+
+
 def outcome_signals(claim, facts):
     """Each signal: the outcome it points to, why, and the clause behind it."""
     signals = []
@@ -159,6 +182,8 @@ def outcome_signals(claim, facts):
         signals.append({"outcome": "ROUTE", "clause": "CLS-PAY-012",
                         "reason": f"net payable {facts['net_payable_if_covered_usd']} > 25000, senior adjuster"})
     indicators = fraud_indicators(claim)
+    if facts.get("loss_locations_match") is False:      # only set when the location check is on
+        indicators.append("FNOL and police report give different loss locations")
     if indicators:
         signals.append({"outcome": "FLAG", "clause": "CLS-FRD-007",
                         "reason": "fraud indicators: " + "; ".join(indicators)})
