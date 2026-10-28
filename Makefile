@@ -9,6 +9,8 @@ BASE_URL   ?= http://localhost:$(PORT)/api/v1
 CONSOLE    ?= http://localhost:$(PORT)
 CLAIM      ?= CLM-2024-1800
 AS         ?= alice
+BRAIN      ?= mock
+AWS_PROFILE ?= claimsense
 
 export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
@@ -57,11 +59,11 @@ web: deps ## build + serve the Ops Console on :$(PORT)
 web-dev: deps ## hot-reload the console instead (development)
 	cd platform/web && PORT=$(PORT) npm run dev
 
-agent: ## assess a claim with the mock agents: make agent CLAIM=CLM-2024-1800 AS=alice (needs make api)
-	cd agent && uv run claimsense-agent run --claim $(CLAIM) --user $(AS) --brain mock
+agent: ## assess a claim: make agent CLAIM=CLM-2024-1800 AS=alice [BRAIN=bedrock] (needs make api)
+	cd agent && AWS_PROFILE=$(AWS_PROFILE) uv run claimsense-agent run --claim $(CLAIM) --user $(AS) --brain $(BRAIN)
 
-runner: ## the runner service the console's Run assessment button calls (port 8100; needs make api)
-	cd agent && uv run uvicorn claimsense_agent.runner:app --port 8100
+runner: ## the service behind the console's Run assessment button (port 8100) [BRAIN=bedrock]
+	cd agent && AWS_PROFILE=$(AWS_PROFILE) CLAIMSENSE_BRAIN=$(BRAIN) uv run uvicorn claimsense_agent.runner:app --port 8100
 
 eval: ## the evaluation suite (being rebuilt from the 20 course claims; not ready yet)
 	@echo "The evaluation suite is being rebuilt from the course claims (next step). For now: make test"

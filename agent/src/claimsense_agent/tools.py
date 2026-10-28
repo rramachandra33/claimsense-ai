@@ -20,6 +20,10 @@ class ToolRefused(Exception):
     """A tool call was refused by the API (e.g. 403) or failed."""
 
 
+class AgentFailed(Exception):
+    """An agent could not produce its output (e.g. the model call failed or ran out of turns)."""
+
+
 def mcp_server_params(agent, obo_token, run_id):
     """How to start the MCP server for one agent."""
     env = dict(os.environ)

@@ -26,7 +26,27 @@ the policy manual (a made-up citation), or no clause can be cited at all (open q
 * `mock` (default): deterministic stand-ins in `agents/mock.py`. They make the same tool calls a
   real agent would, through the real MCP server and API, and replace only the model's judgment
   with simple rules. No model, no key, no AWS, and every run gives the same result.
-* `bedrock`: Claude on Amazon Bedrock through the OpenAI Agents SDK. **Next step, not built yet.**
+* `bedrock`: Claude on Amazon Bedrock through the OpenAI Agents SDK (`agents/bedrock.py`), the
+  Week 15 sample's pattern (`LitellmModel("bedrock/converse/…")`). Haiku 4.5 reads and assesses
+  risk; Sonnet 4.5 checks coverage and drafts. About 30–45 s a run. Each agent's tools are thin
+  wrappers around its own MCP session, so every call still goes through the MCP server and the
+  API under that agent's OBO token. Agents SDK tracing is turned off (it would upload claim data
+  to OpenAI), and LiteLLM does not load `.env` files.
+
+  Locally it uses the AWS profile `claimsense` (`aws login --profile claimsense`); on EC2 the
+  instance role. Run it with `BRAIN=bedrock`:
+
+  ```bash
+  make agent CLAIM=CLM-2024-1800 AS=alice BRAIN=bedrock
+  make runner BRAIN=bedrock          # the console's Run assessment button then uses Claude
+  ```
+
+### Personal details
+
+The note goes into the client's claims system, so code removes street addresses, phone numbers
+and emails from its summary and deny reason before writing it (`redact.py`). Names cannot be
+caught by a pattern; the agents are told to leave them out. Agent outputs keep what the agents
+wrote: they stay in ClaimSense's assessment record, visible only to people who may read the claim.
 
 ## Run
 
@@ -69,7 +89,12 @@ make test        # or: cd agent && uv run --extra dev pytest -q
 ```
 
 The tests start their own API on a free port, so `make api` does not need to be running; the
-database does (`make up`). They clean up the notes they write.
+database does (`make up`). They clean up the notes they write. One test calls Claude for real and
+runs only when asked:
+
+```bash
+cd agent && CLAIMSENSE_BEDROCK_TESTS=1 AWS_PROFILE=claimsense uv run --extra dev pytest -q tests/test_bedrock.py
+```
 
 ## Provisional, still to decide
 
@@ -90,6 +115,8 @@ src/claimsense_agent/
 ├── api.py          the pipeline's own API calls (adjuster's token), with note-write retries
 ├── tools.py        one agent's MCP session (its OBO token)
 ├── brain.py        mock or bedrock
+├── redact.py       removes addresses, phones and emails from the note
 ├── trace.py        on-screen trace (from the Week 15 sample)
-└── agents/mock.py  the four mock agents
+├── agents/mock.py     the four mock agents
+└── agents/bedrock.py  the four Claude agents (Bedrock, Agents SDK)
 ```

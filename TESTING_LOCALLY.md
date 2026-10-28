@@ -72,9 +72,21 @@ The OBO token expires after 5 minutes; ask for a new one if you get 401.
 ```bash
 make api-test     # 67 tests
 make mcp-test     # 6 tests
-make test         # 23 tests: the agent pipeline end to end (starts its own API)
+make test         # 34 tests (+1 Bedrock test, opt-in): the agent pipeline end to end (starts its own API)
 uv run --with pytest pytest platform/db/seed -q    # 4 tests
 ```
+
+**G. Claude instead of the mock agents (Bedrock; a few cents and about 40 s a run)**
+
+```bash
+aws sts get-caller-identity --profile claimsense   # must show user/rramachandra33; if expired:
+aws login --profile claimsense                     # sign in as the IAM user (use a private window)
+make agent CLAIM=CLM-2024-1800 AS=alice BRAIN=bedrock
+make runner BRAIN=bedrock                          # then Run assessment in the console uses Claude
+```
+
+Claude may APPROVE CLM-2024-1800 or FLAG it: the FNOL and the police report give different loss
+locations, and the police report says "single vehicle". Addresses in a note show as `[address]`.
 
 **F. Run the four agents from the terminal** (mock brain, no AWS; with `make api` running):
 

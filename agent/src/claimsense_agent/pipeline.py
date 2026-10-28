@@ -19,11 +19,12 @@ The note is then written once, by code, with the adjuster's token and an Idempot
 import uuid
 
 from .api import ApiError
-from .brain import agents_for
+from .brain import agents_for, models_for
 from .facts import (PROVISIONAL_PRECEDENCE, code_outcome, compute_facts, documentation_gaps,
                     outcome_signals)
+from .redact import redact
 from .schemas import DraftOutput, RunResult
-from .tools import ToolRefused, open_tools
+from .tools import AgentFailed, ToolRefused, open_tools
 from .trace import Tracer
 
 # The clauses an APPROVE rests on, by loss category: the insuring clause, deductible and period.
@@ -36,18 +37,18 @@ APPROVE_CLAUSES = {
 async def run_agent(client, claim_id, run_id, agent, agent_function, *inputs, **options):
     """Get the agent's OBO token, start its MCP server with it, and run the agent.
 
-    Returns (output, clause ids its searches returned). A refusal is raised only after the MCP
-    session has closed, so it arrives as a plain ToolRefused, not wrapped by the session.
+    Returns (output, clause ids its searches returned). A refusal or failure is raised only after
+    the MCP session has closed, so it arrives as itself, not wrapped by the session.
     """
     token = client.obo_token(claim_id, agent, run_id)
-    refused = None
+    error = None
     async with open_tools(agent, token, run_id) as tools:
         try:
             output = await agent_function(tools, claim_id, *inputs, **options)
-        except ToolRefused as e:
-            refused = e
-    if refused:
-        raise refused
+        except (ToolRefused, AgentFailed) as e:
+            error = e
+    if error:
+        raise error
     return output, tools.retrieved
 
 
@@ -164,7 +165,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
                 demo_bad_draft=demo_bad_draft)
             t.kv("outcome", outputs["drafter"].outcome)
             t.kv("cites", outputs["drafter"].cited_clauses)
-    except (ToolRefused, ApiError) as e:
+    except (ToolRefused, AgentFailed, ApiError) as e:
         result.problems.append(str(e))
         return result
 
@@ -190,6 +191,14 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
         else:
             t.event("draft passes every check", level="ok")
 
+        # The note goes into the client's claims system: no addresses, phone numbers or emails.
+        summary, found_in_summary = redact(draft.summary)
+        deny_reason, found_in_reason = redact(draft.deny_reason)
+        redacted = found_in_summary + found_in_reason
+        if redacted:
+            draft = draft.model_copy(update={"summary": summary, "deny_reason": deny_reason})
+            t.event(f"removed {redacted} personal detail(s) from the note", level="warn")
+
     # ---- code writes the note (adjuster's token, idempotent) ----------------------------------
     note = {
         "run_id": run_id,
@@ -201,9 +210,10 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, demo_bad_d
         "code_facts": {"facts": facts, "signals": signals, "documentation_gaps": gaps,
                        "provisional_precedence": PROVISIONAL_PRECEDENCE},
         "agent_outputs": {name: out.model_dump() for name, out in outputs.items()},
-        "models": {name: brain for name in outputs},
+        "models": models_for(brain),
     }
     note["agent_outputs"]["draft_problems"] = problems
+    note["agent_outputs"]["personal_details_removed_from_note"] = redacted
     with tracer.span("write note", kind="tool") as t:
         try:
             response = client.write_note(claim_id, note, idempotency_key=run_id)
