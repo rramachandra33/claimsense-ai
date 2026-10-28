@@ -1,0 +1,18 @@
+# Build context for agent/Dockerfile and platform/db/Dockerfile.seed (the repo root).
+**/.venv
+**/node_modules
+**/.next
+**/__pycache__
+**/.pytest_cache
+**/.env
+**/.env.*
+.git
+docs
+reference
+frontend
+data-visualization
+evals
+data/synthetic
+data/course_fixtures/source
+platform/db/seed/data
+*.pdf

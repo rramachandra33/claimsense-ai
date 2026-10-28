@@ -16,13 +16,27 @@ export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
 export CLAIMSENSE_CONSOLE_URL := $(CONSOLE)
 
-.PHONY: help up deps seed api api-test mcp-test token web web-dev agent runner eval test down clean doctor
+.PHONY: help stack stack-down stack-logs up deps seed api api-test mcp-test token web web-dev agent runner eval test down clean doctor
 
 help: ## show this list
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
+stack: ## the whole stack in Docker: db, seed, api :8000, runner :8100, console :3100 [BRAIN=bedrock]
+	@cd platform/db && docker compose down 2>/dev/null || true
+	@test -f .env || { printf 'CLAIMSENSE_JWT_SECRET=%s\nBRAIN=mock\n' "$$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > .env; echo "==> wrote .env"; }
+	BRAIN=$(BRAIN) docker compose up --build --detach --wait
+	@echo ""
+	@echo "==> ready: console on http://localhost:$(PORT)  (make stack-logs, make stack-down)"
+
+stack-down: ## stop the Docker stack (data survives)
+	docker compose down
+
+stack-logs: ## follow the Docker stack's logs
+	docker compose logs --follow api runner web
+
 up: ## Postgres + schema + course-fixture seed (one command)
+	@docker compose down 2>/dev/null || true      # the Docker stack uses the same container name
 	cd platform/db && docker compose up -d
 	@echo "==> waiting for Postgres…"
 	@until (cd platform/db && docker compose exec -T claimsense-db pg_isready -U claimsense >/dev/null 2>&1); do sleep 1; done

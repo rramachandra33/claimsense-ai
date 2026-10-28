@@ -6,6 +6,22 @@ console (port 3100). Docker Desktop must be running.
 
 ## 1. Start
 
+**Option 1: the whole stack in Docker, one command**
+
+```bash
+cd ~/raju/CLAIMSENSE-AI
+make stack                    # db, seed, api :8000, runner :8100, console :3100 (first build: a few minutes)
+make stack BRAIN=bedrock      # the same, with Claude in the runner (needs a current `aws login --profile claimsense`)
+make stack-logs               # follow the api, runner and console logs
+```
+
+`make stack` writes `.env` with a random token secret the first time. It stops `make up`'s database
+first (both use the container name `claimsense-db` and port 5433), so `make eval` and `make test`
+work against the stack's database too. Each start reloads the course data. A console sign-in from
+before a new secret shows "Missing, expired or invalid token": sign out and in again.
+
+**Option 2: each service in its own terminal** (faster to change code)
+
 ```bash
 # Terminal 1: database + data API
 cd ~/raju/CLAIMSENSE-AI
@@ -126,5 +142,7 @@ cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claims
 
 ## 3. Stop
 
-Ctrl+C in each terminal. `make down` stops the database (data kept); `make up` brings it back
-(it also reloads the course data, which clears drafts and the audit log).
+Docker stack: `make stack-down` (data kept until the next start reloads it).
+
+Separate terminals: Ctrl+C in each terminal. `make down` stops the database (data kept); `make up`
+brings it back (it also reloads the course data, which clears drafts and the audit log).

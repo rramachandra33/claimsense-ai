@@ -1,0 +1,11 @@
+# One-shot job: build the seed CSVs (the load-time guardrail runs here) and load them into the
+# stack's database. Built from the repo root by docker-compose.yml.
+FROM postgres:16
+RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /repo
+COPY data/course_fixtures data/course_fixtures
+COPY data/identity data/identity
+COPY platform/db platform/db
+ENV CLAIMSENSE_LOAD_DIRECT=1
+CMD ["platform/db/load.sh"]

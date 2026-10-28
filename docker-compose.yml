@@ -1,0 +1,91 @@
+# The whole ClaimSense stack with one command:
+#
+#     make stack            (or: docker compose up --build, with CLAIMSENSE_JWT_SECRET in .env)
+#
+# db -> seed (one-shot: schema + course fixtures) -> api -> runner -> web (console on :3100).
+# The database is published on 5433 like `make up`'s, so make eval / make test work against it too.
+# `make up` and this stack both use the container name claimsense-db: run one at a time.
+name: claimsense
+
+x-db-url: &db-url postgresql://claimsense:claimsense@db:5432/claimsense
+
+services:
+  db:
+    image: postgres:16
+    container_name: claimsense-db
+    environment:
+      POSTGRES_USER: claimsense
+      POSTGRES_PASSWORD: claimsense
+      POSTGRES_DB: claimsense
+    ports:
+      - "${CLAIMSENSE_DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claimsense"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  seed:
+    build:
+      context: .
+      dockerfile: platform/db/Dockerfile.seed
+    environment:
+      CLAIMSENSE_DB_URL: *db-url
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ./api
+    environment:
+      CLAIMSENSE_DB_URL: *db-url
+      CLAIMSENSE_JWT_SECRET: ${CLAIMSENSE_JWT_SECRET:?set it in .env (make stack writes one)}
+      CLAIMSENSE_DEV_LOGIN: "1"         # the console's sign-in until Cognito replaces it
+    ports:
+      - "8000:8000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  runner:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    environment:
+      CLAIMSENSE_API_URL: http://api:8000
+      CLAIMSENSE_BRAIN: ${BRAIN:-mock}
+      CLAIMSENSE_LOCATION_CHECK: ${CLAIMSENSE_LOCATION_CHECK:-}
+      # Only the bedrock brain uses these: your `aws login` profile. The config is read-only; the
+      # login cache is writable because the SDK refreshes the short-lived credentials there.
+      AWS_PROFILE: ${AWS_PROFILE:-claimsense}
+    volumes:
+      - ${HOME}/.aws/config:/home/app/.aws/config:ro
+      - ${HOME}/.aws/login:/home/app/.aws/login
+    ports:
+      - "8100:8100"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    build: ./platform/web
+    environment:
+      CLAIMSENSE_API_URL: http://api:8000
+      CLAIMSENSE_RUNNER_URL: http://runner:8100
+    ports:
+      - "${PORT:-3100}:3100"
+    depends_on:
+      api:
+        condition: service_healthy
+      runner:
+        condition: service_started
+
+volumes:
+  pgdata:

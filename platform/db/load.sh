@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
 # One-command local load: schema + course-fixture seed CSVs -> local Postgres.
 # Usage: ./load.sh        (run `docker compose up -d` first; `make up` does both)
+# In the full stack (make stack) the seed container runs it with CLAIMSENSE_LOAD_DIRECT=1, and psql
+# connects to CLAIMSENSE_DB_URL directly instead of going through `docker compose exec`.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 DB_URL="${CLAIMSENSE_DB_URL:-postgresql://claimsense:claimsense@localhost:5433/claimsense}"
-PSQL=(docker compose exec -T claimsense-db psql -U claimsense -d claimsense -v ON_ERROR_STOP=1)
+if [ "${CLAIMSENSE_LOAD_DIRECT:-}" = "1" ]; then
+  PSQL=(psql "$DB_URL" -v ON_ERROR_STOP=1)
+  db_ready() { pg_isready -d "$DB_URL" >/dev/null 2>&1; }
+else
+  PSQL=(docker compose exec -T claimsense-db psql -U claimsense -d claimsense -v ON_ERROR_STOP=1)
+  db_ready() { docker compose exec -T claimsense-db pg_isready -U claimsense >/dev/null 2>&1; }
+fi
 
 echo "==> building seed CSVs (guardrail runs here)…"
 python3 seed/build_seed.py
 
 echo "==> waiting for Postgres at ${DB_URL}…"
-until docker compose exec -T claimsense-db pg_isready -U claimsense >/dev/null 2>&1; do sleep 1; done
+until db_ready; do sleep 1; done
 
 echo "==> applying schema (clean reset)…"
 "${PSQL[@]}" -q -c "DROP SCHEMA IF EXISTS claimsense, policy_admin, claims_mgmt, doc_store CASCADE;"
