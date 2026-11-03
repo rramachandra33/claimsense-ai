@@ -150,3 +150,36 @@ def test_server_offers_exactly_five_read_only_tools(mcp_base):
     names = sorted(t.name for t in tools.tools)
     assert names == ["get_claim", "get_document", "get_policy", "list_documents", "search_clauses"]
     assert not any("note" in n or "write" in n for n in names)    # no write tool for agents
+
+
+def function_url_event(method, path, body=None, token=None):
+    """A request as a Lambda Function URL delivers it (payload format 2.0)."""
+    headers = {"host": "example.lambda-url.us-east-1.on.aws", "content-type": "application/json",
+               "accept": "application/json, text/event-stream"}
+    if token:
+        headers["authorization"] = "Bearer " + token
+    return {
+        "version": "2.0", "routeKey": "$default", "rawPath": path, "rawQueryString": "",
+        "headers": headers,
+        "requestContext": {"http": {"method": method, "path": path, "protocol": "HTTP/1.1",
+                                    "sourceIp": "203.0.113.1", "userAgent": "pytest"},
+                           "domainName": "example.lambda-url.us-east-1.on.aws",
+                           "requestId": "test", "stage": "$default"},
+        "body": json.dumps(body) if body is not None else None,
+        "isBase64Encoded": False,
+    }
+
+
+def test_lambda_handler_serves_the_registry_and_the_tools(mcp_base):
+    from claimsense_mcp.lambda_handler import handler
+
+    registry = handler(function_url_event("GET", "/registry/v0/servers"), None)
+    assert json.loads(registry["body"])["servers"][0]["server"]["name"] == "io.claimsense/claims"
+    alice = make_dev_token("alice", "adjuster")
+    for _ in range(2):      # a warm Lambda answers request after request
+        call_body = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                     "params": {"name": "get_claim", "arguments": {"claim_id": "CLM-2024-1800"}}}
+        response = handler(function_url_event("POST", "/mcp", call_body, alice), None)
+        assert response["statusCode"] == 200
+        result = json.loads(response["body"])["result"]
+        assert json.loads(result["content"][0]["text"])["claim"]["claim_id"] == "CLM-2024-1800"

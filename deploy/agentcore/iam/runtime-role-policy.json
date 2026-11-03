@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {"Sid": "EcrLogin", "Effect": "Allow", "Action": "ecr:GetAuthorizationToken", "Resource": "*"},
+    {"Sid": "PullTheRunnerImage", "Effect": "Allow",
+     "Action": ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"],
+     "Resource": "arn:aws:ecr:us-east-1:ACCOUNT:repository/claimsense-runner"},
+    {"Sid": "ClaudeOnBedrock", "Effect": "Allow",
+     "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+     "Resource": [
+       "arn:aws:bedrock:us-east-1:ACCOUNT:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+       "arn:aws:bedrock:us-east-1:ACCOUNT:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+       "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0",
+       "arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"]},
+    {"Sid": "RuntimeLogs", "Effect": "Allow",
+     "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"],
+     "Resource": "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/bedrock-agentcore/runtimes/*"},
+    {"Sid": "RuntimeLogGroupsList", "Effect": "Allow", "Action": "logs:DescribeLogGroups",
+     "Resource": "arn:aws:logs:us-east-1:ACCOUNT:log-group:*"},
+    {"Sid": "Traces", "Effect": "Allow",
+     "Action": ["xray:PutTraceSegments", "xray:PutTelemetryRecords", "xray:GetSamplingRules", "xray:GetSamplingTargets"],
+     "Resource": "*"},
+    {"Sid": "Metrics", "Effect": "Allow", "Action": "cloudwatch:PutMetricData", "Resource": "*",
+     "Condition": {"StringEquals": {"cloudwatch:namespace": "bedrock-agentcore"}}}
+  ]
+}

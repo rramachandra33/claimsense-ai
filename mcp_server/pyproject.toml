@@ -7,6 +7,7 @@ dependencies = [
     "mcp>=1.2",
     "httpx>=0.27",
     "uvicorn>=0.30",       # serves /mcp and the registry over HTTP
+    "mangum>=0.19",
 ]
 
 [project.optional-dependencies]

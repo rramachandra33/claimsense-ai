@@ -60,3 +60,30 @@ def test_invocation_keeps_the_access_rules(live_api):
 def test_invocation_needs_the_adjusters_token(live_api):
     response = runner.post("/invocations", json={"claim_id": "CLM-2024-1800"})
     assert response.status_code == 401
+
+
+def test_runs_are_forwarded_to_agentcore_when_a_runtime_is_set(monkeypatch):
+    """With a runtime ARN, /runs sends the claim and the adjuster's token to AgentCore."""
+    import io
+    import json
+    from claimsense_agent import runner as runner_module
+
+    sent = {}
+
+    class FakeAgentCore:
+        def invoke_agent_runtime(self, **request):
+            sent.update(request)
+            answer = {"status": "written", "outcome": "APPROVE", "brain": "bedrock"}
+            return {"response": io.BytesIO(json.dumps(answer).encode())}
+
+    monkeypatch.setenv("CLAIMSENSE_AGENTCORE_RUNTIME_ARN", "arn:aws:bedrock-agentcore:us-east-1:1:runtime/x")
+    monkeypatch.setattr("boto3.client", lambda *args, **kwargs: FakeAgentCore())
+    headers = bearer("alice", "adjuster")
+    response = runner.post("/runs", json={"claim_id": "CLM-2024-1800"}, headers=headers)
+    assert response.json()["outcome"] == "APPROVE"
+    assert sent["agentRuntimeArn"].endswith("runtime/x")
+    assert len(sent["runtimeSessionId"]) >= 33
+    payload = json.loads(sent["payload"])
+    assert payload == {"claim_id": "CLM-2024-1800",
+                       "user_token": headers["Authorization"].removeprefix("Bearer ")}
+    assert runner_module.agentcore_runtime_arn()

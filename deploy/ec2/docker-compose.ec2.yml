@@ -12,6 +12,8 @@
 # CLAIMS_API_URL is the data API the agents use (MCP server and runner): the Lambda Claims API's
 # Function URL once deploy/lambda/deploy.sh has run, the local api container until then. The
 # console keeps using the local api container, the only one with the development sign-in.
+# MCP_REGISTRY_URL is where the runner finds the MCP server: the claimsense-mcp function's
+# registry once deploy/lambda/deploy.sh has run, the local mcp container until then.
 #
 # The seed job resets the database to the course fixtures each time the stack is (re)created.
 name: claimsense
@@ -90,8 +92,10 @@ services:
     restart: *restart
     environment:
       CLAIMSENSE_API_URL: ${CLAIMS_API_URL:-http://api:8000}
-      CLAIMSENSE_MCP_REGISTRY_URL: http://mcp:8200/registry/v0/servers
+      CLAIMSENSE_MCP_REGISTRY_URL: ${MCP_REGISTRY_URL:-http://mcp:8200/registry/v0/servers}
       CLAIMSENSE_BRAIN: ${BRAIN:-mock}
+      # Set by deploy/agentcore/deploy.sh: then /runs hands each run to the AgentCore runtime.
+      CLAIMSENSE_AGENTCORE_RUNTIME_ARN: ${AGENTCORE_RUNTIME_ARN:-}
       AWS_DEFAULT_REGION: us-east-1     # Bedrock credentials come from the instance role
     ports:
       - "127.0.0.1:8100:8100"

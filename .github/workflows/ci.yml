@@ -60,7 +60,7 @@ jobs:
     needs: test-and-eval              # a failing test or gate means no image is pushed
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40               # the arm64 build runs under emulation
     permissions:
       id-token: write                 # for the OIDC token GitHub exchanges for AWS credentials
       contents: read
@@ -87,3 +87,16 @@ jobs:
           build_and_push runner agent/Dockerfile            .
           build_and_push web    platform/web/Dockerfile     platform/web
           build_and_push seed   platform/db/Dockerfile.seed .
+
+      # AgentCore Runtime runs arm64 containers only. The runner is built a second time for arm64
+      # (under QEMU emulation on this x86 machine) and pushed as arm64-<commit> and arm64-latest.
+      - name: Build and push the runner for arm64 (AgentCore)
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
+        run: |
+          docker run --privileged --rm tonistiigi/binfmt --install arm64
+          docker buildx create --use --name arm64-builder
+          image="$REGISTRY/claimsense-runner"
+          docker buildx build --platform linux/arm64 -f agent/Dockerfile \
+            -t "$image:arm64-$TAG" -t "$image:arm64-latest" --provenance=false --push .

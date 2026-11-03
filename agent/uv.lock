@@ -569,6 +569,7 @@ version = "0.1.0"
 source = { editable = "../mcp_server" }
 dependencies = [
     { name = "httpx" },
+    { name = "mangum" },
     { name = "mcp" },
     { name = "uvicorn" },
 ]
@@ -577,6 +578,7 @@ dependencies = [
 requires-dist = [
     { name = "fastapi", marker = "extra == 'dev'", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
+    { name = "mangum", specifier = ">=0.19" },
     { name = "mcp", specifier = ">=1.2" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'dev'", specifier = ">=3.2" },
     { name = "pyjwt", marker = "extra == 'dev'", specifier = ">=2.9" },

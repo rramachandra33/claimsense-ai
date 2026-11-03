@@ -1,8 +1,13 @@
-# The Lambda Claims API
+# The Lambda functions: Claims API and MCP server
 
-The data API (`api/`) runs on AWS Lambda as the function `claimsense-api`, behind a Function URL.
-The agents on the EC2 instance (MCP server and runner) use it; the console keeps using the
-instance's private API, the only one with the development sign-in.
+Two functions, each behind a Function URL:
+
+- `claimsense-api`: the data API (`api/`), in the default VPC so it reaches PostgreSQL on EC2.
+- `claimsense-mcp`: the MCP server and its registry (`mcp_server/`, `lambda_handler.py`), outside
+  the VPC; it calls `claimsense-api` over its URL with each agent's token.
+
+The agents (the runner on EC2, and on AgentCore) use both; the console keeps using the instance's
+private API, the only one with the development sign-in.
 
 ```
 console ──> api container on EC2 (dev sign-in, 127.0.0.1)          ┐
