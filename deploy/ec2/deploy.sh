@@ -5,7 +5,8 @@
 #   AWS_PROFILE=claimsense deploy/ec2/deploy.sh            # images tagged latest
 #   TAG=<git sha> BRAIN=bedrock deploy/ec2/deploy.sh        # a specific build, Claude agents
 #
-# The JWT secret is generated on the instance the first time and stays there (/opt/claimsense/.env).
+# The JWT secret and the database password are generated on the instance the first time and stay
+# there (/opt/claimsense/.env). deploy/lambda/deploy.sh reads them from there.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -37,9 +38,18 @@ echo "==> pulling and starting the stack"
 set -euo pipefail
 REGISTRY=$1 TAG=$2 BRAIN=$3 REGION=$4
 cd /opt/claimsense
-if [ ! -f .env ]; then
-  echo "CLAIMSENSE_JWT_SECRET=$(openssl rand -hex 32)" > .env
-  chmod 600 .env
+touch .env && chmod 600 .env
+if ! grep -q '^CLAIMSENSE_JWT_SECRET=' .env; then
+  echo "CLAIMSENSE_JWT_SECRET=$(openssl rand -hex 32)" >> .env
+fi
+if ! grep -q '^CLAIMSENSE_DB_PASSWORD=' .env; then
+  PASSWORD=$(openssl rand -hex 24)
+  echo "CLAIMSENSE_DB_PASSWORD=$PASSWORD" >> .env
+  # A database created earlier still has the old password: change it in place.
+  if docker compose ps --status running --services 2>/dev/null | grep -qx db; then
+    # </dev/null: this script arrives on stdin, and psql would otherwise read the rest of it.
+    docker compose exec -T db psql -q -U claimsense -c "ALTER USER claimsense PASSWORD '$PASSWORD'" </dev/null
+  fi
 fi
 # Settings that follow each deploy; the secret line stays.
 grep -v -E '^(REGISTRY|TAG|BRAIN)=' .env > .env.new || true

@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageClaimSenseFunctions",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateFunction", "lambda:DeleteFunction", "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration", "lambda:UpdateFunctionCode", "lambda:UpdateFunctionConfiguration",
+        "lambda:CreateFunctionUrlConfig", "lambda:GetFunctionUrlConfig", "lambda:UpdateFunctionUrlConfig",
+        "lambda:DeleteFunctionUrlConfig", "lambda:AddPermission", "lambda:RemovePermission", "lambda:GetPolicy",
+        "lambda:PutFunctionConcurrency", "lambda:DeleteFunctionConcurrency", "lambda:GetFunctionConcurrency",
+        "lambda:TagResource", "lambda:ListTags", "lambda:InvokeFunction"
+      ],
+      "Resource": "arn:aws:lambda:us-east-1:ACCOUNT:function:claimsense-*"
+    },
+    {
+      "Sid": "GiveTheFunctionItsRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::ACCOUNT:role/claimsense-lambda-api",
+      "Condition": { "StringEquals": { "iam:PassedToService": "lambda.amazonaws.com" } }
+    },
+    {
+      "Sid": "ReadTheFunctionsLogs",
+      "Effect": "Allow",
+      "Action": ["logs:DescribeLogStreams", "logs:GetLogEvents", "logs:FilterLogEvents", "logs:StartLiveTail"],
+      "Resource": "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/lambda/claimsense-*"
+    }
+  ]
+}

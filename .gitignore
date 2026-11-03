@@ -28,3 +28,6 @@ platform/db/seed/data/
 
 # evaluation run outputs (keep a run by copying it out, or commit it deliberately)
 evals/results/
+
+# Lambda package built by deploy/lambda/deploy.sh
+deploy/lambda/.build/
