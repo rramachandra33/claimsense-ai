@@ -33,6 +33,13 @@ AWS_PROFILE=claimsense deploy/agentcore/deploy.sh        # runtime with metrics 
 ```
 
 One-time, as root: CloudWatch → Settings → **Transaction Search** → Enable (spans to `aws/spans`).
+Until it is active (a few minutes after enabling), the runtime log shows "Failed to export spans
+batch code: 400, reason: Bad Request" every few seconds; it stops by itself.
+
+Check the spans (Logs Insights on `aws/spans`): `stats count(*) as n by name | sort n desc`. A run
+shows `POST /invocations`, our steps (`code facts`, `reader`, `coverage`, `risk`, `drafter`,
+`check draft`, `write note`), the HTTP calls to the MCP and Claims API functions, the Bedrock
+calls and `CloudWatch.PutMetricData`.
 
 ## IAM
 
