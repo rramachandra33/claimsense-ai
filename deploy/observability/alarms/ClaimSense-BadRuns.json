@@ -1,0 +1,15 @@
+{
+  "AlarmName": "ClaimSense-BadRuns",
+  "AlarmDescription": "Over 25% of runs in an hour failed or fell back to code's decision (Quality dashboard).",
+  "Metrics": [
+    {"Id": "runs", "ReturnData": false,
+     "MetricStat": {"Metric": {"Namespace": "ClaimSense", "MetricName": "Runs", "Dimensions": [{"Name": "Brain", "Value": "bedrock"}]}, "Period": 3600, "Stat": "Sum"}},
+    {"Id": "fb", "ReturnData": false,
+     "MetricStat": {"Metric": {"Namespace": "ClaimSense", "MetricName": "Fallbacks", "Dimensions": [{"Name": "Brain", "Value": "bedrock"}]}, "Period": 3600, "Stat": "Sum"}},
+    {"Id": "fail", "ReturnData": false,
+     "MetricStat": {"Metric": {"Namespace": "ClaimSense", "MetricName": "Failures", "Dimensions": [{"Name": "Brain", "Value": "bedrock"}]}, "Period": 3600, "Stat": "Sum"}},
+    {"Id": "bad", "Label": "failed or fallback (%)", "ReturnData": true, "Expression": "100 * (fb + fail) / runs"}
+  ],
+  "EvaluationPeriods": 1, "Threshold": 25, "ComparisonOperator": "GreaterThanThreshold",
+  "TreatMissingData": "notBreaching"
+}

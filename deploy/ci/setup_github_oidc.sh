@@ -82,6 +82,11 @@ else
   echo "    created"
 fi
 aws iam put-role-policy --role-name "$ROLE" --policy-name ecr-push --policy-document "$PUSH"
+# The evaluation gate on main publishes its pass rate (namespace ClaimSense only).
+aws iam put-role-policy --role-name "$ROLE" --policy-name eval-metrics --policy-document '{
+  "Version": "2012-10-17",
+  "Statement": [{"Effect": "Allow", "Action": "cloudwatch:PutMetricData", "Resource": "*",
+                 "Condition": {"StringEquals": {"cloudwatch:namespace": "ClaimSense"}}}]}'
 echo "    ecr-push policy set"
 
 echo "==> done. Role: arn:aws:iam::$ACCOUNT:role/$ROLE (the AWS_ROLE_ARN in .github/workflows/ci.yml)"

@@ -1,9 +1,10 @@
-"""Tiny zero-dependency tracing + console rendering.
+"""Tiny tracing + console rendering, and OpenTelemetry spans.
 
-This is deliberately hand-rolled (no `rich`) so the demo runs on a clean
-machine with only the stdlib. In the W15 real build this is replaced by
-OpenTelemetry → Application Insights; the *shape* (spans with a trace id,
-nested events, attributes) is intentionally the same so the swap is obvious.
+The console rendering is hand-rolled (no `rich`). Each span is also an OpenTelemetry span
+(claimsense.kind = agent | tool | guardrail), so every step of a run is recorded where
+OpenTelemetry sends it. On AgentCore the runner starts under `opentelemetry-instrument` with
+AWS's distribution, which sends the spans (and the HTTP and model calls inside them) to
+CloudWatch. Anywhere else OpenTelemetry is not set up and the spans cost nothing.
 """
 from __future__ import annotations
 
@@ -14,6 +15,10 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Iterator
+
+from opentelemetry import trace as otel_trace
+
+OTEL_TRACER = otel_trace.get_tracer("claimsense")
 
 # --- ANSI styling (auto-disabled when not a TTY or NO_COLOR is set) ----------
 _USE_COLOR = sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
@@ -73,7 +78,8 @@ class Tracer:
         self._depth += 1
         start = time.perf_counter()
         try:
-            yield self
+            with OTEL_TRACER.start_as_current_span(name, attributes={"claimsense.kind": kind}):
+                yield self
         finally:
             self._depth -= 1
             dur = (time.perf_counter() - start) * 1000

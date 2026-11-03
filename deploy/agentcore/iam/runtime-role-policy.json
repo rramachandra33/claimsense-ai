@@ -21,6 +21,6 @@
      "Action": ["xray:PutTraceSegments", "xray:PutTelemetryRecords", "xray:GetSamplingRules", "xray:GetSamplingTargets"],
      "Resource": "*"},
     {"Sid": "Metrics", "Effect": "Allow", "Action": "cloudwatch:PutMetricData", "Resource": "*",
-     "Condition": {"StringEquals": {"cloudwatch:namespace": "bedrock-agentcore"}}}
+     "Condition": {"StringEquals": {"cloudwatch:namespace": ["bedrock-agentcore", "ClaimSense"]}}}
   ]
 }

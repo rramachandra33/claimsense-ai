@@ -30,7 +30,21 @@ echo "    MCP registry $MCP_URL/registry/v0/servers"
 
 ARTIFACT="{\"containerConfiguration\":{\"containerUri\":\"$IMAGE\"}}"
 NETWORK='{"networkMode":"PUBLIC"}'
-ENVIRONMENT="{\"RUNNER_PORT\":\"8080\",\"CLAIMSENSE_BRAIN\":\"$BRAIN\",\"CLAIMSENSE_API_URL\":\"$API_URL\",\"CLAIMSENSE_MCP_REGISTRY_URL\":\"$MCP_URL/registry/v0/servers\",\"AWS_DEFAULT_REGION\":\"$AWS_REGION\"}"
+# Observability: CLAIMSENSE_METRICS sends per-run metrics (namespace ClaimSense); CLAIMSENSE_OTEL
+# starts the runner under OpenTelemetry with AWS's distribution, which sends traces to CloudWatch
+# (AgentCore Observability; needs CloudWatch Transaction Search switched on once per account).
+ENVIRONMENT=$(python3 -c '
+import json, sys
+api, mcp, brain, region = sys.argv[1:]
+print(json.dumps({
+    "RUNNER_PORT": "8080", "CLAIMSENSE_BRAIN": brain, "AWS_DEFAULT_REGION": region,
+    "CLAIMSENSE_API_URL": api, "CLAIMSENSE_MCP_REGISTRY_URL": mcp + "/registry/v0/servers",
+    "CLAIMSENSE_METRICS": "1", "CLAIMSENSE_OTEL": "1",
+    "AGENT_OBSERVABILITY_ENABLED": "true",
+    "OTEL_PYTHON_DISTRO": "aws_distro", "OTEL_PYTHON_CONFIGURATOR": "aws_configurator",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf", "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_RESOURCE_ATTRIBUTES": "service.name=claimsense_runner",
+}))' "$API_URL" "$MCP_URL" "$BRAIN" "$AWS_REGION")
 
 echo "==> runtime $NAME"
 RUNTIME_ID=$(aws bedrock-agentcore-control list-agent-runtimes \

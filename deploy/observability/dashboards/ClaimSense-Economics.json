@@ -1,0 +1,27 @@
+{
+  "widgets": [
+    {"type": "text", "x": 0, "y": 0, "width": 24, "height": 2,
+     "properties": {"markdown": "## Economics: what the assessments cost\nA resolution is a run that writes a note. Cost per resolution = model cost ÷ resolutions (Claude on Bedrock, us. inference profiles)."}},
+    {"type": "metric", "x": 0, "y": 2, "width": 8, "height": 5,
+     "properties": {"title": "Last 24 hours", "region": "us-east-1", "view": "singleValue", "period": 86400, "stat": "Sum",
+       "setPeriodToTimeRange": true,
+       "metrics": [
+         ["ClaimSense", "RunCostUsd", "Brain", "bedrock", {"id": "cost", "label": "model cost (USD)"}],
+         [".", "Resolutions", ".", ".", {"id": "res", "label": "resolutions"}],
+         [{"expression": "cost / res", "label": "cost per resolution (USD)", "id": "cpr"}]]}},
+    {"type": "metric", "x": 8, "y": 2, "width": 16, "height": 5,
+     "properties": {"title": "Cost per resolution (USD), hourly", "region": "us-east-1", "view": "timeSeries", "period": 3600, "stat": "Sum",
+       "metrics": [
+         ["ClaimSense", "RunCostUsd", "Brain", "bedrock", {"id": "cost", "visible": false}],
+         [".", "Resolutions", ".", ".", {"id": "res", "visible": false}],
+         [{"expression": "cost / res", "label": "cost per resolution", "id": "cpr"}]]}},
+    {"type": "metric", "x": 0, "y": 7, "width": 12, "height": 6,
+     "properties": {"title": "Model cost (USD) per hour", "region": "us-east-1", "view": "timeSeries", "stat": "Sum", "period": 3600,
+       "metrics": [["ClaimSense", "RunCostUsd", "Brain", "bedrock", {"label": "cost"}]]}},
+    {"type": "metric", "x": 12, "y": 7, "width": 12, "height": 6,
+     "properties": {"title": "Tokens per hour", "region": "us-east-1", "view": "timeSeries", "stat": "Sum", "period": 3600,
+       "metrics": [
+         ["ClaimSense", "InputTokens", "Brain", "bedrock", {"label": "input"}],
+         [".", "OutputTokens", ".", ".", {"label": "output"}]]}}
+  ]
+}

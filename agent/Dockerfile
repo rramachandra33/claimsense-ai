@@ -19,4 +19,7 @@ USER app
 # 8100 for the console; AgentCore Runtime expects 8080 (it runs the image with RUNNER_PORT=8080).
 ENV RUNNER_PORT=8100
 EXPOSE 8100 8080
-CMD ["sh", "-c", "exec uvicorn claimsense_agent.runner:app --host 0.0.0.0 --port $RUNNER_PORT"]
+# CLAIMSENSE_OTEL=1 (set on AgentCore): start under OpenTelemetry (AWS's distribution), which sends
+# the traces to CloudWatch.
+ENV CLAIMSENSE_OTEL=0
+CMD ["sh", "-c", "if [ \"$CLAIMSENSE_OTEL\" = 1 ]; then exec opentelemetry-instrument uvicorn claimsense_agent.runner:app --host 0.0.0.0 --port $RUNNER_PORT; else exec uvicorn claimsense_agent.runner:app --host 0.0.0.0 --port $RUNNER_PORT; fi"]

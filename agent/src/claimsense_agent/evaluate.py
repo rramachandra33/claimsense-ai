@@ -24,6 +24,7 @@ import httpx
 from .api import ApiClient, api_url
 from .facts import location_check_on
 from .local_api import LocalApi, database_is_up
+from .metrics import NAMESPACE, eval_metrics, metrics_on, publish
 from .pipeline import run_assessment
 from .redact import redact
 from .trace import BOLD, GREEN, GREY, RED, RESET, YELLOW, Tracer
@@ -382,4 +383,8 @@ def run_suite(brain="mock", case_ids=None, family=None, min_pass=0.9):
     path.write_text(json.dumps({"run_at": stamp, "summary": summary, "results": results},
                                indent=2, default=str) + "\n")
     print(f"{GREY}results: {path.relative_to(REPO)}{RESET}")
+    # Only a full run's pass rate goes to the quality dashboard, not a few chosen cases.
+    if metrics_on() and not case_ids and not family:
+        if publish(eval_metrics(summary)):
+            print(f"{GREY}pass rate published to CloudWatch ({NAMESPACE}/EvalPassRate){RESET}")
     return 0 if summary["pass_rate"] >= min_pass else 1

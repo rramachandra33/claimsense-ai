@@ -1,0 +1,29 @@
+{
+  "widgets": [
+    {"type": "text", "x": 0, "y": 0, "width": 24, "height": 2,
+     "properties": {"markdown": "## Experience: how fast and how reliably claims are assessed\nRuns on AgentCore (Claude). p95 = the time the slowest 1 in 20 runs takes. Lambda panels: the Claims API and the MCP server."}},
+    {"type": "metric", "x": 0, "y": 2, "width": 12, "height": 6,
+     "properties": {"title": "Run duration (ms): p50 and p95", "region": "us-east-1", "view": "timeSeries", "period": 300,
+       "metrics": [
+         ["ClaimSense", "RunDurationMs", "Brain", "bedrock", {"stat": "p50", "label": "p50"}],
+         ["...", {"stat": "p95", "label": "p95"}]],
+       "annotations": {"horizontal": [{"label": "alarm: p95 over 2 minutes", "value": 120000}]}}},
+    {"type": "metric", "x": 12, "y": 2, "width": 12, "height": 6,
+     "properties": {"title": "Runs and failures", "region": "us-east-1", "view": "timeSeries", "stat": "Sum", "period": 300,
+       "metrics": [
+         ["ClaimSense", "Runs", "Brain", "bedrock", {"label": "runs"}],
+         [".", "Failures", ".", ".", {"label": "failed runs"}]]}},
+    {"type": "metric", "x": 0, "y": 8, "width": 12, "height": 6,
+     "properties": {"title": "Lambda duration p95 (ms)", "region": "us-east-1", "view": "timeSeries", "stat": "p95", "period": 300,
+       "metrics": [
+         ["AWS/Lambda", "Duration", "FunctionName", "claimsense-api", {"label": "Claims API"}],
+         ["...", "claimsense-mcp", {"label": "MCP server"}]]}},
+    {"type": "metric", "x": 12, "y": 8, "width": 12, "height": 6,
+     "properties": {"title": "Lambda errors and throttles", "region": "us-east-1", "view": "timeSeries", "stat": "Sum", "period": 300,
+       "metrics": [
+         ["AWS/Lambda", "Errors", "FunctionName", "claimsense-api", {"label": "Claims API errors"}],
+         ["...", "claimsense-mcp", {"label": "MCP errors"}],
+         [".", "Throttles", ".", "claimsense-api", {"label": "Claims API throttles"}],
+         ["...", "claimsense-mcp", {"label": "MCP throttles"}]]}}
+  ]
+}

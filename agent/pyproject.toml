@@ -16,6 +16,7 @@ dependencies = [
     # The bedrock brain: Claude on Amazon Bedrock through the OpenAI Agents SDK (via LiteLLM).
     "openai-agents[litellm]>=0.24",
     "boto3[crt]>=1.35",   # crt: needed for aws login credentials
+    "aws-opentelemetry-distro>=0.10",
 ]
 
 [project.optional-dependencies]

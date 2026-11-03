@@ -33,6 +33,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from .api import ApiClient, api_url
+from .metrics import metrics_on, publish, run_metrics
 from .pipeline import run_assessment
 from .trace import Tracer
 
@@ -108,6 +109,8 @@ def assess(token, claim_id):
     response = result.model_dump()
     response["brain"] = brain()
     response["duration_ms"] = round(tracer.total_ms())
+    if metrics_on():
+        publish(run_metrics(result, response["duration_ms"], brain()))
     return response
 
 

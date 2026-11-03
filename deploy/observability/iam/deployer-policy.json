@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {"Sid": "ClaimSenseDashboards", "Effect": "Allow",
+     "Action": ["cloudwatch:PutDashboard", "cloudwatch:GetDashboard", "cloudwatch:DeleteDashboards"],
+     "Resource": "arn:aws:cloudwatch::ACCOUNT:dashboard/ClaimSense-*"},
+    {"Sid": "ClaimSenseAlarms", "Effect": "Allow",
+     "Action": ["cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms", "cloudwatch:SetAlarmState"],
+     "Resource": "arn:aws:cloudwatch:us-east-1:ACCOUNT:alarm:ClaimSense-*"},
+    {"Sid": "ReadMetricsAndAlarms", "Effect": "Allow",
+     "Action": ["cloudwatch:ListDashboards", "cloudwatch:DescribeAlarms", "cloudwatch:GetMetricData",
+                "cloudwatch:ListMetrics", "cloudwatch:GetMetricStatistics"],
+     "Resource": "*"},
+    {"Sid": "PublishClaimSenseMetrics", "Effect": "Allow", "Action": "cloudwatch:PutMetricData", "Resource": "*",
+     "Condition": {"StringEquals": {"cloudwatch:namespace": "ClaimSense"}}},
+    {"Sid": "QueryTheTraces", "Effect": "Allow",
+     "Action": ["logs:StartQuery", "logs:StopQuery"],
+     "Resource": ["arn:aws:logs:us-east-1:ACCOUNT:log-group:aws/spans",
+                  "arn:aws:logs:us-east-1:ACCOUNT:log-group:aws/spans:*",
+                  "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/bedrock-agentcore/runtimes/*"]},
+    {"Sid": "QueryResults", "Effect": "Allow", "Action": "logs:GetQueryResults", "Resource": "*"}
+  ]
+}

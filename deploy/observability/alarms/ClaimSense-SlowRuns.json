@@ -1,0 +1,9 @@
+{
+  "AlarmName": "ClaimSense-SlowRuns",
+  "AlarmDescription": "p95 run duration over 2 minutes for 15 minutes (Experience dashboard).",
+  "Namespace": "ClaimSense", "MetricName": "RunDurationMs",
+  "Dimensions": [{"Name": "Brain", "Value": "bedrock"}],
+  "ExtendedStatistic": "p95", "Period": 300, "EvaluationPeriods": 3, "DatapointsToAlarm": 3,
+  "Threshold": 120000, "ComparisonOperator": "GreaterThanThreshold",
+  "TreatMissingData": "notBreaching"
+}
