@@ -33,7 +33,16 @@ AWS_PROFILE=claimsense deploy/agentcore/deploy.sh    # create/update the runtime
    (only AgentCore in this account may use it) → inline policy `iam/runtime-role-policy.json`:
    pull `claimsense-runner`, the two Claude models, its logs, traces and metrics.
 2. Managed policy `ClaimSenseAgentCoreDeploy` from `iam/deployer-policy.json`, attached to the IAM
-   user: manage runtimes, pass only `claimsense-agentcore`, read the runtime logs.
+   user: manage runtimes and their endpoints, pass only `claimsense-agentcore`, read the runtime
+   logs, and create AgentCore's own service-linked roles (the first runtime in an account creates
+   `AWSServiceRoleForBedrockAgentCoreRuntimeIdentity` and `...Network`; nothing else).
 3. The instance role's inline policy `ClaimSenseInstance` gains `InvokeAgentRuntime` on
    `runtime/claimsense_runner-*` (`deploy/ec2/iam/instance-role-policy.json`), so the runner on the
    instance can forward runs.
+
+## Deployed (2026-11-03)
+
+Runtime `claimsense_runner-MQY7JmBfHG`, image `claimsense-runner:arm64-latest` (CI build affa6a6),
+Claude. Through the console's path (EC2 runner → AgentCore): alice on CLM-2024-1800 → APPROVE,
+decision_source model, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004, $0.067, about 55 s (plus about
+10 s on a cold start); alice on carol's CLM-2024-1873 → refused (403) before any model call.
