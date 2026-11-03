@@ -1,134 +1,64 @@
-# Host the ClaimSense portal on EC2 — exact steps
+# ClaimSense on EC2
 
-Three ways to run the bank. This page is the third.
+One t3.small (Amazon Linux 2023, x86_64) runs the stack from the images CI pushed to ECR:
+PostgreSQL, the data API, the MCP server and registry, the runner and the console. Nothing is
+built on the instance, and there are no AWS keys on it: the instance role pulls the images and
+calls Bedrock.
 
-| Where | Command | Good for |
-|---|---|---|
-| Hosted class instance | nothing — it's always on | following along in class |
-| Your laptop | `make up && make web` | offline, $0, full control |
-| **Your EC2 box** | this page | a URL your teammates (and your agent from anywhere) can hit |
+| File | What |
+|---|---|
+| `setup_ec2_access.sh` | One-time IAM set-up, run with an admin profile: instance role `claimsense-ec2` and the managed policy `ClaimSenseEc2Deploy` attached to the IAM user (or do it in the console, below) |
+| `iam/*.json` | The policies that script applies (`ACCOUNT` is filled in) |
+| `create_instance.sh` | Key pair, security group `claimsense-sg`, the instance (all tagged `Project=claimsense`) |
+| `user_data.sh` | First boot: Docker and the Compose plugin |
+| `docker-compose.ec2.yml` | The stack, from ECR images, restarting on failure and after reboots |
+| `deploy.sh` | Copy the Compose file, pull the images, start the stack; run again to update |
 
-Cost note: a `t3.small` is roughly a few cents an hour. **Terminate it when class
-ends** — idle cloud is the W14 lesson, and this is where you practise it.
-
----
-
-## Step 1 — launch the instance (AWS CLI, copy-paste)
-
-```bash
-# pick your region once
-export AWS_REGION=us-east-1
-
-# a key pair to SSH with (skip if you already have one)
-aws ec2 create-key-pair --region $AWS_REGION --key-name claimsense-key \
-  --query KeyMaterial --output text > ~/.ssh/claimsense-key.pem
-chmod 400 ~/.ssh/claimsense-key.pem
-
-# a security group that lets YOU in on 22 (ssh) and 3100 (the console)
-MYIP=$(curl -s https://checkip.amazonaws.com)
-SG=$(aws ec2 create-security-group --region $AWS_REGION \
-      --group-name claimsense-sg --description "ClaimSense console" \
-      --query GroupId --output text)
-aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $SG \
-  --protocol tcp --port 22   --cidr ${MYIP}/32
-aws ec2 authorize-security-group-ingress --region $AWS_REGION --group-id $SG \
-  --protocol tcp --port 3100 --cidr ${MYIP}/32
-
-# the latest Amazon Linux 2023 AMI, resolved by SSM (no hardcoded AMI ids)
-AMI=$(aws ssm get-parameters --region $AWS_REGION \
-  --names /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
-  --query 'Parameters[0].Value' --output text)
-
-# launch
-aws ec2 run-instances --region $AWS_REGION \
-  --image-id $AMI --instance-type t3.small \
-  --key-name claimsense-key --security-group-ids $SG \
-  --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=20}' \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=claimsense-console}]' \
-  --query 'Instances[0].InstanceId' --output text
-```
-
-Wait for it, then get the public DNS:
+## Steps
 
 ```bash
-INSTANCE=<the id printed above>
-aws ec2 wait instance-running --region $AWS_REGION --instance-ids $INSTANCE
-aws ec2 describe-instances --region $AWS_REGION --instance-ids $INSTANCE \
-  --query 'Reservations[0].Instances[0].PublicDnsName' --output text
+AWS_PROFILE=<admin profile> deploy/ec2/setup_ec2_access.sh    # once
+AWS_PROFILE=claimsense deploy/ec2/create_instance.sh          # once
+AWS_PROFILE=claimsense deploy/ec2/deploy.sh                   # then: http://<public dns>:3100
 ```
 
-## Step 2 — bootstrap the box (one script)
+`TAG=<git sha>` deploys a specific CI build (default `latest`); `BRAIN=bedrock` runs Claude.
+
+### The one-time IAM set-up in the console (no admin CLI profile)
+
+As root, with `ACCOUNT` in the policy files replaced by the account id:
+
+1. IAM → Roles → Create role → AWS service, EC2 → no policies → name `claimsense-ec2`. The console
+   also creates the instance profile. On the role: Add permissions → Create inline policy → JSON
+   `iam/instance-role-policy.json`, name `ClaimSenseInstance`.
+2. IAM → Policies → Create policy → JSON `iam/deployer-policy.json`, name `ClaimSenseEc2Deploy`.
+   Then the user → Add permissions → Attach policies directly → `ClaimSenseEc2Deploy`. (A managed
+   policy, because all inline policies of one user share a 2,048-character limit.)
+
+## What the deploy rights allow
+
+Launch only a t3.small tagged `Project=claimsense`; start, stop, reboot, terminate and change
+security-group rules only on resources tagged `Project=claimsense`, so other instances in the
+account (ClarityFi's `rr-capstone`) cannot be touched; pass only the `claimsense-ec2` role to EC2.
+
+## Exposure
+
+- Security group: 22 (SSH) and 3100 (console) from the owner's IP only. If your IP changes, add the
+  new one to `claimsense-sg` (and remove the old).
+- On the instance, the API (8000), MCP server (8200), runner (8100) and PostgreSQL (5432) listen
+  on 127.0.0.1 only.
+- IMDSv2 only, hop limit 2 (containers reach the role's credentials); disk encrypted.
+
+## Cost and teardown
+
+About $0.02 an hour while running (t3.small) plus about $1.60 a month for the 20 GB disk. Stop it
+between sessions:
 
 ```bash
-PUBLIC=<the public dns from above>
-ssh -i ~/.ssh/claimsense-key.pem ec2-user@$PUBLIC
-
-# on the instance — point it at wherever you pushed this codebase:
-curl -fsSL https://raw.githubusercontent.com/<you>/<your-repo>/main/deploy/ec2/ec2_bootstrap.sh \
-  | bash -s -- https://github.com/<you>/<your-repo>.git
+ID=$(aws ec2 describe-instances --filters Name=tag:Project,Values=claimsense \
+  --query 'Reservations[].Instances[].InstanceId' --output text)
+aws ec2 stop-instances --instance-ids $ID      # start-instances to resume; the public DNS changes
 ```
 
-No repo yet? Copy the tree up instead, then run the script locally on the box:
-
-```bash
-# from your laptop, at the codebase root
-rsync -az --exclude node_modules --exclude .next --exclude .venv \
-  ./ ec2-user@$PUBLIC:/tmp/claimsense/
-ssh -i ~/.ssh/claimsense-key.pem ec2-user@$PUBLIC \
-  'sudo mkdir -p /opt/claimsense && sudo cp -r /tmp/claimsense/. /opt/claimsense/ && \
-   sudo chown -R ec2-user:ec2-user /opt/claimsense && bash /opt/claimsense/deploy/ec2/ec2_bootstrap.sh'
-```
-
-The script installs Docker/Node/uv, starts Postgres, loads the 100k-row
-deterministic seed, applies `api.sql`, **mints two scoped analyst keys into
-`/opt/claimsense/ANALYST_KEYS.txt`**, builds the console, and registers a systemd
-service so it survives reboots.
-
-## Step 3 — point everything at your box
-
-```bash
-export CLAIMSENSE_BASE_URL="http://$PUBLIC:3100/api/v1"
-export CLAIMSENSE_CONSOLE_URL="http://$PUBLIC:3100"
-export CLAIMSENSE_KEY_A=<type_a key from ANALYST_KEYS.txt>
-export CLAIMSENSE_KEY_B=<type_b key from ANALYST_KEYS.txt>
-
-make mcp-live      # two-analyst RBAC + a real ticket, on YOUR portal
-make slack-live    # the Slack card's button now opens YOUR portal
-```
-
-Your agent — laptop, Lambda, or AgentCore — reaches it through the same variable.
-Nothing else changes; that is the point of putting the URL in the environment.
-
-## Verify
-
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://$PUBLIC:3100/login              # 200
-curl -s -o /dev/null -w '%{http_code}\n' http://$PUBLIC:3100/api/v1/disputes/29 # 401 (no key)
-curl -s -H "Authorization: Bearer $CLAIMSENSE_KEY_A" \
-  http://$PUBLIC:3100/api/v1/disputes/29 | head -c 120                          # the dispute
-```
-
-## Operate
-
-```bash
-sudo systemctl status claimsense      # is it up?
-sudo journalctl -u claimsense -f      # logs
-sudo systemctl restart claimsense     # after a code change (rebuild first: npm run build)
-```
-
-## Tear down (do this)
-
-```bash
-aws ec2 terminate-instances --region $AWS_REGION --instance-ids $INSTANCE
-aws ec2 delete-security-group --region $AWS_REGION --group-id $SG   # after termination completes
-```
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| browser hangs on `:3100` | security-group rule missing, or your IP changed | re-run the `authorize-security-group-ingress` call with your current IP |
-| `502`/connection refused | service not up yet (first build takes ~2 min) | `sudo journalctl -u claimsense -f` |
-| console loads, data empty | seed didn't load | `cd /opt/claimsense/platform/db && sudo ./load.sh demo` |
-| `401` on every API call | key not minted / wrong key | `cat /opt/claimsense/ANALYST_KEYS.txt`, or `node mint-key.mjs --demo` |
-| `403` on a dispute you expect to see | that's RBAC working — the key's scope doesn't cover that dispute type | use the other key |
+The seed job resets the database to the course fixtures each time the stack is re-created
+(`deploy.sh`), so notes written on the instance do not survive a redeploy.

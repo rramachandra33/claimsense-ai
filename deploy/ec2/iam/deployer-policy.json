@@ -1,0 +1,65 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LaunchOnlyTaggedT3Small",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:us-east-1:ACCOUNT:instance/*",
+      "Condition": {
+        "StringEquals": { "aws:RequestTag/Project": "claimsense", "ec2:InstanceType": "t3.small" }
+      }
+    },
+    {
+      "Sid": "WhatALaunchUses",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": [
+        "arn:aws:ec2:us-east-1::image/*",
+        "arn:aws:ec2:us-east-1:ACCOUNT:subnet/*",
+        "arn:aws:ec2:us-east-1:ACCOUNT:network-interface/*",
+        "arn:aws:ec2:us-east-1:ACCOUNT:volume/*",
+        "arn:aws:ec2:us-east-1:ACCOUNT:security-group/*",
+        "arn:aws:ec2:us-east-1:ACCOUNT:key-pair/*"
+      ]
+    },
+    {
+      "Sid": "CreateKeyAndSecurityGroup",
+      "Effect": "Allow",
+      "Action": ["ec2:CreateKeyPair", "ec2:CreateSecurityGroup"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "TagOnlyWhileCreating",
+      "Effect": "Allow",
+      "Action": "ec2:CreateTags",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "ec2:CreateAction": ["RunInstances", "CreateSecurityGroup", "CreateKeyPair"] }
+      }
+    },
+    {
+      "Sid": "ChangeOnlyClaimSenseResources",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:StartInstances", "ec2:StopInstances", "ec2:RebootInstances", "ec2:TerminateInstances",
+        "ec2:AuthorizeSecurityGroupIngress", "ec2:RevokeSecurityGroupIngress", "ec2:DeleteSecurityGroup"
+      ],
+      "Resource": "*",
+      "Condition": { "StringEquals": { "aws:ResourceTag/Project": "claimsense" } }
+    },
+    {
+      "Sid": "LatestAmazonLinuxImage",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameters",
+      "Resource": "arn:aws:ssm:us-east-1::parameter/aws/service/ami-amazon-linux-latest/*"
+    },
+    {
+      "Sid": "GiveTheInstanceItsRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::ACCOUNT:role/claimsense-ec2",
+      "Condition": { "StringEquals": { "iam:PassedToService": "ec2.amazonaws.com" } }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+# ClaimSense on the EC2 instance: the same services as the root docker-compose.yml, but the images
+# are pulled from ECR (built and tested by CI) instead of built here.
+#
+#   docker compose -f docker-compose.ec2.yml up -d      (deploy.sh does this)
+#
+# Only the console (3100) is published on all interfaces, and the security group lets in only
+# your IP. The API, MCP server, runner and database listen on 127.0.0.1 only. AWS access (ECR
+# pulls, Bedrock) comes from the instance role, so there are no keys on the box.
+#
+# The seed job resets the database to the course fixtures each time the stack is (re)created.
+name: claimsense
+
+x-db-url: &db-url postgresql://claimsense:claimsense@db:5432/claimsense
+x-restart: &restart unless-stopped
+
+services:
+  db:
+    image: postgres:16
+    container_name: claimsense-db
+    restart: *restart
+    environment:
+      POSTGRES_USER: claimsense
+      POSTGRES_PASSWORD: claimsense
+      POSTGRES_DB: claimsense
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claimsense"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  seed:
+    image: ${REGISTRY}/claimsense-seed:${TAG:-latest}
+    environment:
+      CLAIMSENSE_DB_URL: *db-url
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: ${REGISTRY}/claimsense-api:${TAG:-latest}
+    restart: *restart
+    environment:
+      CLAIMSENSE_DB_URL: *db-url
+      CLAIMSENSE_JWT_SECRET: ${CLAIMSENSE_JWT_SECRET:?set in .env (deploy.sh writes one)}
+      CLAIMSENSE_DEV_LOGIN: "1"         # the console's sign-in until Cognito replaces it
+      CLAIMSENSE_RATE_LIMIT_PER_MINUTE: ${CLAIMSENSE_RATE_LIMIT_PER_MINUTE:-300}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  mcp:
+    image: ${REGISTRY}/claimsense-runner:${TAG:-latest}
+    restart: *restart
+    command: ["claimsense-mcp"]
+    environment:
+      CLAIMSENSE_API_URL: http://api:8000
+      CLAIMSENSE_MCP_HOST: 0.0.0.0
+      CLAIMSENSE_MCP_PORT: "8200"
+      CLAIMSENSE_MCP_PUBLIC_URL: http://mcp:8200/mcp
+    ports:
+      - "127.0.0.1:8200:8200"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8200/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  runner:
+    image: ${REGISTRY}/claimsense-runner:${TAG:-latest}
+    restart: *restart
+    environment:
+      CLAIMSENSE_API_URL: http://api:8000
+      CLAIMSENSE_MCP_REGISTRY_URL: http://mcp:8200/registry/v0/servers
+      CLAIMSENSE_BRAIN: ${BRAIN:-mock}
+      AWS_DEFAULT_REGION: us-east-1     # Bedrock credentials come from the instance role
+    ports:
+      - "127.0.0.1:8100:8100"
+    depends_on:
+      api:
+        condition: service_healthy
+      mcp:
+        condition: service_healthy
+
+  web:
+    image: ${REGISTRY}/claimsense-web:${TAG:-latest}
+    restart: *restart
+    environment:
+      CLAIMSENSE_API_URL: http://api:8000
+      CLAIMSENSE_RUNNER_URL: http://runner:8100
+    ports:
+      - "3100:3100"
+    depends_on:
+      api:
+        condition: service_healthy
+      runner:
+        condition: service_started
+
+volumes:
+  pgdata:
