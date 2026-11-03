@@ -85,13 +85,34 @@ Each run adds a new note (re-runs never overwrite). `make up` reloads the course
 ## The runner (the console's Run assessment button)
 
 ```bash
-make runner      # http://localhost:8100, needs make api
+make runner      # http://localhost:8100, needs make api + make mcp
 ```
 
 `POST /runs {"claim_id": ...}` with the adjuster's token runs the pipeline as that adjuster and
 returns the run result. The runner is a client of the data API like any other: it forwards the
 token and has no access rules or secrets of its own. The brain comes from `CLAIMSENSE_BRAIN`
 (default `mock`).
+
+### The AgentCore Runtime contract
+
+The same service answers the two routes Amazon Bedrock AgentCore Runtime calls, so the same image
+runs there unchanged (AgentCore runs it on port 8080: `RUNNER_PORT=8080`):
+
+| Route | What |
+|---|---|
+| `GET /ping` | `{"status": "Healthy"}` |
+| `POST /invocations` | `{"claim_id": ..., "user_token": ...}`: the same run as `/runs` |
+
+On AgentCore the caller signs the request with AWS credentials (SigV4), which uses the
+`Authorization` header, so the adjuster's token travels in the body as `user_token`. The access
+rules are unchanged: the API still decides what that adjuster may see.
+
+```bash
+docker run --rm -p 8080:8080 -e RUNNER_PORT=8080 --network claimsense_default \
+  -e CLAIMSENSE_API_URL=http://api:8000 \
+  -e CLAIMSENSE_MCP_REGISTRY_URL=http://mcp:8200/registry/v0/servers claimsense-runner
+curl localhost:8080/ping
+```
 
 ## The loss-location check (off by default)
 
@@ -133,7 +154,7 @@ cd agent && CLAIMSENSE_BEDROCK_TESTS=1 AWS_PROFILE=claimsense uv run --extra dev
 ```
 src/claimsense_agent/
 ├── cli.py          run / claims commands
-├── runner.py       the runner service the console calls (POST /runs)
+├── runner.py       the runner service: POST /runs (console), GET /ping + POST /invocations (AgentCore)
 ├── pipeline.py     the run: facts, four agents, draft checks, note write
 ├── facts.py        code facts and the outcome signals (same rules as scripts/import_course_fixtures.py)
 ├── schemas.py      typed outputs for each agent and for the run

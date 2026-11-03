@@ -16,5 +16,7 @@ RUN uv sync --frozen --no-dev
 
 RUN useradd --create-home app
 USER app
-EXPOSE 8100
-CMD ["uvicorn", "claimsense_agent.runner:app", "--host", "0.0.0.0", "--port", "8100"]
+# 8100 for the console; AgentCore Runtime expects 8080 (it runs the image with RUNNER_PORT=8080).
+ENV RUNNER_PORT=8100
+EXPOSE 8100 8080
+CMD ["sh", "-c", "exec uvicorn claimsense_agent.runner:app --host 0.0.0.0 --port $RUNNER_PORT"]

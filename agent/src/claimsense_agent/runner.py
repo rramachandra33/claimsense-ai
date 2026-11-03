@@ -2,11 +2,21 @@
 
     POST /runs  {"claim_id": "CLM-2024-1800"}   with the adjuster's token as Authorization
 
+It also speaks the Amazon Bedrock AgentCore Runtime contract, so the same image can run on
+AgentCore:
+
+    GET  /ping          health, answered with {"status": "Healthy"}
+    POST /invocations   {"claim_id": "CLM-2024-1800", "user_token": "<the adjuster's token>"}
+
+On AgentCore the caller signs the request with AWS credentials (SigV4), and that signature uses
+the Authorization header. So /invocations takes the adjuster's token in the body instead.
+
 The runner is a client of the data API like any other. It forwards the adjuster's token and has
 no access rules or secrets of its own: the API decides whether this adjuster may read the claim,
 issues each agent's OBO token, and accepts or refuses the note.
 
-Start it with `make runner` (port 8100). The brain comes from CLAIMSENSE_BRAIN (default mock).
+Start it with `make runner` (port 8100; AgentCore uses 8080, set by RUNNER_PORT in the image).
+The brain comes from CLAIMSENSE_BRAIN (default mock).
 """
 import asyncio
 import os
@@ -26,6 +36,12 @@ class RunRequest(BaseModel):
     claim_id: str
 
 
+class InvocationRequest(BaseModel):
+    """The AgentCore payload: the claim, and the token of the adjuster the run acts for."""
+    claim_id: str
+    user_token: str | None = None
+
+
 def brain():
     return os.environ.get("CLAIMSENSE_BRAIN", "mock")
 
@@ -39,22 +55,41 @@ def health():
     return {"status": "ok", "brain": brain(), "api_url": api_url()}
 
 
-@app.post("/runs")
-def create_run(body: RunRequest, authorization: str = Header(default=None)):
-    """Run the four agents on one claim as the calling adjuster, and return what happened.
+@app.get("/ping")
+def ping():
+    """AgentCore's health check."""
+    return {"status": "Healthy"}
 
-    A plain `def` route runs in its own worker thread, so asyncio.run gives the run its own event
-    loop and one slow run does not hold up others.
-    """
-    if not authorization or not authorization.startswith("Bearer "):
-        return error(401, "unauthenticated", "Sign in first.")
-    client = ApiClient(authorization.removeprefix("Bearer "))
+
+def assess(token, claim_id):
+    """Run the four agents on one claim as the adjuster whose token this is; return what happened."""
+    client = ApiClient(token)
     tracer = Tracer(quiet=True)
     try:
-        result = asyncio.run(run_assessment(client, body.claim_id, brain=brain(), tracer=tracer))
+        result = asyncio.run(run_assessment(client, claim_id, brain=brain(), tracer=tracer))
     except NotImplementedError as e:
         return error(501, "brain_not_available", str(e))
     response = result.model_dump()
     response["brain"] = brain()
     response["duration_ms"] = round(tracer.total_ms())
     return response
+
+
+@app.post("/runs")
+def create_run(body: RunRequest, authorization: str = Header(default=None)):
+    """Run the four agents on one claim as the calling adjuster (the console's Run assessment).
+
+    A plain `def` route runs in its own worker thread, so asyncio.run gives the run its own event
+    loop and one slow run does not hold up others.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        return error(401, "unauthenticated", "Sign in first.")
+    return assess(authorization.removeprefix("Bearer "), body.claim_id)
+
+
+@app.post("/invocations")
+def invoke(body: InvocationRequest):
+    """The same run, called through AgentCore. The adjuster's token comes in the body."""
+    if not body.user_token:
+        return error(401, "unauthenticated", "Send the adjuster's token as user_token.")
+    return assess(body.user_token, body.claim_id)
