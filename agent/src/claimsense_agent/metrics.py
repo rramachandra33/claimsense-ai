@@ -3,8 +3,8 @@
   experience  RunDurationMs (p50/p95), Runs, Failures
   economics   RunCostUsd, InputTokens, OutputTokens, Resolutions (a run that writes a note), so
               cost per resolution = sum of RunCostUsd / sum of Resolutions
-  quality     Fallbacks (the draft failed a check and code's decision was used), Decisions by
-              outcome, and EvalPassRate from the evaluation suite
+  quality     Fallbacks (the draft failed a check and code's decision was used), AgentFailures (an
+              agent could not finish; code wrote a DENY), Decisions by outcome, and EvalPassRate
 
 Off unless CLAIMSENSE_METRICS=1 (the AgentCore runtime and CI set it). Publishing never breaks a
 run: a failure is printed and the run's answer is returned as usual.
@@ -32,6 +32,7 @@ def run_metrics(result, duration_ms, brain):
         metric("Failures", 1 if result.status == "failed" else 0, Brain=brain),
         metric("Resolutions", 1 if result.note_id is not None else 0, Brain=brain),
         metric("Fallbacks", 1 if result.decision_source == "deterministic_fallback" else 0, Brain=brain),
+        metric("AgentFailures", 1 if result.decision_source == "agent_failure" else 0, Brain=brain),
         metric("InputTokens", result.input_tokens, Brain=brain),
         metric("OutputTokens", result.output_tokens, Brain=brain),
     ]

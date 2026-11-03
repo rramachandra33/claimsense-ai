@@ -17,6 +17,9 @@ function ClauseLink({ id }: { id: string }) {
 }
 
 function SourceTag({ source }: { source: Note["decision_source"] }) {
+  if (source === "agent_failure") {
+    return <span className="text-xs font-medium text-red-700">an agent could not finish: DENY until an adjuster assesses the claim</span>;
+  }
   if (source === "deterministic_fallback") {
     return <span className="text-xs font-medium text-amber-700">decided by code: the agents&apos; draft failed a check</span>;
   }

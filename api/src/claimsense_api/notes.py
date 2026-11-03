@@ -57,8 +57,9 @@ def check_note(note):
         raise NoteError(400, "invalid_argument", f"outcome must be one of {', '.join(OUTCOMES)}.")
     if not note.summary.strip() or len(note.summary) > 1000:
         raise NoteError(400, "invalid_argument", "summary must be 1 to 1000 characters.")
-    if note.decision_source not in ("model", "deterministic_fallback"):
-        raise NoteError(400, "invalid_argument", "decision_source must be model or deterministic_fallback.")
+    if note.decision_source not in ("model", "deterministic_fallback", "agent_failure"):
+        raise NoteError(400, "invalid_argument",
+                        "decision_source must be model, deterministic_fallback or agent_failure.")
     if not note.cited_clauses:
         if note.outcome != "DENY" or not note.deny_reason:
             raise NoteError(422, "citation_required",

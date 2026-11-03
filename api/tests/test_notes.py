@@ -14,7 +14,7 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from claimsense_api.auth import make_dev_token  # noqa: E402
-from claimsense_api.db import db_url, execute, fetch_all  # noqa: E402
+from claimsense_api.db import db_url, execute, fetch_all, fetch_one  # noqa: E402
 from claimsense_api.main import app  # noqa: E402
 
 try:
@@ -110,6 +110,16 @@ def test_uncited_deny_with_reason_is_allowed(run_id):
     assert response.json()["note"]["deny_reason"] == "no supporting clause found"
 
 
+def test_agent_failure_deny_is_allowed(run_id):
+    """When an agent cannot finish, code writes an uncited DENY with decision_source agent_failure."""
+    reason = "The automated assessment could not be completed (risk: MaxTurnsExceeded)."
+    body = deny_note(run_id, cited_clauses=[], deny_reason=reason, decision_source="agent_failure")
+    response = client.post(f"/api/v1/claims/{CLAIM}/notes", json=body, headers=headers("david", "k-" + run_id))
+    assert response.status_code == 201
+    row = fetch_one("SELECT decision_source FROM claimsense.assessments WHERE run_id = %s", (run_id,))
+    assert row["decision_source"] == "agent_failure"
+
+
 @pytest.mark.parametrize("changes", [
     {"outcome": "APPROVE", "cited_clauses": []},                     # uncited approval
     {"cited_clauses": []},                                           # uncited DENY without a reason
@@ -145,7 +155,8 @@ def test_cannot_write_a_note_on_a_claim_you_cannot_read(run_id):
     assert notes_for(run_id) == []
 
 
-@pytest.mark.parametrize("problem", ["missing_key", "bad_outcome", "bad_run_id", "missing_field"])
+@pytest.mark.parametrize("problem", ["missing_key", "bad_outcome", "bad_run_id", "missing_field",
+                                     "bad_decision_source"])
 def test_bad_requests_are_400(run_id, problem):
     body = deny_note(run_id)
     key = "k-" + run_id
@@ -157,6 +168,8 @@ def test_bad_requests_are_400(run_id, problem):
         body["run_id"] = "not-a-uuid"
     if problem == "missing_field":
         del body["summary"]
+    if problem == "bad_decision_source":
+        body["decision_source"] = "model_said_so"
     response = client.post(f"/api/v1/claims/{CLAIM}/notes", json=body, headers=headers("david", key))
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "invalid_argument"

@@ -51,6 +51,24 @@ def test_each_agent_acted_for_alice_with_its_own_token(live_api):
     assert denied == []       # no agent tried anything outside its scopes
 
 
+def test_an_agent_that_cannot_finish_leads_to_a_deny_note(live_api, monkeypatch):
+    """The user's rule (2026-11-03): an agent failure is posted as a DENY for an adjuster to assess."""
+    from claimsense_agent.agents import mock
+    from claimsense_agent.tools import AgentFailed
+
+    async def risk_runs_out_of_turns(tools, claim_id):
+        await tools.call("get_claim", claim_id=claim_id)
+        raise AgentFailed("risk: MaxTurnsExceeded: Max turns (15) exceeded")
+
+    monkeypatch.setattr(mock, "risk", risk_runs_out_of_turns)
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    assert result.status == "written" and result.note_id is not None
+    assert result.outcome == "DENY"
+    assert result.decision_source == "agent_failure"
+    assert result.cited_clauses == []
+    assert result.problems == ["risk: MaxTurnsExceeded: Max turns (15) exceeded"]
+
+
 def test_coverage_citations_that_were_not_retrieved_are_removed(live_api, monkeypatch):
     from claimsense_agent.agents import mock
     real_coverage = mock.coverage

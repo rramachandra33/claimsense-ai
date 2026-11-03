@@ -14,6 +14,10 @@ A draft that fails a check is replaced by code's own decision (decision_source
 "deterministic_fallback"). Two cases are always DENY:
   * the draft cites a clause that does not exist in the policy manual (a made-up citation)
   * no clause can be cited at all (open question 3)
+If an agent itself fails (its model call fails or it runs out of turns), the run still ends with a
+note: a DENY written by code, with no citation, saying the automated assessment could not be
+completed (decision_source "agent_failure"; the user's decision, 2026-11-03, for now). An access
+refusal is different: the run fails and nothing is written.
 The note is then written once, by code, with the adjuster's token and an Idempotency-Key.
 """
 import uuid
@@ -62,6 +66,13 @@ def drop_unretrieved(output, retrieved):
     if dropped:
         output = output.model_copy(update={"cited_clauses": kept})
     return output, dropped
+
+
+def agent_failure_deny(error):
+    """The note when an agent could not finish: DENY, no citation, and why."""
+    reason = (f"The automated assessment could not be completed ({error}). "
+              "An adjuster must assess this claim.")
+    return DraftOutput(outcome="DENY", summary=reason, cited_clauses=[], deny_reason=reason)
 
 
 def check_draft(draft, signals, gaps, retrieved):
@@ -206,31 +217,42 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
                            bad_citation=bad_citation)
             t.kv("outcome", outputs["drafter"].outcome)
             t.kv("cites", outputs["drafter"].cited_clauses)
-    except (ToolRefused, AgentFailed, ApiError) as e:
+    except (ToolRefused, ApiError) as e:
+        # An access refusal or an API error: nothing is written.
         result.problems.append(str(e))
         return result
+    except AgentFailed as e:
+        agent_error = str(e)
+    else:
+        agent_error = None
 
     # ---- code checks the draft ------------------------------------------------------------------
     with tracer.span("check draft", kind="guardrail") as t:
-        draft = outputs["drafter"]
-        problems = check_draft(draft, signals, gaps, retrieved)
-        unknown = unknown_clauses(client, draft.cited_clauses, retrieved)
-        decision_source = "model"
-        if unknown:
-            problems.append(f"cites {', '.join(unknown)}, which does not exist in the policy manual")
-            for p in problems:
-                t.event(p, level="block")
-            draft = made_up_citation_deny(unknown)
-            decision_source = "deterministic_fallback"
-            t.event("made-up citation: replaced by DENY", level="warn")
-        elif problems:
-            for p in problems:
-                t.event(p, level="block")
-            draft = fallback_draft(facts, signals, gaps, retrieved)
-            decision_source = "deterministic_fallback"
-            t.event(f"replaced by code's draft: {draft.outcome}", level="warn")
+        if agent_error:
+            problems = [agent_error]
+            draft = agent_failure_deny(agent_error)
+            decision_source = "agent_failure"
+            t.event(f"agent failed: {agent_error}; DENY written for an adjuster to assess", level="warn")
         else:
-            t.event("draft passes every check", level="ok")
+            draft = outputs["drafter"]
+            problems = check_draft(draft, signals, gaps, retrieved)
+            unknown = unknown_clauses(client, draft.cited_clauses, retrieved)
+            decision_source = "model"
+            if unknown:
+                problems.append(f"cites {', '.join(unknown)}, which does not exist in the policy manual")
+                for p in problems:
+                    t.event(p, level="block")
+                draft = made_up_citation_deny(unknown)
+                decision_source = "deterministic_fallback"
+                t.event("made-up citation: replaced by DENY", level="warn")
+            elif problems:
+                for p in problems:
+                    t.event(p, level="block")
+                draft = fallback_draft(facts, signals, gaps, retrieved)
+                decision_source = "deterministic_fallback"
+                t.event(f"replaced by code's draft: {draft.outcome}", level="warn")
+            else:
+                t.event("draft passes every check", level="ok")
 
         # The note goes into the client's claims system: no addresses, phone numbers or emails.
         summary, found_in_summary = redact(draft.summary)

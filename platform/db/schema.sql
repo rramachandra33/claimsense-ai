@@ -142,7 +142,8 @@ CREATE TABLE claimsense.assessments (
     claim_id         TEXT NOT NULL REFERENCES claims_mgmt.claims (claim_id),
     on_behalf_of     TEXT NOT NULL REFERENCES claimsense.users (user_id),
     outcome          TEXT NOT NULL CHECK (outcome IN ('APPROVE', 'FLAG', 'ROUTE', 'DENY')),
-    decision_source  TEXT NOT NULL CHECK (decision_source IN ('model', 'deterministic_fallback')),
+    -- agent_failure: an agent could not finish, so code wrote a DENY for an adjuster to assess
+    decision_source  TEXT NOT NULL CHECK (decision_source IN ('model', 'deterministic_fallback', 'agent_failure')),
     code_facts       JSONB NOT NULL,               -- dates, money, ratios computed by code
     agent_outputs    JSONB NOT NULL,               -- typed output of each agent
     citations        TEXT[] NOT NULL DEFAULT '{}',

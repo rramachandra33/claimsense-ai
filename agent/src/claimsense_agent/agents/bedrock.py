@@ -167,7 +167,9 @@ COVERAGE = """Your job: decide whether this loss is covered by the policy, and f
 
 RISK = """Your job: assess fraud risk under the policy manual's SIU referral rule (CLS-FRD-007).
 1. Get the claim and read its documents.
-2. Search the manual for the fraud investigation and referral clause.
+2. Search the manual for the fraud investigation and referral clause: it is CLS-FRD-007. Search at
+   most 3 times in all; if a search does not return it, a search such as "fraud investigation SIU
+   referral" will. Do not keep searching for other clauses: coverage is another agent's job.
 3. indicators: each fraud indicator you find. Code uses these thresholds, so report them when present:
    - 2 or more prior claims in the last 12 months
    - no police report although injury or airbag deployment is reported

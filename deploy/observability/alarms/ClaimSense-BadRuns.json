@@ -1,15 +1,88 @@
 {
   "AlarmName": "ClaimSense-BadRuns",
-  "AlarmDescription": "Over 25% of runs in an hour failed or fell back to code's decision (Quality dashboard).",
+  "AlarmDescription": "Over 25% of runs in an hour failed, fell back to code's decision, or had an agent that could not finish (Quality dashboard).",
   "Metrics": [
-    {"Id": "runs", "ReturnData": false,
-     "MetricStat": {"Metric": {"Namespace": "ClaimSense", "MetricName": "Runs", "Dimensions": [{"Name": "Brain", "Value": "bedrock"}]}, "Period": 3600, "Stat": "Sum"}},
-    {"Id": "fb", "ReturnData": false,
-     "MetricStat": {"Metric": {"Namespace": "ClaimSense", "MetricName": "Fallbacks", "Dimensions": [{"Name": "Brain", "Value": "bedrock"}]}, "Period": 3600, "Stat": "Sum"}},
-    {"Id": "fail", "ReturnData": false,
-     "MetricStat": {"Metric": {"Namespace": "ClaimSense", "MetricName": "Failures", "Dimensions": [{"Name": "Brain", "Value": "bedrock"}]}, "Period": 3600, "Stat": "Sum"}},
-    {"Id": "bad", "Label": "failed or fallback (%)", "ReturnData": true, "Expression": "100 * (fb + fail) / runs"}
+    {
+      "Id": "runs",
+      "ReturnData": false,
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ClaimSense",
+          "MetricName": "Runs",
+          "Dimensions": [
+            {
+              "Name": "Brain",
+              "Value": "bedrock"
+            }
+          ]
+        },
+        "Period": 3600,
+        "Stat": "Sum"
+      }
+    },
+    {
+      "Id": "fb",
+      "ReturnData": false,
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ClaimSense",
+          "MetricName": "Fallbacks",
+          "Dimensions": [
+            {
+              "Name": "Brain",
+              "Value": "bedrock"
+            }
+          ]
+        },
+        "Period": 3600,
+        "Stat": "Sum"
+      }
+    },
+    {
+      "Id": "fail",
+      "ReturnData": false,
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ClaimSense",
+          "MetricName": "Failures",
+          "Dimensions": [
+            {
+              "Name": "Brain",
+              "Value": "bedrock"
+            }
+          ]
+        },
+        "Period": 3600,
+        "Stat": "Sum"
+      }
+    },
+    {
+      "Id": "af",
+      "ReturnData": false,
+      "MetricStat": {
+        "Metric": {
+          "Namespace": "ClaimSense",
+          "MetricName": "AgentFailures",
+          "Dimensions": [
+            {
+              "Name": "Brain",
+              "Value": "bedrock"
+            }
+          ]
+        },
+        "Period": 3600,
+        "Stat": "Sum"
+      }
+    },
+    {
+      "Id": "bad",
+      "Label": "failed, fallback or agent failure (%)",
+      "ReturnData": true,
+      "Expression": "100 * (fb + af + fail) / runs"
+    }
   ],
-  "EvaluationPeriods": 1, "Threshold": 25, "ComparisonOperator": "GreaterThanThreshold",
+  "EvaluationPeriods": 1,
+  "Threshold": 25,
+  "ComparisonOperator": "GreaterThanThreshold",
   "TreatMissingData": "notBreaching"
 }

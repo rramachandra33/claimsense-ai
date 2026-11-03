@@ -20,7 +20,7 @@ def test_a_written_run_is_a_resolution():
                        cost_usd=0.07)
     got = values(metrics.run_metrics(result, 54000, "bedrock"))
     assert got == {"Runs": 1, "RunDurationMs": 54000, "Failures": 0, "Resolutions": 1, "Fallbacks": 0,
-                   "InputTokens": 100, "OutputTokens": 20, "RunCostUsd": 0.07, "Decisions:APPROVE": 1}
+                   "AgentFailures": 0, "InputTokens": 100, "OutputTokens": 20, "RunCostUsd": 0.07, "Decisions:APPROVE": 1}
 
 
 def test_a_fallback_and_a_failure_are_counted():

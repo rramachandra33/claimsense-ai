@@ -66,7 +66,7 @@ export type Note = {
   author: string;
   created_at: string;
   run_id: string;
-  decision_source: "model" | "deterministic_fallback";
+  decision_source: "model" | "deterministic_fallback" | "agent_failure";
   code_facts: {
     facts: Record<string, unknown> & {
       in_force_at_loss: boolean;
