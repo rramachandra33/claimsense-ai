@@ -22,6 +22,7 @@ from pydantic import BaseModel
 
 from .notes import NoteError, NoteRequest, check_note, write_note
 from .obo import AGENT_SCOPES, OBO_LIFETIME_SECONDS, make_obo_token
+from .ratelimit import allow_request
 
 app = FastAPI(title="ClaimSense data API", version="0.1.0")
 
@@ -63,9 +64,10 @@ def claim_not_available(claim_id):
 
 
 def require_user(authorization, action, resource_type=None, resource_id=None):
-    """Step 1 for every route: return the caller, or audit the refusal and stop."""
+    """Step 1 for every route: return the caller, or audit the refusal and stop.
+    Also applies the rate limit, so a caller over it is refused before any data is read."""
     try:
-        return get_user(authorization)
+        user = get_user(authorization)
     except AuthError as e:
         log_audit(action, "deny", resource_type=resource_type, resource_id=resource_id,
                   reason=f"authentication failed: {e}")
@@ -74,6 +76,11 @@ def require_user(authorization, action, resource_type=None, resource_id=None):
         log_audit(action, "deny", resource_type=resource_type, resource_id=resource_id,
                   reason=str(e))
         raise ApiError(403, "forbidden", "Your account may not use this service.")
+    if not allow_request(user["user_id"]):
+        log_audit(action, "deny", user=user, resource_type=resource_type, resource_id=resource_id,
+                  reason="rate limit")
+        raise ApiError(429, "rate_limited", "Too many requests. Try again in a minute.")
+    return user
 
 
 # ---------------------------------------------------------------------------

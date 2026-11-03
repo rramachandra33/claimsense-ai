@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn>=0.30",
     "psycopg[binary]>=3.2",
     "pyjwt>=2.9",
+    "mangum>=0.19",       # runs the same app on AWS Lambda (lambda_handler.py)
 ]
 
 [project.optional-dependencies]

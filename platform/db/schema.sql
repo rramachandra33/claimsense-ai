@@ -187,6 +187,14 @@ CREATE TABLE claimsense.idempotency_keys (
     PRIMARY KEY (user_id, idem_key)
 );
 
+-- Requests per user per minute, for the API's rate limit (api/src/claimsense_api/ratelimit.py).
+CREATE TABLE claimsense.rate_limit (
+    user_id        TEXT NOT NULL,
+    window_start   TIMESTAMPTZ NOT NULL,            -- the minute being counted
+    request_count  INTEGER NOT NULL,
+    PRIMARY KEY (user_id, window_start)
+);
+
 -- ---------------------------------------------------------------------------
 -- Audit log — every request and tool call, allowed or denied (reused from the sample, plus OBO columns)
 -- ---------------------------------------------------------------------------

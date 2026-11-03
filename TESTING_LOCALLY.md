@@ -90,7 +90,7 @@ The OBO token expires after 5 minutes; ask for a new one if you get 401.
 **D. Automated tests** (need only the database):
 
 ```bash
-make api-test     # 67 tests
+make api-test     # 73 tests (incl. rate limit and the Lambda handler)
 make mcp-test     # 8 tests (over HTTP, including the registry)
 make test         # 38 tests (+1 Bedrock test, opt-in): the agent pipeline end to end (starts its own API and MCP server)
 uv run --with pytest pytest platform/db/seed -q    # 4 tests

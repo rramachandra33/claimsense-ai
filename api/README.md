@@ -69,3 +69,18 @@ On every call with an OBO token the API also checks the scope and the bound clai
 claims, writing notes and minting tokens, records searches under the token's own run and agent, and
 stops working as soon as the adjuster is suspended. Audit rows record the agent as `actor` and the
 adjuster as `on_behalf_of`.
+
+### Rate limit
+
+At most `CLAIMSENSE_RATE_LIMIT_PER_MINUTE` requests per user per minute (`ratelimit.py`). The count
+is kept in PostgreSQL (`claimsense.rate_limit`), so it holds when many Lambda copies run at once.
+An agent's calls count for the adjuster it acts for (one assessment run is about 25 calls). Over the
+limit: `429 rate_limited`, audited as a deny with reason `rate limit`, before any data is read.
+Unset or `0` means no limit, which is what local development, the tests and the evaluation use; the
+deployed API sets it.
+
+## On AWS Lambda
+
+`claimsense_api.lambda_handler.handler` runs the same app on Lambda through Mangum (a Function URL
+or API Gateway event in, the app's response out). Token check, access rule, rate limit and audit
+are unchanged. `tests/test_platform.py` calls the handler with Function URL events.
