@@ -1,6 +1,6 @@
-"""Start the data API on a free local port for the pipeline tests.
+"""Start the data API and the MCP server on free local ports for the pipeline tests.
 
-The MCP server runs as a separate process and calls the API over HTTP, so the API has to really
+The agents reach the MCP server over HTTP and it calls the API over HTTP, so both have to really
 listen on a port; an in-process test client is not enough. Tests that need it skip cleanly when
 the database is not running (`make up`).
 """

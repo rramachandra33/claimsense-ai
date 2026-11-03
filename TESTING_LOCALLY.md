@@ -1,7 +1,7 @@
 # Testing ClaimSense locally (MacBook, no AWS needed)
 
 Everything built so far runs on this Mac: PostgreSQL (Docker, port 5433), the data API (port 8000),
-the runner (port 8100, runs the four agents), the MCP server (started per run over stdio) and the
+the runner (port 8100, runs the four agents), the MCP server with its registry (port 8200; agents find it at `/registry/v0/servers`) and the
 console (port 3100). Docker Desktop must be running.
 
 ## 1. Start
@@ -10,7 +10,7 @@ console (port 3100). Docker Desktop must be running.
 
 ```bash
 cd ~/raju/CLAIMSENSE-AI
-make stack                    # db, seed, api :8000, runner :8100, console :3100 (first build: a few minutes)
+make stack                    # db, seed, api :8000, mcp :8200, runner :8100, console :3100 (first build: a few minutes)
 make stack BRAIN=bedrock      # the same, with Claude in the runner (needs a current `aws login --profile claimsense`)
 make stack-logs               # follow the api, runner and console logs
 ```
@@ -29,11 +29,15 @@ make up                                   # only if the database is not already 
 export CLAIMSENSE_JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 CLAIMSENSE_DEV_LOGIN=1 make api           # http://localhost:8000
 
-# Terminal 2: runner (what the Run assessment button calls; mock agents, no AWS)
+# Terminal 2: MCP server + registry (the agents' only way to the data)
+cd ~/raju/CLAIMSENSE-AI
+make mcp                                  # http://localhost:8200/registry/v0/servers
+
+# Terminal 3: runner (what the Run assessment button calls; mock agents, no AWS)
 cd ~/raju/CLAIMSENSE-AI
 make runner                               # http://localhost:8100/health
 
-# Terminal 3: console
+# Terminal 4: console
 cd ~/raju/CLAIMSENSE-AI
 make web                                  # http://localhost:3100
 ```
@@ -87,8 +91,8 @@ The OBO token expires after 5 minutes; ask for a new one if you get 401.
 
 ```bash
 make api-test     # 67 tests
-make mcp-test     # 6 tests
-make test         # 38 tests (+1 Bedrock test, opt-in): the agent pipeline end to end (starts its own API)
+make mcp-test     # 8 tests (over HTTP, including the registry)
+make test         # 38 tests (+1 Bedrock test, opt-in): the agent pipeline end to end (starts its own API and MCP server)
 uv run --with pytest pytest platform/db/seed -q    # 4 tests
 ```
 
@@ -114,7 +118,7 @@ in the course data). By default that is not a reason to FLAG, and Claude is told
 `CLAIMSENSE_LOCATION_CHECK=1` code compares the two locations and a mismatch is a FLAG
 (CLS-FRD-007). Addresses in a note show as `[address]`.
 
-**G. Run the four agents from the terminal** (mock brain, no AWS; with `make api` running):
+**G. Run the four agents from the terminal** (mock brain, no AWS; with `make api` and `make mcp` running):
 
 ```bash
 make agent CLAIM=CLM-2024-1800 AS=alice      # APPROVE, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004

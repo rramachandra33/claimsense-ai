@@ -3,7 +3,8 @@
     cd agent && uv run --extra dev pytest -q
 
 Each run goes through everything real except the model: OBO tokens per agent, the MCP server
-over stdio, the API's access checks and audit log, the draft checks and the note write.
+over HTTP (found through the registry), the API's access checks and audit log, the draft checks
+and the note write.
 """
 import asyncio
 

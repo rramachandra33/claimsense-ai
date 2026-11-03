@@ -5,8 +5,8 @@ description = "ClaimSense assessment pipeline: four agents (reader, coverage, ri
 readme = "README.md"
 requires-python = ">=3.12"
 
-# The agents reach claim data only through the ClaimSense MCP server, which this package starts
-# for each agent over stdio. Mock mode needs nothing else: no model, no AWS.
+# The agents reach claim data only through the ClaimSense MCP server, over HTTP; they find its
+# URL in the MCP registry. Mock mode needs nothing else: no model, no AWS.
 dependencies = [
     "claimsense-mcp",
     "httpx>=0.27",

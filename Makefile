@@ -16,13 +16,13 @@ export CLAIMSENSE_DB_URL      := $(DB_URL)
 export CLAIMSENSE_BASE_URL    := $(BASE_URL)
 export CLAIMSENSE_CONSOLE_URL := $(CONSOLE)
 
-.PHONY: help stack stack-down stack-logs up deps seed api api-test mcp-test token web web-dev agent runner eval test down clean doctor
+.PHONY: help stack stack-down stack-logs up deps seed api api-test mcp mcp-test token web web-dev agent runner eval test down clean doctor
 
 help: ## show this list
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-stack: ## the whole stack in Docker: db, seed, api :8000, runner :8100, console :3100 [BRAIN=bedrock]
+stack: ## the whole stack in Docker: db, seed, api :8000, mcp :8200, runner :8100, console :3100 [BRAIN=bedrock]
 	@cd platform/db && docker compose down 2>/dev/null || true
 	@test -f .env || { printf 'CLAIMSENSE_JWT_SECRET=%s\nBRAIN=mock\n' "$$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > .env; echo "==> wrote .env"; }
 	BRAIN=$(BRAIN) docker compose up --build --detach --wait
@@ -33,7 +33,7 @@ stack-down: ## stop the Docker stack (data survives)
 	docker compose down
 
 stack-logs: ## follow the Docker stack's logs
-	docker compose logs --follow api runner web
+	docker compose logs --follow api mcp runner web
 
 up: ## Postgres + schema + course-fixture seed (one command)
 	@docker compose down 2>/dev/null || true      # the Docker stack uses the same container name
@@ -61,6 +61,9 @@ api: ## run the ClaimSense data API on :8000 (needs CLAIMSENSE_JWT_SECRET; see a
 api-test: ## the data API's access tests (needs `make up` first)
 	cd api && uv run --extra dev pytest -q
 
+mcp: ## the MCP server and its registry on :8200 (agents find it at /registry/v0/servers; needs make api)
+	cd mcp_server && uv run claimsense-mcp
+
 mcp-test: ## the MCP server's tool tests (needs `make up` first)
 	cd mcp_server && uv run --extra dev pytest -q
 
@@ -73,10 +76,10 @@ web: deps ## build + serve the Ops Console on :$(PORT)
 web-dev: deps ## hot-reload the console instead (development)
 	cd platform/web && PORT=$(PORT) npm run dev
 
-agent: ## assess a claim: make agent CLAIM=CLM-2024-1800 AS=alice [BRAIN=bedrock] (needs make api)
+agent: ## assess a claim: make agent CLAIM=CLM-2024-1800 AS=alice [BRAIN=bedrock] (needs make api + make mcp)
 	cd agent && AWS_PROFILE=$(AWS_PROFILE) uv run claimsense-agent run --claim $(CLAIM) --user $(AS) --brain $(BRAIN)
 
-runner: ## the service behind the console's Run assessment button (port 8100) [BRAIN=bedrock]
+runner: ## the service behind the console's Run assessment button (port 8100) [BRAIN=bedrock] (needs make api + make mcp)
 	cd agent && AWS_PROFILE=$(AWS_PROFILE) CLAIMSENSE_BRAIN=$(BRAIN) uv run uvicorn claimsense_agent.runner:app --port 8100
 
 eval: ## the 60-case evaluation (needs make up): make eval [BRAIN=bedrock] — mock is the CI gate
@@ -93,7 +96,7 @@ verify: ## $$0 smoke gate: prerequisites + smoke eval + unit tests. Run this fir
 	@$(MAKE) --no-print-directory test
 	@echo "verify: OK"
 
-test: ## the agent pipeline's tests (needs make up; starts its own API)
+test: ## the agent pipeline's tests (needs make up; starts its own API and MCP server)
 	cd agent && uv run --extra dev pytest -q
 
 doctor: ## check prerequisites and report what's missing

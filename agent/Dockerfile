@@ -1,5 +1,6 @@
-# The runner service (the console's Run assessment button) with the four agents and the MCP server
-# they start over stdio. Built from the repo root, because the agent installs ../mcp_server.
+# The runner service (the console's Run assessment button) with the four agents. The same image
+# runs the MCP server and its registry (command: claimsense-mcp), because the agent installs
+# ../mcp_server. Built from the repo root.
 FROM python:3.12-slim
 COPY --from=ghcr.io/astral-sh/uv:0.11.29 /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/agent/.venv/bin:$PATH"

@@ -1,19 +1,23 @@
 """One agent's connection to the ClaimSense MCP server.
 
-For each agent the pipeline starts the MCP server over stdio with that agent's OBO token, so the
-agent can do only what its token allows (its scopes, its one claim, five minutes). The same
-server is what a real model will use through the Agents SDK; in mock mode the mock agents call
-the tools directly through this wrapper.
+The MCP server is an HTTP service. Its address is not configured here: the agent looks it up in
+the MCP registry (GET /registry/v0/servers) by name. Each agent connects with its own OBO token
+in the Authorization header, so it can do only what its token allows (its scopes, its one claim,
+five minutes). The same connection is used by the Claude agents through the Agents SDK; in mock
+mode the mock agents call the tools directly through this wrapper.
+
+Settings: CLAIMSENSE_MCP_REGISTRY_URL (default http://localhost:8200/registry/v0/servers).
 """
 import json
 import os
-import sys
 from contextlib import asynccontextmanager
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+import httpx
+import httpx2
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 
-from .api import api_url
+MCP_SERVER_NAME = "io.claimsense/claims"
 
 
 class ToolRefused(Exception):
@@ -24,16 +28,29 @@ class AgentFailed(Exception):
     """An agent could not produce its output (e.g. the model call failed or ran out of turns)."""
 
 
-def mcp_server_params(agent, obo_token, run_id):
-    """How to start the MCP server for one agent."""
-    env = dict(os.environ)
-    env.update({
-        "CLAIMSENSE_API_URL": api_url(),
-        "CLAIMSENSE_TOKEN": obo_token,
-        "CLAIMSENSE_RUN_ID": run_id,
-        "CLAIMSENSE_AGENT": agent,
-    })
-    return StdioServerParameters(command=sys.executable, args=["-m", "claimsense_mcp.server"], env=env)
+class McpNotFound(Exception):
+    """The registry did not list the ClaimSense MCP server, or could not be reached."""
+
+
+def registry_url():
+    return os.environ.get("CLAIMSENSE_MCP_REGISTRY_URL", "http://localhost:8200/registry/v0/servers")
+
+
+def find_mcp_url(name=MCP_SERVER_NAME):
+    """Ask the MCP registry where the named server is, and return its streamable-HTTP URL."""
+    try:
+        response = httpx.get(registry_url(), timeout=10)
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise McpNotFound(f"MCP registry {registry_url()} not reachable: {e}")
+    for entry in response.json()["servers"]:
+        server = entry["server"]
+        if server["name"] != name:
+            continue
+        for remote in server.get("remotes", []):
+            if remote["type"] == "streamable-http":
+                return remote["url"]
+    raise McpNotFound(f"MCP registry {registry_url()} does not list {name}")
 
 
 class AgentTools:
@@ -67,12 +84,15 @@ class AgentTools:
 
 @asynccontextmanager
 async def open_tools(agent, obo_token, run_id):
-    """Start the MCP server for one agent and yield its AgentTools."""
-    params = mcp_server_params(agent, obo_token, run_id)
-    # The server logs each HTTP call to stderr; keep that out of the pipeline's output.
-    with open(os.devnull, "w") as quiet:
-        errlog = sys.stderr if os.environ.get("CLAIMSENSE_MCP_DEBUG") else quiet
-        async with stdio_client(params, errlog=errlog) as (read, write):
+    """Connect one agent to the MCP server with its OBO token and yield its AgentTools.
+
+    run_id is not sent: the token already carries it, and the API records searches under it."""
+    url = find_mcp_url()
+    # 30 s to connect or send, 5 minutes to read (the SDK's own defaults for MCP over HTTP).
+    timeout = httpx2.Timeout(30, read=300)
+    async with httpx2.AsyncClient(headers={"Authorization": "Bearer " + obo_token}, timeout=timeout) as http:
+        # The server is stateless, so there is no session to close at the end (terminate_on_close).
+        async with streamable_http_client(url, http_client=http, terminate_on_close=False) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 yield AgentTools(session, agent)

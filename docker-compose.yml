@@ -2,7 +2,7 @@
 #
 #     make stack            (or: docker compose up --build, with CLAIMSENSE_JWT_SECRET in .env)
 #
-# db -> seed (one-shot: schema + course fixtures) -> api -> runner -> web (console on :3100).
+# db -> seed (one-shot: schema + course fixtures) -> api -> mcp -> runner -> web (console on :3100).
 # The database is published on 5433 like `make up`'s, so make eval / make test work against it too.
 # `make up` and this stack both use the container name claimsense-db: run one at a time.
 name: claimsense
@@ -54,12 +54,35 @@ services:
       timeout: 3s
       retries: 10
 
+  # The MCP server and its registry. Same image as the runner (it contains the MCP package).
+  mcp:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    command: ["claimsense-mcp"]
+    environment:
+      CLAIMSENSE_API_URL: http://api:8000
+      CLAIMSENSE_MCP_HOST: 0.0.0.0
+      CLAIMSENSE_MCP_PORT: "8200"
+      CLAIMSENSE_MCP_PUBLIC_URL: http://mcp:8200/mcp      # what the registry tells agents
+    ports:
+      - "8200:8200"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8200/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
   runner:
     build:
       context: .
       dockerfile: agent/Dockerfile
     environment:
       CLAIMSENSE_API_URL: http://api:8000
+      CLAIMSENSE_MCP_REGISTRY_URL: http://mcp:8200/registry/v0/servers
       CLAIMSENSE_BRAIN: ${BRAIN:-mock}
       CLAIMSENSE_LOCATION_CHECK: ${CLAIMSENSE_LOCATION_CHECK:-}
       # Only the bedrock brain uses these: your `aws login` profile. The config is read-only; the
@@ -72,6 +95,8 @@ services:
       - "8100:8100"
     depends_on:
       api:
+        condition: service_healthy
+      mcp:
         condition: service_healthy
 
   web:
