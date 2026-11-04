@@ -30,4 +30,6 @@ make web                                                    # console on http://
 |---|---|---|
 | `CLAIMSENSE_API_URL` | `http://localhost:8000` | Where the data API runs |
 
-The session cookie is httpOnly and holds the API-issued token; page scripts cannot read it.
+The session cookie is httpOnly and holds the API-issued token; page scripts cannot read it. In
+production it is also Secure (HTTPS only), unless `CLAIMSENSE_COOKIE_SECURE=0`: the EC2 console is
+still plain HTTP and sets it to 0, or the browser drops the cookie and every page goes back to sign-in.

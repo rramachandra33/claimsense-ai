@@ -111,6 +111,7 @@ services:
     environment:
       CLAIMSENSE_API_URL: http://api:8000
       CLAIMSENSE_RUNNER_URL: http://runner:8100
+      CLAIMSENSE_COOKIE_SECURE: "0"    # the console is plain HTTP here; set to 1 behind HTTPS
     ports:
       - "3100:3100"
     depends_on:
