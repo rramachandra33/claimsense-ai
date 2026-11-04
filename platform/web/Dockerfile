@@ -11,7 +11,9 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-COPY --from=build /app/.next .next
+# Owned by the console's user: Next.js writes its page cache under .next/cache at run time
+# (after a run, to show the new note), and as root-owned files that failed with EACCES.
+COPY --from=build --chown=node:node /app/.next .next
 COPY next.config.mjs ./
 USER node
 EXPOSE 3100

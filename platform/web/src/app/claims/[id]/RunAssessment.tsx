@@ -1,22 +1,44 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Play } from "lucide-react";
+import { Loader2, Play } from "lucide-react";
 import { OutcomeBadge } from "@/components/badges";
 import { formatCost } from "@/lib/format";
 import { runAssessmentAction, type RunState } from "./actions";
 
+/** Seconds since the run started, counting up once a second while it runs. */
+function useElapsedSeconds(running: boolean): number {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!running) return;
+    setSeconds(0);
+    const started = Date.now();
+    const timer = setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [running]);
+  return seconds;
+}
+
 function RunButton() {
   const { pending } = useFormStatus();
+  const seconds = useElapsedSeconds(pending);
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-claimsense-primary px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-claimsense-deep disabled:opacity-60"
-    >
-      <Play className="h-3.5 w-3.5" />
-      {pending ? "Running the four agents…" : "Run assessment"}
-    </button>
+    <>
+      <button
+        type="submit"
+        disabled={pending}
+        className="inline-flex items-center gap-1.5 rounded-lg bg-claimsense-primary px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-claimsense-deep disabled:opacity-60"
+      >
+        {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+        {pending ? `Running the four agents… ${seconds} s` : "Run assessment"}
+      </button>
+      {pending ? (
+        <p role="status" className="text-xs font-medium text-claimsense-primary">
+          A run usually takes 40–60 seconds. The new note appears below when it finishes.
+        </p>
+      ) : null}
+    </>
   );
 }
 
