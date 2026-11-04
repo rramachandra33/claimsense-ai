@@ -98,14 +98,15 @@ export function RunAssessment({ claimId, claimStatus }: { claimId: string; claim
   const [asking, setAsking] = useState(false);
   const result = state.result;
 
-  function run() {
+  // The form's action is the run itself, so the button sees it as pending (spinner and timer,
+  // which replace the question while it runs). The question is closed once the run has answered.
+  useEffect(() => {
     setAsking(false);
-    formAction();
-  }
+  }, [state]);
 
   return (
     <div className="space-y-3">
-      <form action={run} className="flex flex-wrap items-center gap-3">
+      <form action={formAction} className="flex flex-wrap items-center gap-3">
         <RunButton claimStatus={claimStatus} asking={asking}
           onAsk={() => setAsking(true)} onCancel={() => setAsking(false)} />
         <p className="text-xs text-claimsense-muted">
