@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
 import { Loader2, Play } from "lucide-react";
 import { OutcomeBadge } from "@/components/badges";
 import { formatCost } from "@/lib/format";
@@ -32,21 +31,23 @@ export function isDecided(claimStatus: string): boolean {
 
 /**
  * The button. On a claim that is already decided, the first click only asks; the run starts
- * when the adjuster clicks Rerun in that question.
+ * when the adjuster clicks Rerun in that question. While a run goes, a spinner and a seconds
+ * counter replace the button (and the question).
  */
-function RunButton({ claimStatus, asking, onAsk, onCancel }: {
+function RunButton({ claimStatus, running, asking, onRun, onAsk, onCancel }: {
   claimStatus: string;
+  running: boolean;
   asking: boolean;
+  onRun: () => void;
   onAsk: () => void;
   onCancel: () => void;
 }) {
-  const { pending } = useFormStatus();
-  const seconds = useElapsedSeconds(pending);
+  const seconds = useElapsedSeconds(running);
 
-  if (pending) {
+  if (running) {
     return (
       <>
-        <button type="submit" disabled className={BUTTON}>
+        <button type="button" disabled className={BUTTON}>
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Running the four agents… {seconds} s
         </button>
@@ -62,7 +63,7 @@ function RunButton({ claimStatus, asking, onAsk, onCancel }: {
       <div role="alertdialog" aria-label="Rerun on a decided claim"
         className="flex flex-wrap items-center gap-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
         <span>It is already {claimStatus.toLowerCase()}. Rerun it?</span>
-        <button type="submit" className={BUTTON}>
+        <button type="button" onClick={onRun} className={BUTTON}>
           <Play className="h-3.5 w-3.5" />
           Rerun
         </button>
@@ -84,7 +85,7 @@ function RunButton({ claimStatus, asking, onAsk, onCancel }: {
   }
 
   return (
-    <button type="submit" className={BUTTON}>
+    <button type="button" onClick={onRun} className={BUTTON}>
       <Play className="h-3.5 w-3.5" />
       Run assessment
     </button>
@@ -93,27 +94,35 @@ function RunButton({ claimStatus, asking, onAsk, onCancel }: {
 
 /** The Run assessment button, and what the last run did. The note itself appears in the list below. */
 export function RunAssessment({ claimId, claimStatus }: { claimId: string; claimStatus: string }) {
-  const action = runAssessmentAction.bind(null, claimId);
-  const [state, formAction] = useFormState<RunState>(action, { result: null, error: null });
+  const [state, setState] = useState<RunState>({ result: null, error: null });
+  const [running, setRunning] = useState(false);
   const [asking, setAsking] = useState(false);
   const result = state.result;
 
-  // The form's action is the run itself, so the button sees it as pending (spinner and timer,
-  // which replace the question while it runs). The question is closed once the run has answered.
-  useEffect(() => {
+  // The run is called directly and tracked here: running is true from the click until the run
+  // answers. (React's form status did not show it, so the question stayed up during the run.)
+  async function run() {
     setAsking(false);
-  }, [state]);
+    setRunning(true);
+    try {
+      setState(await runAssessmentAction(claimId, state));
+    } catch {
+      setState({ result: null, error: "The run could not be completed. Reload the page to see if a note was written." });
+    } finally {
+      setRunning(false);
+    }
+  }
 
   return (
     <div className="space-y-3">
-      <form action={formAction} className="flex flex-wrap items-center gap-3">
-        <RunButton claimStatus={claimStatus} asking={asking}
+      <div className="flex flex-wrap items-center gap-3">
+        <RunButton claimStatus={claimStatus} running={running} asking={asking} onRun={run}
           onAsk={() => setAsking(true)} onCancel={() => setAsking(false)} />
         <p className="text-xs text-claimsense-muted">
           Reader → coverage → risk → drafter, each with its own short-lived token. Code checks the draft
           and writes one note for you to confirm.
         </p>
-      </form>
+      </div>
 
       {state.error ? (
         <p className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-rose-200">{state.error}</p>
