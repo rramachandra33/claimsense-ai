@@ -20,38 +20,94 @@ function useElapsedSeconds(running: boolean): number {
   return seconds;
 }
 
-function RunButton() {
+const BUTTON =
+  "inline-flex items-center gap-1.5 rounded-lg bg-claimsense-primary px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-claimsense-deep disabled:opacity-60";
+
+/** Claim statuses that mean the claims system has already decided the claim. */
+const DECIDED_STATUSES = ["approved", "denied", "closed", "settled", "paid"];
+
+export function isDecided(claimStatus: string): boolean {
+  return DECIDED_STATUSES.includes(claimStatus.trim().toLowerCase());
+}
+
+/**
+ * The button. On a claim that is already decided, the first click only asks; the run starts
+ * when the adjuster clicks Rerun in that question.
+ */
+function RunButton({ claimStatus, asking, onAsk, onCancel }: {
+  claimStatus: string;
+  asking: boolean;
+  onAsk: () => void;
+  onCancel: () => void;
+}) {
   const { pending } = useFormStatus();
   const seconds = useElapsedSeconds(pending);
-  return (
-    <>
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-claimsense-primary px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-claimsense-deep disabled:opacity-60"
-      >
-        {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-        {pending ? `Running the four agents… ${seconds} s` : "Run assessment"}
-      </button>
-      {pending ? (
+
+  if (pending) {
+    return (
+      <>
+        <button type="submit" disabled className={BUTTON}>
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Running the four agents… {seconds} s
+        </button>
         <p role="status" className="text-xs font-medium text-claimsense-primary">
           A run usually takes 40–60 seconds. The new note appears below when it finishes.
         </p>
-      ) : null}
-    </>
+      </>
+    );
+  }
+
+  if (asking) {
+    return (
+      <div role="alertdialog" aria-label="Rerun on a decided claim"
+        className="flex flex-wrap items-center gap-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
+        <span>It is already {claimStatus.toLowerCase()}. Rerun it?</span>
+        <button type="submit" className={BUTTON}>
+          <Play className="h-3.5 w-3.5" />
+          Rerun
+        </button>
+        <button type="button" onClick={onCancel}
+          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100">
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  if (isDecided(claimStatus)) {
+    return (
+      <button type="button" onClick={onAsk} className={BUTTON}>
+        <Play className="h-3.5 w-3.5" />
+        Run assessment
+      </button>
+    );
+  }
+
+  return (
+    <button type="submit" className={BUTTON}>
+      <Play className="h-3.5 w-3.5" />
+      Run assessment
+    </button>
   );
 }
 
 /** The Run assessment button, and what the last run did. The note itself appears in the list below. */
-export function RunAssessment({ claimId }: { claimId: string }) {
+export function RunAssessment({ claimId, claimStatus }: { claimId: string; claimStatus: string }) {
   const action = runAssessmentAction.bind(null, claimId);
   const [state, formAction] = useFormState<RunState>(action, { result: null, error: null });
+  const [asking, setAsking] = useState(false);
   const result = state.result;
+
+  function run() {
+    setAsking(false);
+    formAction();
+  }
 
   return (
     <div className="space-y-3">
-      <form action={formAction} className="flex flex-wrap items-center gap-3">
-        <RunButton />
+      <form action={run} className="flex flex-wrap items-center gap-3">
+        <RunButton claimStatus={claimStatus} asking={asking}
+          onAsk={() => setAsking(true)} onCancel={() => setAsking(false)} />
         <p className="text-xs text-claimsense-muted">
           Reader → coverage → risk → drafter, each with its own short-lived token. Code checks the draft
           and writes one note for you to confirm.

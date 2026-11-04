@@ -37,7 +37,7 @@ export default async function ClaimPage({ params }: { params: { id: string } }) 
     <AppShell session={session} title={`${claim.claim_id} · ${claim.incident_type}`} crumbs={crumbs}>
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="ClaimSense assessment" subtitle="Draft decisions for you to confirm. Nothing is paid or closed automatically." className="lg:col-span-3">
-          <RunAssessment claimId={claim.claim_id} />
+          <RunAssessment claimId={claim.claim_id} claimStatus={claim.claim_status} />
           <div className="mt-4 border-t border-claimsense-line pt-4">
             {!notesResult.ok ? (
               <ApiErrorPanel status={notesResult.status} message={notesResult.error.message} />
