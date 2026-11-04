@@ -142,11 +142,25 @@ runs only when asked:
 cd agent && CLAIMSENSE_BEDROCK_TESTS=1 AWS_PROFILE=claimsense uv run --extra dev pytest -q tests/test_bedrock.py
 ```
 
+## Precedence (decided 2026-11-04)
+
+When several outcomes are signalled, the note carries the first of **DENY, FLAG, ROUTE, APPROVE**
+(`PRECEDENCE` in `facts.py`). No cover ends it; fraud review comes before any specialist or payment;
+a specialist comes before payment. A documentation gap on its own counts as FLAG (CLS-DOC-009).
+
+Nothing is dropped: after the draft checks, code adds to the note's summary (`note_additions`)
+
+* **Also needs:** each signal for another outcome, with its clause (for example a senior adjuster
+  on a FLAG, or an injury on a DENY);
+* **Pending documentation:** each documentation gap, with its clause;
+* on a FLAG that rests on documentation alone: "Code found no fraud indicators: this FLAG is for
+  the pending documentation."
+
+Code writes these lines, so no draft can leave them out. The three original cases are in
+`evals/precedence_cases.json`.
+
 ## Provisional, still to decide
 
-* **Precedence** (open question 2): when several outcomes are signalled, `PROVISIONAL_PRECEDENCE`
-  in `facts.py` picks DENY, then FLAG, then ROUTE. A documentation gap on its own counts as FLAG.
-  Both are placeholders until the precedence decision; the cases are in `evals/precedence_cases.json`.
 * **Fraud threshold**: vendor score 0.70.
 
 ## Files

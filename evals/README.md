@@ -51,12 +51,15 @@ With `CLAIMSENSE_LOCATION_CHECK=1`, a case's `with_location_check` expectations 
 (EV-001 and EV-049 expect FLAG instead of APPROVE; EV-045 must cite CLS-FRD-007). The results file
 records whether the check was on.
 
+### Precedence (decided 2026-11-04)
+
+Cases where more than one outcome applies list them in `signalled`, and expect the first in the
+order DENY, FLAG, ROUTE, APPROVE (a documentation gap counts as FLAG). 12 cases, including 10 of
+the 20 course claims; the report lists them. `precedence_cases.json` is the original list of 3
+from the data import, now with their expected outcomes.
+
 ### Still to decide
 
-* **Precedence (open question 2).** Cases where more than one outcome applies are marked
-  `precedence_pending`: any of the signalled outcomes passes, and the report lists what each case
-  got. 12 cases, including 10 of the 20 course claims (a documentation gap counts as FLAG).
-  `precedence_cases.json` is the original list of 3 from the data import.
 * **Proposed rules.** Two cases are not covered by any code rule yet, so the mock brain fails them
   by design: a VIN mismatch (EV-035) and an unmapped loss type such as mechanical breakdown
   (EV-039). Both currently get APPROVE; the proposal is that neither may. With the location check

@@ -4,9 +4,9 @@ The rules come from the AutoSure policy manual as written (open question 6). Thi
 logic as `scripts/import_course_fixtures.py`; a test checks both give the same facts for all
 20 course claims.
 
-`outcome_signals` lists which outcome each fact points to. Which outcome wins when several are
-signalled is still open (open question 2): PROVISIONAL_PRECEDENCE is a placeholder so runs can
-finish, and the reproducing claims are in `evals/precedence_cases.json`.
+`outcome_signals` lists which outcome each fact points to. When several are signalled, PRECEDENCE
+picks the one the note carries (decided 2026-11-04, open question 2): DENY, then FLAG, then ROUTE,
+then APPROVE. The others are not dropped: `note_additions` lists them on the note.
 """
 import os
 import re
@@ -30,8 +30,10 @@ TOTAL_LOSS_RATIO = Decimal("0.75")            # CLS-TL-005
 SENIOR_CONFIRMATION_ABOVE = Decimal("25000")  # CLS-PAY-012
 FRAUD_SCORE_THRESHOLD = 0.70                  # provisional (DECISIONS.md)
 
-# PROVISIONAL, not decided (open question 2). Earlier in the list wins.
-PROVISIONAL_PRECEDENCE = ["DENY", "FLAG", "ROUTE", "APPROVE"]
+# Which outcome the note carries when several are signalled: earlier in the list wins.
+# Decided 2026-11-04 (open question 2): no cover ends it; fraud review comes before any specialist
+# or payment; a specialist comes before payment.
+PRECEDENCE = ["DENY", "FLAG", "ROUTE", "APPROVE"]
 
 
 def to_decimal(value):
@@ -220,15 +222,34 @@ def rule_clauses(facts, signals, gaps):
 
 
 def code_outcome(signals, gaps):
-    """The outcome code would choose on its own (the deterministic fallback).
-
-    PROVISIONAL: uses PROVISIONAL_PRECEDENCE, and treats a documentation gap with no other signal
-    as FLAG (an estimate pending OCR cannot support payment, CLS-DOC-009). Both are open question 2.
-    """
+    """The outcome code would choose on its own (the deterministic fallback): the first outcome in
+    PRECEDENCE that is signalled. A documentation gap counts as FLAG (decided 2026-11-04: an
+    estimate pending OCR cannot support payment, CLS-DOC-009)."""
     signalled = [s["outcome"] for s in signals]
     if gaps:
         signalled.append("FLAG")
-    for outcome in PROVISIONAL_PRECEDENCE:
+    for outcome in PRECEDENCE:
         if outcome in signalled:
             return outcome
     return "APPROVE"
+
+
+def note_additions(outcome, signals, gaps):
+    """The lines code adds to a note, so nothing the note's own outcome leaves out is lost.
+
+    "Also needs" lists each signal for another outcome (for example a senior adjuster on a FLAG),
+    and "Pending documentation" lists each gap. When a FLAG rests on documentation alone, the note
+    says code found no fraud indicators, so it is not read as a fraud referral.
+    Returns "" when there is nothing to add."""
+    lines = []
+    others = [s for s in signals if s["outcome"] != outcome]
+    if others:
+        items = [f"{s['outcome']}: {s['reason']} ({s['clause']})" for s in others]
+        lines.append("Also needs: " + "; ".join(items) + ".")
+    if gaps:
+        items = [f"{g['reason']} ({g['clause']})" for g in gaps]
+        lines.append("Pending documentation: " + "; ".join(items) + ".")
+        code_found_fraud = any(s["outcome"] == "FLAG" for s in signals)
+        if outcome == "FLAG" and not code_found_fraud:
+            lines.append("Code found no fraud indicators: this FLAG is for the pending documentation.")
+    return " ".join(lines)

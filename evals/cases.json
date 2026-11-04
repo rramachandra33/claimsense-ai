@@ -21,12 +21,12 @@
     "claim_id": "CLM-2024-1873",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "FLAG"
     },
-    "precedence_pending": true
+    "signalled": [
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-003",
@@ -36,12 +36,12 @@
     "claim_id": "CLM-2024-1946",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "FLAG"
     },
-    "precedence_pending": true
+    "signalled": [
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-004",
@@ -51,12 +51,12 @@
     "claim_id": "CLM-2024-2019",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "DENY",
-        "FLAG"
-      ]
+      "outcome": "DENY"
     },
-    "precedence_pending": true
+    "signalled": [
+      "DENY",
+      "FLAG"
+    ]
   },
   {
     "case_id": "EV-005",
@@ -88,12 +88,12 @@
     "claim_id": "CLM-2024-2238",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "DENY",
-        "FLAG"
-      ]
+      "outcome": "DENY"
     },
-    "precedence_pending": true
+    "signalled": [
+      "DENY",
+      "FLAG"
+    ]
   },
   {
     "case_id": "EV-008",
@@ -125,12 +125,12 @@
     "claim_id": "CLM-2024-2457",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "FLAG"
     },
-    "precedence_pending": true
+    "signalled": [
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-011",
@@ -162,13 +162,13 @@
     "claim_id": "CLM-2024-2676",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "DENY",
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "DENY"
     },
-    "precedence_pending": true
+    "signalled": [
+      "DENY",
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-014",
@@ -189,12 +189,12 @@
     "claim_id": "CLM-2024-2822",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "DENY",
-        "FLAG"
-      ]
+      "outcome": "DENY"
     },
-    "precedence_pending": true
+    "signalled": [
+      "DENY",
+      "FLAG"
+    ]
   },
   {
     "case_id": "EV-016",
@@ -215,12 +215,12 @@
     "claim_id": "CLM-2024-2968",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "FLAG"
     },
-    "precedence_pending": true
+    "signalled": [
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-018",
@@ -241,13 +241,13 @@
     "claim_id": "CLM-2024-3114",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "DENY",
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "DENY"
     },
-    "precedence_pending": true
+    "signalled": [
+      "DENY",
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-020",
@@ -257,12 +257,12 @@
     "claim_id": "CLM-2024-3187",
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "FLAG"
     },
-    "precedence_pending": true
+    "signalled": [
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-021",
@@ -710,12 +710,12 @@
     },
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "DENY",
-        "FLAG"
-      ]
+      "outcome": "DENY"
     },
-    "precedence_pending": true
+    "signalled": [
+      "DENY",
+      "FLAG"
+    ]
   },
   {
     "case_id": "EV-042",
@@ -734,13 +734,13 @@
     },
     "expect": {
       "status": "written",
-      "outcome_any": [
-        "DENY",
-        "FLAG",
-        "ROUTE"
-      ]
+      "outcome": "DENY"
     },
-    "precedence_pending": true
+    "signalled": [
+      "DENY",
+      "FLAG",
+      "ROUTE"
+    ]
   },
   {
     "case_id": "EV-043",

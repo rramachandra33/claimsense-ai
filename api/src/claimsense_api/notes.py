@@ -55,8 +55,10 @@ def check_note(note):
         raise NoteError(400, "invalid_argument", "run_id must be a UUID.")
     if note.outcome not in OUTCOMES:
         raise NoteError(400, "invalid_argument", f"outcome must be one of {', '.join(OUTCOMES)}.")
-    if not note.summary.strip() or len(note.summary) > 1000:
-        raise NoteError(400, "invalid_argument", "summary must be 1 to 1000 characters.")
+    # 2000: the draft's summary (at most 600) plus the lines code adds (other signals, pending
+    # documentation), which a claim with many signals can make long.
+    if not note.summary.strip() or len(note.summary) > 2000:
+        raise NoteError(400, "invalid_argument", "summary must be 1 to 2000 characters.")
     if note.decision_source not in ("model", "deterministic_fallback", "agent_failure"):
         raise NoteError(400, "invalid_argument",
                         "decision_source must be model, deterministic_fallback or agent_failure.")

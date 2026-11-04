@@ -24,8 +24,8 @@ import uuid
 
 from .api import ApiError
 from .brain import agents_for, models_for
-from .facts import (PROVISIONAL_PRECEDENCE, code_outcome, compute_facts, documentation_gaps,
-                    location_check_on, locations_match, outcome_signals, rule_clauses)
+from .facts import (PRECEDENCE, code_outcome, compute_facts, documentation_gaps, location_check_on,
+                    locations_match, note_additions, outcome_signals, rule_clauses)
 from .pricing import usage_summary
 from .redact import redact
 from .schemas import DraftOutput, RunResult
@@ -254,6 +254,13 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
             else:
                 t.event("draft passes every check", level="ok")
 
+        # Code adds what the outcome leaves out: signals for other outcomes and documentation gaps
+        # (precedence, decided 2026-11-04). Code writes these lines, so no draft can drop them.
+        additions = note_additions(draft.outcome, signals, gaps)
+        if additions:
+            draft = draft.model_copy(update={"summary": draft.summary.rstrip() + " " + additions})
+            t.event(additions)
+
         # The note goes into the client's claims system: no addresses, phone numbers or emails.
         summary, found_in_summary = redact(draft.summary)
         deny_reason, found_in_reason = redact(draft.deny_reason)
@@ -271,7 +278,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
         "deny_reason": draft.deny_reason,
         "decision_source": decision_source,
         "code_facts": {"facts": facts, "signals": signals, "documentation_gaps": gaps,
-                       "provisional_precedence": PROVISIONAL_PRECEDENCE},
+                       "precedence": PRECEDENCE},
         "agent_outputs": {name: out.model_dump() for name, out in outputs.items()},
         "models": models_for(brain),
     }

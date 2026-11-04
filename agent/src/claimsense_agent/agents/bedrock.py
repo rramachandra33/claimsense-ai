@@ -186,9 +186,10 @@ Outcomes:
 - ROUTE: needs a specialist: total-loss appraiser, injury-qualified adjuster, or a senior adjuster
   for net payable above $25,000.
 - DENY: not covered: the loss is outside the policy period, or the policy has no cover for it.
-When several apply, the current rule (provisional, still to be decided) is DENY over FLAG over ROUTE
-over APPROVE, and a documentation gap on its own means FLAG. Never APPROVE when the code signals or
-documentation gaps list anything.
+When several apply, the outcome is the first of DENY, FLAG, ROUTE, APPROVE that applies. A
+documentation gap on its own means FLAG. Never APPROVE when the code signals or documentation gaps
+list anything. Code adds the other signals and the documentation gaps to the note itself, so your
+summary should explain the outcome you chose; you need not repeat them.
 
 Write:
 - outcome

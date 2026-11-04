@@ -19,8 +19,8 @@
       "no readable repair estimate (pending OCR) (CLS-DOC-009)",
       "medical report on a no-injury FNOL (CLS-INJ-008)"
     ],
-    "expected_outcome": null,
-    "note": "Precedence deferred (open question 2). Fill expected_outcome once decided."
+    "expected_outcome": "FLAG",
+    "note": "Decided 2026-11-04: DENY > FLAG > ROUTE > APPROVE; the note lists the other signals and the documentation gaps."
   },
   {
     "claim_id": "CLM-2024-2676",
@@ -41,8 +41,8 @@
     "documentation_gaps": [
       "no readable repair estimate (pending OCR) (CLS-DOC-009)"
     ],
-    "expected_outcome": null,
-    "note": "Precedence deferred (open question 2). Fill expected_outcome once decided."
+    "expected_outcome": "DENY",
+    "note": "Decided 2026-11-04: DENY > FLAG > ROUTE > APPROVE; the note lists the other signals and the documentation gaps."
   },
   {
     "claim_id": "CLM-2024-3114",
@@ -57,13 +57,13 @@
       },
       {
         "outcome": "ROUTE",
-        "reason": "repair/ACV 0.8377 ≥ 0.75, total-loss appraiser (CLS-TL-005)"
+        "reason": "repair/ACV 0.8377 \u2265 0.75, total-loss appraiser (CLS-TL-005)"
       }
     ],
     "documentation_gaps": [
       "no readable repair estimate (none on file) (CLS-DOC-009)"
     ],
-    "expected_outcome": null,
-    "note": "Precedence deferred (open question 2). Fill expected_outcome once decided."
+    "expected_outcome": "DENY",
+    "note": "Decided 2026-11-04: DENY > FLAG > ROUTE > APPROVE; the note lists the other signals and the documentation gaps."
   }
 ]

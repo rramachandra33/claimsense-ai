@@ -325,12 +325,13 @@ def print_summary(cases, results, summary):
     for family, counts in summary["by_family"].items():
         print(f"  {family:<10} {counts['passed']}/{counts['total']}")
 
-    pending = [(c, r) for c, r in zip(cases, results) if c.get("precedence_pending")]
-    if pending:
-        print(f"\n{BOLD}Precedence pending (open question 2): what each case got{RESET}")
-        for case, result in pending:
-            options = " / ".join(case["expect"]["outcome_any"])
-            print(f"  {case['case_id']} {options:<20} → {result.get('outcome')}  {GREY}{case['title']}{RESET}")
+    several = [(c, r) for c, r in zip(cases, results) if c.get("signalled")]
+    if several:
+        print(f"\n{BOLD}Several outcomes signalled (precedence DENY > FLAG > ROUTE > APPROVE){RESET}")
+        for case, result in several:
+            options = " / ".join(case["signalled"])
+            state = f"{GREEN}pass{RESET}" if result["passed"] else f"{YELLOW}fail{RESET}"
+            print(f"  {case['case_id']} {state}  {options:<20} → {result.get('outcome')}  {GREY}{case['title']}{RESET}")
 
     proposed = [(c, r) for c, r in zip(cases, results) if c.get("proposed_rule")]
     if proposed:

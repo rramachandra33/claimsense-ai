@@ -115,13 +115,19 @@ def test_draft_citing_a_made_up_clause_is_denied(live_api):
     assert note["deny_reason"] == "the draft cited CLS-XXX-999, which is not in the policy manual"
 
 
-def test_precedence_case_uses_the_provisional_order(live_api):
-    """CLM-2024-1873 signals FLAG and ROUTE (evals/precedence_cases.json). Until open question 2 is
-    decided, the provisional order picks FLAG; update this test when precedence is set."""
+def test_precedence_picks_flag_and_the_note_lists_the_rest(live_api):
+    """CLM-2024-1873 signals FLAG and ROUTE and has documentation gaps. FLAG wins (DENY > FLAG >
+    ROUTE > APPROVE); code adds the senior-adjuster ROUTE and the gaps to the note."""
+    from claimsense_api.db import fetch_one
+
     result = assess(live_api, "bob", "senior-adjuster", "CLM-2024-1873")
     assert result.outcome == "FLAG"
     assert "CLS-FRD-007" in result.cited_clauses
-    assert "CLS-PAY-012" in result.cited_clauses
+    note = fetch_one("SELECT summary FROM claims_mgmt.claim_notes WHERE note_id = %s", (result.note_id,))
+    assert "Also needs: ROUTE: net payable" in note["summary"]
+    assert "(CLS-PAY-012)" in note["summary"]
+    assert "Pending documentation: no readable repair estimate (pending OCR) (CLS-DOC-009)" in note["summary"]
+    assert "Code found no fraud indicators" not in note["summary"]      # this FLAG is for fraud
 
 
 def test_an_agent_is_refused_outside_its_scopes(live_api):

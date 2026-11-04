@@ -10,7 +10,7 @@ import pytest
 
 from claimsense_agent import api
 from claimsense_agent.facts import (code_outcome, compute_facts, documentation_gaps, locations_match,
-                                    outcome_signals)
+                                    note_additions, outcome_signals)
 from claimsense_agent.pipeline import check_draft, drop_unretrieved, fallback_draft, unknown_clauses
 from claimsense_agent.schemas import CoverageOutput, DraftOutput
 
@@ -187,3 +187,34 @@ def test_a_location_mismatch_is_a_flag_only_when_the_check_has_set_the_fact():
     assert outcome_signals(claim, facts) == [{
         "outcome": "FLAG", "clause": "CLS-FRD-007",
         "reason": "fraud indicators: FNOL and police report give different loss locations"}]
+
+
+DENY_LAPSED = {"outcome": "DENY", "clause": "CLS-PER-006", "reason": "loss 3 days after policy end"}
+ROUTE_INJURY = {"outcome": "ROUTE", "clause": "CLS-INJ-008", "reason": "injury reported, injury-qualified adjuster"}
+FLAG_FRAUD = {"outcome": "FLAG", "clause": "CLS-FRD-007", "reason": "fraud indicators: vendor score 0.87"}
+GAP_ESTIMATE = {"clause": "CLS-DOC-009", "reason": "no readable repair estimate (pending OCR)"}
+
+
+def test_precedence_is_deny_then_flag_then_route():
+    assert code_outcome([ROUTE_INJURY, FLAG_FRAUD, DENY_LAPSED], []) == "DENY"
+    assert code_outcome([ROUTE_INJURY, FLAG_FRAUD], []) == "FLAG"
+    assert code_outcome([ROUTE_INJURY], [GAP_ESTIMATE]) == "FLAG"       # a gap counts as FLAG
+    assert code_outcome([ROUTE_INJURY], []) == "ROUTE"
+
+
+def test_note_lists_the_signals_the_outcome_leaves_out():
+    text = note_additions("DENY", [DENY_LAPSED, ROUTE_INJURY], [GAP_ESTIMATE])
+    assert text == ("Also needs: ROUTE: injury reported, injury-qualified adjuster (CLS-INJ-008). "
+                    "Pending documentation: no readable repair estimate (pending OCR) (CLS-DOC-009).")
+
+
+def test_a_flag_for_documentation_alone_says_it_is_not_fraud():
+    text = note_additions("FLAG", [], [GAP_ESTIMATE])
+    assert "Pending documentation: no readable repair estimate (pending OCR) (CLS-DOC-009)." in text
+    assert "Code found no fraud indicators: this FLAG is for the pending documentation." in text
+    assert "no fraud indicators" not in note_additions("FLAG", [FLAG_FRAUD], [GAP_ESTIMATE])
+
+
+def test_nothing_to_add_on_a_clean_claim():
+    assert note_additions("APPROVE", [], []) == ""
+    assert note_additions("DENY", [DENY_LAPSED], []) == ""
