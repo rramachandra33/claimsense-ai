@@ -10,7 +10,9 @@
 # ClaimSenseLambdaDeploy rights (see README.md).
 #
 # The function runs with the development sign-in OFF: its URL is public, and only requests with a
-# valid token get past the token check. Sign-in stays on the instance's private API until Cognito.
+# valid token get past the token check. Once deploy/cognito/setup.sh has run, the function also
+# accepts Cognito access tokens: it sits in the VPC with no internet, so the pool's public keys
+# (JWKS) are fetched here and stored in its environment. Re-run after Cognito rotates its keys.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -43,6 +45,15 @@ DB_PASSWORD=$(printf '%s\n' "$ENV_FILE" | sed -n 's/^CLAIMSENSE_DB_PASSWORD=//p'
 if [ -z "$JWT_SECRET" ] || [ -z "$DB_PASSWORD" ]; then
   echo "The instance has no JWT secret or database password yet: run deploy/ec2/deploy.sh first." >&2
   exit 1
+fi
+COGNITO_POOL_ID=$(printf '%s\n' "$ENV_FILE" | sed -n 's/^COGNITO_POOL_ID=//p')
+COGNITO_CLIENT_ID=$(printf '%s\n' "$ENV_FILE" | sed -n 's/^COGNITO_CLIENT_ID=//p')
+COGNITO_JWKS=""
+if [ -n "$COGNITO_POOL_ID" ]; then
+  COGNITO_JWKS=$(curl -fsS "https://cognito-idp.${COGNITO_POOL_ID%%_*}.amazonaws.com/$COGNITO_POOL_ID/.well-known/jwks.json")
+  echo "    Cognito pool $COGNITO_POOL_ID (public keys fetched)"
+else
+  echo "    no Cognito pool yet (deploy/cognito/setup.sh): development and agent tokens only"
 fi
 
 echo "==> security group $LAMBDA_SG_NAME (the Lambda's; no inbound rules)"
@@ -120,7 +131,17 @@ echo "==> packages (Linux x86_64, Python 3.12)"
 package api claimsense_api
 package mcp_server claimsense_mcp
 
-ENVIRONMENT="Variables={CLAIMSENSE_DB_URL=postgresql://claimsense:$DB_PASSWORD@$PRIVATE_IP:5432/claimsense,CLAIMSENSE_JWT_SECRET=$JWT_SECRET,CLAIMSENSE_RATE_LIMIT_PER_MINUTE=$RATE_LIMIT}"
+# JSON, not the Variables={a=b,...} shorthand: the public keys contain commas.
+ENVIRONMENT=$(DB_URL="postgresql://claimsense:$DB_PASSWORD@$PRIVATE_IP:5432/claimsense" JWT_SECRET="$JWT_SECRET" \
+  RATE_LIMIT="$RATE_LIMIT" POOL="$COGNITO_POOL_ID" CLIENT="$COGNITO_CLIENT_ID" JWKS="$COGNITO_JWKS" python3 -c '
+import json, os
+variables = {"CLAIMSENSE_DB_URL": os.environ["DB_URL"], "CLAIMSENSE_JWT_SECRET": os.environ["JWT_SECRET"],
+             "CLAIMSENSE_RATE_LIMIT_PER_MINUTE": os.environ["RATE_LIMIT"]}
+if os.environ["POOL"]:
+    variables["CLAIMSENSE_COGNITO_POOL_ID"] = os.environ["POOL"]
+    variables["CLAIMSENSE_COGNITO_CLIENT_ID"] = os.environ["CLIENT"]
+    variables["CLAIMSENSE_COGNITO_JWKS"] = json.dumps(json.loads(os.environ["JWKS"]), separators=(",", ":"))
+print(json.dumps({"Variables": variables}))')
 SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC" Name=default-for-az,Values=true \
   --query 'Subnets[].SubnetId' --output text | tr '\t' ',')
 

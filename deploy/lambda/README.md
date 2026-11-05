@@ -45,8 +45,9 @@ function inside a VPC reaches it only through a VPC endpoint (about $7 a month);
 - The URL is public (auth type NONE), as the app does its own token check: no token → 401, another
   adjuster's claim → 403, over the rate limit → 429, all audited.
 - PostgreSQL accepts connections only from `claimsense-lambda-sg` (and on the instance itself).
-- The function has no internet access (VPC, no NAT); it needs none. With Cognito, its public
-  signing keys can be set as configuration.
+- The function has no internet access (VPC, no NAT); it needs none. Once `deploy/cognito/setup.sh`
+  has run, `deploy.sh` stores the Cognito pool's public keys in the function's environment so it
+  can check Cognito tokens offline; re-run it if Cognito rotates its keys.
 
 ## One-time IAM set-up (as root, in the console)
 

@@ -21,9 +21,11 @@ scratch: `DEPLOY_AND_TEST_ON_AWS.md`. Every decision, dated: `DECISIONS.md`. `ma
 
 ## Status
 
-Working locally: data API, MCP server, four agents (mock and Claude on Bedrock), runner, console,
-evaluation suite, and the Docker stack. Still to do: CI gate and image push, AWS deployment,
-Cognito. Roadmap: `docs/ClaimSense-AI-Roadmap-and-Status.pdf`.
+Built and deployed on AWS: data API (EC2 and Lambda), MCP server and registry (Lambda), four
+agents on AgentCore (Claude on Bedrock; mock agents locally), console with Confirm/Reject, scheduled
+batch assessment, Amazon Cognito sign-in (`deploy/cognito/`), CI with the evaluation gate, and
+CloudWatch dashboards and alarms. Still to do: the capstone documents, the incident drill and
+runbook. Roadmap: `docs/ClaimSense-AI-Roadmap-and-Status.pdf`.
 
 ## Repository layout (current)
 

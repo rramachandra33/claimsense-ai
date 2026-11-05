@@ -94,9 +94,28 @@ at run time (`claim_status_at_run`).
 The JWT secret and database password are Lambda environment variables (encrypted at rest). Secrets
 Manager from inside the VPC needs an interface endpoint (about $7 a month); revisit for production.
 
+### Amazon Cognito sign-in (open question 9) · decided 2026-11-05
+People sign in with a user name and password checked by Cognito (pool `claimsense-users`, app
+client `claimsense-console`), on the console's own form: its server calls Cognito and keeps the
+access token in the httpOnly cookie (Cognito's hosted page needs HTTPS return addresses, and the
+EC2 console is plain HTTP). The data API checks the token's RS256 signature against the pool's
+public keys, the issuer, the app client and `token_use=access`, and maps `username` to
+`claimsense.users`; the Cognito group must equal the user's group there, and a suspended user is
+refused whatever Cognito says.
+* **Development sign-in off on EC2**, and a person's development token is refused wherever Cognito
+  is configured. Locally it stays on. The batch account keeps its own token (not a person, not in
+  the pool); agents keep OBO tokens, minted by our API (Cognito has no token exchange).
+* **No MFA for now** (add for production); no self sign-up; administrator-only recovery.
+* **8-hour access tokens**, the console's session. Sign-out clears the cookie but cannot revoke a
+  token the API checks offline: a shorter token with refresh is the production fix.
+* The Lambda API has no internet (VPC), so its deploy stores the pool's public keys in its
+  environment; re-deploy after Cognito rotates them.
+`api/src/claimsense_api/auth.py`, `platform/web/src/lib/cognito.ts`, `deploy/cognito/`.
+
 ### Development sign-in only on the EC2 private API · decided 2026-11-03
 The public Lambda Function URL has development sign-in off (404). Sign-in stays on the API inside
-the EC2 instance until Cognito replaces it; both share the token secret.
+the EC2 instance until Cognito replaces it; both share the token secret. (Since 2026-11-05: off on
+EC2 too once Cognito is set up, see above.)
 
 ### Console cookie over plain HTTP · decided 2026-11-04
 `CLAIMSENSE_COOKIE_SECURE=0` on EC2 while the console is plain HTTP (a Secure cookie would be
@@ -121,4 +140,4 @@ claim note, retried with the same idempotency key. 5. Subrogation out of scope. 
 manual's rules as written; gaps defined here. 7. Our evaluation suite, rebuilt from the course claims.
 8. Role table: alice, david adjusters (own claims, confirm up to $25,000); bob senior (all claims,
 confirms above $25,000); carol fraud investigator and eve total-loss appraiser review only.
-9. Amazon Cognito (development tokens until then). 10. PostgreSQL.
+9. Amazon Cognito (built 2026-11-05, see Platform). 10. PostgreSQL.

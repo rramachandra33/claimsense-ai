@@ -52,7 +52,8 @@ batch command). `make up` and `make stack` share the container name: starting on
 
 ## 3. Test every feature in the console (http://localhost:3100)
 
-Sign in by typing a user id (development sign-in; Cognito replaces it on a real deployment).
+Sign in by typing a user id (the development sign-in, on by default locally; on AWS people sign in
+with Amazon Cognito, and you can use Cognito locally too, see §3.6).
 
 ### 3.1 Access by role
 
@@ -126,10 +127,36 @@ cd agent && uv run claimsense-agent run --claim CLM-2024-3041 --user alice --dem
 
 Addresses in a note show as `[address]`.
 
+### 3.6 Amazon Cognito sign-in (optional; needs the pool from `deploy/cognito/setup.sh`)
+
+Locally the console uses Cognito when both ids are set; the development sign-in stays on in the API.
+Create the pool once without touching EC2, then put the two printed lines in `.env`:
+
+```bash
+SKIP_EC2=1 AWS_PROFILE=claimsense deploy/cognito/setup.sh     # prints COGNITO_POOL_ID and COGNITO_CLIENT_ID
+# add both lines to .env (Option A), or export CLAIMSENSE_COGNITO_POOL_ID / CLAIMSENSE_COGNITO_CLIENT_ID
+# in the API and console terminals (Option B)
+make stack                                                   # Option A picks them up
+```
+
+Passwords: `~/.claimsense/cognito-test-users.txt`. Expect:
+
+| Sign in as | Expect |
+|---|---|
+| `alice` with her password | 6 claims; Run assessment works (the runner passes her Cognito token on) |
+| `alice` with a wrong password | "Wrong user name or password." |
+| `frank` with his password | "Your account may not use ClaimSense." (Cognito accepts him; ClaimSense has him suspended) |
+| `claimsense-batch` | "Wrong user name or password." (the batch account is not in the pool) |
+
+The 17 tests in `api/tests/test_cognito.py` cover the token rules without a pool (they play
+Cognito with their own key): wrong key, other pool, other app client, ID token, expired, group
+mismatch, an HS256 token claiming to be Cognito's, and development tokens refused once Cognito is on.
+Remove the two lines from `.env` to go back to the development sign-in.
+
 ## 4. Automated tests and the evaluation (need only the database: `make up` or `make stack`)
 
 ```bash
-make api-test     # 88 tests: access, notes, reviews, the batch account, rate limit, Lambda handler
+make api-test     # 105 tests: access, Cognito tokens, notes, reviews, the batch account, rate limit, Lambda handler
 make mcp-test     # 9 tests: the MCP server and registry over HTTP
 make test         # 75 tests (+1 opt-in Claude test): the pipeline end to end
 cd batch && uv run --extra dev pytest -q && cd ..      # 5 tests: the batch loop

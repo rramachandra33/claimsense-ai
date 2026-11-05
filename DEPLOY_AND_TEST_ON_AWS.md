@@ -6,7 +6,8 @@ details are in the README of its folder under `deploy/`.
 
 ```
 GitHub Actions (OIDC) ──> ECR images
-EC2 t3.small: PostgreSQL · console :3100 · API (dev sign-in) · MCP · runner ──forwards──┐
+Amazon Cognito (pool claimsense-users) <── console sign-in (user name + password)
+EC2 t3.small: PostgreSQL · console :3100 · API · MCP · runner ──forwards──┐
 Lambda claimsense-api (Claims API, in the VPC) <── agents          AgentCore claimsense_runner (Claude)
 Lambda claimsense-mcp (MCP server + registry)  <── agents  <───────┘
 EventBridge Scheduler (every 4 h) ──> Lambda claimsense-batch ──> AgentCore
@@ -34,6 +35,7 @@ CloudWatch: spans, metrics, 3 dashboards, 2 alarms
 | 5 | AgentCore: role `claimsense-agentcore` (custom trust + inline), managed policy `ClaimSenseAgentCoreDeploy` on the user | `deploy/agentcore/iam/*.json` | `deploy/agentcore/README.md` |
 | 6 | Observability: managed policy `ClaimSenseObservability` on the user; CloudWatch → Settings → **Transaction Search → Enable** | `deploy/observability/iam/deployer-policy.json` | the CI role's `eval-metrics` comes from step 2 |
 | 7 | Batch: roles `claimsense-batch-lambda` and `claimsense-batch-scheduler` (custom trust + inline), managed policy `ClaimSenseBatchDeploy` on the user | `deploy/batch/iam/*.json` | `deploy/batch/README.md` |
+| 8 | Cognito: managed policy `ClaimSenseCognitoDeploy` on the user (create and set up user pools; no delete) | `deploy/cognito/iam/deployer-policy.json` | `deploy/cognito/README.md` |
 
 Checks that save time (each one cost a retry before):
 
@@ -59,7 +61,10 @@ the four repositories.
 export AWS_PROFILE=claimsense
 deploy/ec2/create_instance.sh        # once: key pair ~/.ssh/claimsense-key.pem, security group, t3.small
 deploy/ec2/deploy.sh                 # the stack on EC2; generates the DB password and token secret; RESETS the data
-deploy/lambda/deploy.sh              # claimsense-api and claimsense-mcp, their URLs; points the agents at them
+deploy/cognito/setup.sh              # Cognito pool, app client, groups, test users (passwords in ~/.claimsense/);
+                                     # EC2: Cognito sign-in on, development sign-in off
+deploy/lambda/deploy.sh              # claimsense-api and claimsense-mcp, their URLs; points the agents at them;
+                                     # gives claimsense-api the pool's public keys
 deploy/agentcore/deploy.sh           # the runtime claimsense_runner (Claude); the console's runs go to it
 deploy/observability/setup.sh        # dashboards and alarms
 SCHEDULE_STATE=DISABLED deploy/batch/deploy.sh   # the batch Lambda and its schedule, paused; applies the DB change
@@ -84,7 +89,8 @@ twice): `ssh … 'cd /opt/claimsense && docker compose exec -T db psql -U claims
 
 ### 4.1 The console (runs go to Claude on AgentCore: about 30–60 s and $0.06–0.08 each)
 
-Repeat `TESTING_LOCALLY.md` §3.1–3.3 on `http://<public DNS>:3100`. On AWS the outcomes come from
+Repeat `TESTING_LOCALLY.md` §3.1–3.3 on `http://<public DNS>:3100`, signing in with a user name
+and the password from `~/.claimsense/cognito-test-users.txt`. On AWS the outcomes come from
 Claude, so wording differs; the decision rules do not. Expected:
 
 | Check | Expect |
@@ -95,7 +101,29 @@ Claude, so wording differs; the decision rules do not. Expected:
 | alice on CLM-2024-1873 | "Not available" (carol's claim) |
 | Confirm / Reject | as locally; carol and eve have no buttons |
 
-### 4.2 The Lambda functions
+### 4.2 Cognito sign-in
+
+| Check | Expect |
+|---|---|
+| `alice` with her password | the claims list (6 claims); Run assessment works: her Cognito token goes through the runner and AgentCore to the Lambda API, which mints the agents' tokens |
+| `alice` with a wrong password | "Wrong user name or password." |
+| `frank` with his password | "Your account may not use ClaimSense." (suspended in ClaimSense) |
+| `claimsense-batch` | "Wrong user name or password." (not in the pool) |
+| the development sign-in on EC2 | `ssh … 'curl -s -o /dev/null -w "%{http_code}\n" -X POST localhost:8000/api/v1/dev/login -H "content-type: application/json" -d "{\"user_id\":\"alice\"}"'` → **404** |
+
+A Cognito token against the Lambda API by hand (type the password when asked; it is not stored):
+
+```bash
+POOL=$(aws cognito-idp list-user-pools --max-results 60 --query "UserPools[?Name=='claimsense-users'].Id | [0]" --output text)
+CLIENT=$(aws cognito-idp list-user-pool-clients --user-pool-id $POOL --query "UserPoolClients[0].ClientId" --output text)
+printf "alice's password: "; read -s PW; echo
+TOKEN=$(aws cognito-idp initiate-auth --client-id $CLIENT --auth-flow USER_PASSWORD_AUTH \
+  --auth-parameters USERNAME=alice,PASSWORD="$PW" --query AuthenticationResult.AccessToken --output text); unset PW
+API=$(aws lambda get-function-url-config --function-name claimsense-api --query FunctionUrl --output text)
+curl -s ${API}api/v1/me -H "Authorization: Bearer $TOKEN"        # {"user_id":"alice",...}
+```
+
+### 4.3 The Lambda functions
 
 ```bash
 API=$(aws lambda get-function-url-config --function-name claimsense-api --query FunctionUrl --output text)
@@ -107,12 +135,12 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST ${API}api/v1/dev/login -H 'cont
 curl -s ${MCP}registry/v0/servers                               # the MCP registry: io.claimsense/claims
 ```
 
-### 4.3 AgentCore
+### 4.4 AgentCore
 
 `aws bedrock-agentcore-control list-agent-runtimes` shows `claimsense_runner` READY. Each console
 run appears in the log group `/aws/bedrock-agentcore/runtimes/<runtime id>-DEFAULT`.
 
-### 4.4 Observability (CloudWatch, us-east-1)
+### 4.5 Observability (CloudWatch, us-east-1)
 
 - Dashboards **ClaimSense-Experience**, **-Economics**, **-Quality**: after a few runs, run duration
   (p50/p95), cost per resolution, decisions by outcome; the evaluation pass rate from CI.
@@ -120,7 +148,7 @@ run appears in the log group `/aws/bedrock-agentcore/runtimes/<runtime id>-DEFAU
 - Traces: Logs Insights on `aws/spans`: `stats count(*) as n by name | sort n desc` shows `code facts`,
   `reader`, `coverage`, `risk`, `drafter`, `check draft`, `write note`.
 
-### 4.5 The batch assessment
+### 4.6 The batch assessment
 
 ```bash
 aws scheduler get-schedule --name claimsense-batch-every-4h --query State     # "DISABLED" while paused
@@ -141,6 +169,7 @@ picks none. In the console the notes say "by the scheduled batch". CloudWatch sh
 | Lambdas, AgentCore, Scheduler | nothing while idle |
 | Claude | about $0.07 per assessment; a batch of 14 about $1; `make golden` about $3.50 |
 | CloudWatch | a few cents a month at this volume |
+| Cognito | nothing (first 10,000 monthly active users free) |
 
 ```bash
 aws ec2 stop-instances  --instance-ids <id>      # between sessions
@@ -154,5 +183,5 @@ stopped, the batch and every assessment fail (the database is on it): pause the 
 ## 6. Tear down (when the project is over)
 
 Schedule and `claimsense-batch` Lambda → `claimsense-api` and `claimsense-mcp` Lambdas → the
-AgentCore runtime → dashboards and alarms → terminate the instance, delete `claimsense-sg`,
+AgentCore runtime → dashboards and alarms → the Cognito pool (turn deletion protection off first) → terminate the instance, delete `claimsense-sg`,
 `claimsense-lambda-sg` and the key pair → the ECR repositories → the IAM roles and policies.

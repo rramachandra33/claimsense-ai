@@ -63,6 +63,29 @@ export async function devLogin(userId: string): Promise<ApiResult<DevLogin>> {
   }
 }
 
+export type Me = { user_id: string; full_name: string; group: string | null };
+
+/** Who a token belongs to, as the data API sees it (it checks the token and the user's status). */
+export async function whoIs(token: string): Promise<ApiResult<Me>> {
+  try {
+    const response = await fetch(`${API_URL}/api/v1/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      return { ok: false, status: response.status, error: body.error };
+    }
+    return { ok: true, status: response.status, data: body as Me };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      error: { code: "api_unreachable", message: `The ClaimSense API at ${API_URL} is not reachable.` },
+    };
+  }
+}
+
 /**
  * Ask the runner to assess one claim as the signed-in user. The runner forwards the user's token
  * to the data API, which decides access; the console decides nothing itself.

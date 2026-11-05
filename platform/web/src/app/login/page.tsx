@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { LoginForm } from "./LoginForm";
 import { getSession } from "@/lib/session";
+import { cognitoConfig } from "@/lib/cognito";
 
 export const dynamic = "force-dynamic";
 
-// The users in data/identity/users.json (development sign-in only).
+// The users in data/identity/users.json (the same user names in the Cognito pool).
 const USERS = [
   { id: "alice", role: "Adjuster" },
   { id: "david", role: "Adjuster" },
@@ -19,6 +20,7 @@ export default function LoginPage() {
   if (getSession()) {
     redirect("/claims");
   }
+  const cognito = cognitoConfig() !== null;
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -52,15 +54,19 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <h1 className="text-lg font-semibold text-claimsense-ink">Sign in to ClaimSense</h1>
           <p className="mb-6 mt-1 text-sm text-claimsense-muted">
-            Development sign-in: enter a user id. Amazon Cognito replaces this in deployment.
+            {cognito
+              ? "Sign in with your ClaimSense user name and password (Amazon Cognito)."
+              : "Development sign-in: enter a user id. Amazon Cognito replaces this in deployment."}
           </p>
 
           <div className="rounded-xl border border-claimsense-line bg-white p-6 shadow-card">
-            <LoginForm />
+            <LoginForm cognito={cognito} />
           </div>
 
           <div className="mt-4 rounded-lg border border-claimsense-line bg-white/70 p-4 text-xs text-claimsense-muted">
-            <div className="mb-2 font-semibold text-claimsense-ink">Users</div>
+            <div className="mb-2 font-semibold text-claimsense-ink">
+              {cognito ? "Test users (passwords: from the Cognito setup script)" : "Users"}
+            </div>
             <ul className="space-y-1">
               {USERS.map((u) => (
                 <li key={u.id} className="flex justify-between gap-3">

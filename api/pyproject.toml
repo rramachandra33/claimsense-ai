@@ -7,7 +7,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
     "psycopg[binary]>=3.2",
-    "pyjwt>=2.9",
+    "pyjwt[crypto]>=2.9", # [crypto]: RS256, for Cognito tokens
     "mangum>=0.19",       # runs the same app on AWS Lambda (lambda_handler.py)
 ]
 

@@ -11,7 +11,10 @@
 #
 # CLAIMS_API_URL is the data API the agents use (MCP server and runner): the Lambda Claims API's
 # Function URL once deploy/lambda/deploy.sh has run, the local api container until then. The
-# console keeps using the local api container, the only one with the development sign-in.
+# console keeps using the local api container.
+# COGNITO_POOL_ID and COGNITO_CLIENT_ID (written to .env by deploy/cognito/setup.sh) switch the
+# console to Amazon Cognito sign-in; the same script sets DEV_LOGIN=0, turning the development
+# sign-in off (decided 2026-11-05). Without them, the development sign-in stays.
 # MCP_REGISTRY_URL is where the runner finds the MCP server: the claimsense-mcp function's
 # registry once deploy/lambda/deploy.sh has run, the local mcp container until then.
 #
@@ -54,7 +57,9 @@ services:
     environment:
       CLAIMSENSE_DB_URL: *db-url
       CLAIMSENSE_JWT_SECRET: ${CLAIMSENSE_JWT_SECRET:?set in .env (deploy.sh writes one)}
-      CLAIMSENSE_DEV_LOGIN: "1"         # the console's sign-in until Cognito replaces it
+      CLAIMSENSE_DEV_LOGIN: ${DEV_LOGIN:-1}
+      CLAIMSENSE_COGNITO_POOL_ID: ${COGNITO_POOL_ID:-}
+      CLAIMSENSE_COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:-}
       CLAIMSENSE_RATE_LIMIT_PER_MINUTE: ${CLAIMSENSE_RATE_LIMIT_PER_MINUTE:-300}
     ports:
       - "127.0.0.1:8000:8000"
@@ -112,6 +117,8 @@ services:
       CLAIMSENSE_API_URL: http://api:8000
       CLAIMSENSE_RUNNER_URL: http://runner:8100
       CLAIMSENSE_COOKIE_SECURE: "0"    # the console is plain HTTP here; set to 1 behind HTTPS
+      CLAIMSENSE_COGNITO_POOL_ID: ${COGNITO_POOL_ID:-}
+      CLAIMSENSE_COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:-}
     ports:
       - "3100:3100"
     depends_on:

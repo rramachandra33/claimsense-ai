@@ -42,7 +42,10 @@ services:
     environment:
       CLAIMSENSE_DB_URL: *db-url
       CLAIMSENSE_JWT_SECRET: ${CLAIMSENSE_JWT_SECRET:?set it in .env (make stack writes one)}
-      CLAIMSENSE_DEV_LOGIN: "1"         # the console's sign-in until Cognito replaces it
+      CLAIMSENSE_DEV_LOGIN: "1"         # locally the development sign-in stays on
+      # Optional: set both in .env (deploy/cognito/setup.sh prints them) to sign in with Cognito.
+      CLAIMSENSE_COGNITO_POOL_ID: ${COGNITO_POOL_ID:-}
+      CLAIMSENSE_COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:-}
     ports:
       - "8000:8000"
     depends_on:
@@ -104,6 +107,8 @@ services:
     environment:
       CLAIMSENSE_API_URL: http://api:8000
       CLAIMSENSE_RUNNER_URL: http://runner:8100
+      CLAIMSENSE_COGNITO_POOL_ID: ${COGNITO_POOL_ID:-}
+      CLAIMSENSE_COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:-}
     ports:
       - "${PORT:-3100}:3100"
     depends_on:
