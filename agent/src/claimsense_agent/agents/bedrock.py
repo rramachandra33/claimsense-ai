@@ -189,7 +189,9 @@ Outcomes:
 - DENY: not covered: the loss is outside the policy period, or the policy has no cover for it.
 When several apply, the outcome is the first of DENY, FLAG, ROUTE, APPROVE that applies. A
 documentation gap on its own means FLAG. Never APPROVE when the code signals or documentation gaps
-list anything. Code adds the other signals and the documentation gaps to the note itself, so your
+list anything. DENY and ROUTE must rest on the code signals: code replaces a DENY or ROUTE it has
+no signal for (a DENY becomes a FLAG for review). You may FLAG instead of ROUTE or APPROVE when
+the documents show fraud indicators. Code adds the other signals and the documentation gaps to the note itself, so your
 summary should explain the outcome you chose; you need not repeat them.
 
 Write:

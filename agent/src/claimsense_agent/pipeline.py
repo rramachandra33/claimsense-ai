@@ -75,9 +75,32 @@ def agent_failure_deny(error):
     return DraftOutput(outcome="DENY", summary=reason, cited_clauses=[], deny_reason=reason)
 
 
+# Which outcomes a draft may carry, given code's own outcome (decided 2026-11-04, EV-025).
+# DENY and ROUTE rest on facts code works out exactly (period, cover, ratios, injury, the payment
+# threshold), so a draft follows code on them. A draft may always go to FLAG instead of ROUTE or
+# APPROVE: the agents may see fraud indicators in the documents that code cannot check, and a FLAG
+# is reviewed before any payment. A DENY code has no reason for is handled by unsupported_deny_flag.
+ALLOWED_DRAFT_OUTCOMES = {
+    "DENY": ["DENY"],
+    "FLAG": ["FLAG"],
+    "ROUTE": ["ROUTE", "FLAG"],
+    "APPROVE": ["APPROVE", "FLAG"],
+}
+
+
+def is_unsupported_deny(draft, code_out):
+    """A DENY when code found no reason to deny."""
+    return draft.outcome == "DENY" and code_out != "DENY"
+
+
 def check_draft(draft, signals, gaps, retrieved):
     """The code checks on a draft. Returns a list of problems; empty means the draft passes."""
     problems = []
+    code_out = code_outcome(signals, gaps)
+    allowed = ALLOWED_DRAFT_OUTCOMES[code_out]
+    if draft.outcome not in allowed and draft.outcome != "APPROVE" and not is_unsupported_deny(draft, code_out):
+        problems.append(f"{draft.outcome}, but code's outcome is {code_out}, so the draft may only be "
+                        + " or ".join(allowed))
     for clause in draft.cited_clauses:
         if clause not in retrieved:
             problems.append(f"cites {clause}, which no clause search returned in this run")
@@ -89,6 +112,19 @@ def check_draft(draft, signals, gaps, retrieved):
         reasons = [s["reason"] for s in signals] + [g["reason"] for g in gaps]
         problems.append("APPROVE, but code found: " + "; ".join(reasons))
     return problems
+
+
+def unsupported_deny_flag(draft):
+    """The agents drafted DENY, but code found no reason to deny. They may have seen one code cannot
+    check (for example an exclusion in CLS-EXC-010 mentioned in a document), so the note becomes a
+    FLAG that keeps their reason, for an adjuster to review. Returns None when the draft cites no
+    clause (a FLAG must cite one); the caller then uses code's own draft."""
+    if not draft.cited_clauses:
+        return None
+    summary = ("Draft FLAG by code: the agents drafted DENY (" + (draft.deny_reason or "no reason given")
+               + "), but code found no reason to deny that it can check. An adjuster must review "
+               "whether the agents' reason applies before any payment.")
+    return DraftOutput(outcome="FLAG", summary=summary, cited_clauses=draft.cited_clauses, deny_reason=None)
 
 
 def unknown_clauses(client, cited, retrieved):
@@ -249,6 +285,14 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
                 for p in problems:
                     t.event(p, level="block")
                 draft = fallback_draft(facts, signals, gaps, retrieved)
+                decision_source = "deterministic_fallback"
+                t.event(f"replaced by code's draft: {draft.outcome}", level="warn")
+            elif is_unsupported_deny(draft, code_outcome(signals, gaps)):
+                problem = "DENY, but code found no reason to deny: changed to FLAG for an adjuster to review"
+                problems.append(problem)
+                t.event(problem, level="block")
+                flagged = unsupported_deny_flag(draft)
+                draft = flagged or fallback_draft(facts, signals, gaps, retrieved)
                 decision_source = "deterministic_fallback"
                 t.event(f"replaced by code's draft: {draft.outcome}", level="warn")
             else:

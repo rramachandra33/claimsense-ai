@@ -241,3 +241,33 @@ def test_an_unmapped_loss_type_is_routed_to_an_adjuster_to_decide_the_cover():
                                   "(CLS-COLL-001) or comprehensive (CLS-COMP-002) cover, so an "
                                   "adjuster must decide which cover applies, if any"}]
     assert code_outcome(signals, documentation_gaps(facts)) == "ROUTE"
+
+
+def test_a_route_without_a_code_reason_fails_the_check():
+    """EV-025: net payable exactly 25,000 has no ROUTE signal; a ROUTE draft is replaced."""
+    problems = check_draft(draft("ROUTE", ["CLS-PAY-012"]), [], [], ["CLS-PAY-012"])
+    assert problems == ["ROUTE, but code's outcome is APPROVE, so the draft may only be APPROVE or FLAG"]
+
+
+def test_a_draft_follows_the_precedence_order():
+    signals = [DENY_LAPSED, FLAG_FRAUD]
+    problems = check_draft(draft("FLAG", ["CLS-FRD-007"]), signals, [], ["CLS-FRD-007"])
+    assert problems == ["FLAG, but code's outcome is DENY, so the draft may only be DENY"]
+    assert check_draft(draft("DENY", ["CLS-PER-006"], deny_reason="lapsed"), signals, [], ["CLS-PER-006"]) == []
+
+
+def test_a_flag_is_allowed_instead_of_route_or_approve():
+    assert check_draft(draft("FLAG", ["CLS-FRD-007"]), [ROUTE_INJURY], [], ["CLS-FRD-007"]) == []
+    assert check_draft(draft("FLAG", ["CLS-FRD-007"]), [], [], ["CLS-FRD-007"]) == []
+
+
+def test_a_deny_code_has_no_reason_for_becomes_a_flag_that_keeps_the_reason():
+    from claimsense_agent.pipeline import is_unsupported_deny, unsupported_deny_flag
+
+    deny = draft("DENY", ["CLS-EXC-010"], deny_reason="the FNOL says the car was in a street race")
+    assert check_draft(deny, [], [], ["CLS-EXC-010"]) == []          # not a check failure ...
+    assert is_unsupported_deny(deny, "APPROVE")                      # ... the pipeline turns it into a FLAG
+    flag = unsupported_deny_flag(deny)
+    assert flag.outcome == "FLAG" and flag.cited_clauses == ["CLS-EXC-010"]
+    assert "the agents drafted DENY (the FNOL says the car was in a street race)" in flag.summary
+    assert unsupported_deny_flag(draft("DENY", [], deny_reason="x")) is None
