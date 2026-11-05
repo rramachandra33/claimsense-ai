@@ -94,6 +94,8 @@ def remove_temp_claim(number):
     d = db()
     d.execute("""DELETE FROM claimsense.idempotency_keys WHERE note_id IN
                  (SELECT note_id FROM claims_mgmt.claim_notes WHERE claim_id = %s)""", (claim_id,))
+    d.execute("""DELETE FROM claims_mgmt.note_reviews WHERE note_id IN
+                 (SELECT note_id FROM claims_mgmt.claim_notes WHERE claim_id = %s)""", (claim_id,))
     d.execute("DELETE FROM claims_mgmt.claim_notes WHERE claim_id = %s", (claim_id,))
     d.execute("""DELETE FROM claimsense.retrieval_log WHERE run_id IN
                  (SELECT run_id FROM claimsense.assessments WHERE claim_id = %s)""", (claim_id,))
@@ -135,6 +137,9 @@ def remove_run(run_id):
     """Delete the note and records one run wrote on a course claim."""
     d = db()
     d.execute("""DELETE FROM claimsense.idempotency_keys WHERE note_id IN
+                 (SELECT n.note_id FROM claims_mgmt.claim_notes n
+                    JOIN claimsense.assessments a USING (assessment_id) WHERE a.run_id = %s)""", (run_id,))
+    d.execute("""DELETE FROM claims_mgmt.note_reviews WHERE note_id IN
                  (SELECT n.note_id FROM claims_mgmt.claim_notes n
                     JOIN claimsense.assessments a USING (assessment_id) WHERE a.run_id = %s)""", (run_id,))
     d.execute("""DELETE FROM claims_mgmt.claim_notes WHERE assessment_id IN
@@ -320,7 +325,7 @@ def summarise(cases, results, brain, seconds):
 
 def print_summary(cases, results, summary):
     if summary["location_check"]:
-        print("\nLocation check on (CLAIMSENSE_LOCATION_CHECK=1)")
+        print("\nLocation check on (the default; CLAIMSENSE_LOCATION_CHECK=0 turns it off)")
     print(f"\n{BOLD}By family{RESET}")
     for family, counts in summary["by_family"].items():
         print(f"  {family:<10} {counts['passed']}/{counts['total']}")

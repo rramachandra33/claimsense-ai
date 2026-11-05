@@ -137,9 +137,10 @@ def fraud_indicators(claim):
 
 
 def location_check_on():
-    """CLAIMSENSE_LOCATION_CHECK=1 turns on the loss-location check. Off by default: in the course
-    data every police report gives a different location from the FNOL."""
-    return os.environ.get("CLAIMSENSE_LOCATION_CHECK") == "1"
+    """The loss-location check: a FNOL and police report that give different loss locations is a
+    CLS-FRD-007 fraud indicator (FLAG). On by default (decided 2026-11-04);
+    CLAIMSENSE_LOCATION_CHECK=0 turns it off, for data whose location fields are not comparable."""
+    return os.environ.get("CLAIMSENSE_LOCATION_CHECK", "1") != "0"
 
 
 def loss_location(text):

@@ -99,9 +99,9 @@ uv run --with pytest pytest platform/db/seed -q    # 4 tests
 **E. The evaluation suite** (60 cases; only the database is needed, it starts its own API):
 
 ```bash
-make eval                    # mock: about 2 minutes, free; expect 58/60 (2 proposed rules fail by design)
+make eval                    # mock: about 2 minutes, free; expect 60/60
 make eval BRAIN=bedrock      # Claude: about 30 minutes and $3.50
-CLAIMSENSE_LOCATION_CHECK=1 make eval   # with the loss-location check on: expect 60/60
+CLAIMSENSE_LOCATION_CHECK=0 make eval   # with the loss-location check off: expect 60/60
 ```
 
 **F. Claude instead of the mock agents (Bedrock; a few cents and about 40 s a run)**
@@ -113,15 +113,16 @@ make agent CLAIM=CLM-2024-1800 AS=alice BRAIN=bedrock
 make runner BRAIN=bedrock                          # then Run assessment in the console uses Claude
 ```
 
-CLM-2024-1800's FNOL and police report give different loss locations (so does every police report
-in the course data). By default that is not a reason to FLAG, and Claude is told so; with
-`CLAIMSENSE_LOCATION_CHECK=1` code compares the two locations and a mismatch is a FLAG
-(CLS-FRD-007). Addresses in a note show as `[address]`.
+CLM-2024-1800's FNOL and police report give different loss locations (so do the police reports of
+1946, 2019 and 2092). Code compares the two locations, and a mismatch is a FLAG (CLS-FRD-007): on
+by default since 2026-11-04; `CLAIMSENSE_LOCATION_CHECK=0` turns it off. For a clean APPROVE use
+CLM-2024-3041 or 2749 (alice). Addresses in a note show as `[address]`.
 
 **G. Run the four agents from the terminal** (mock brain, no AWS; with `make api` and `make mcp` running):
 
 ```bash
-make agent CLAIM=CLM-2024-1800 AS=alice      # APPROVE, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004
+make agent CLAIM=CLM-2024-3041 AS=alice      # APPROVE, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004
+make agent CLAIM=CLM-2024-1800 AS=alice      # FLAG: FNOL and police report give different loss locations
 make agent CLAIM=CLM-2024-2822 AS=david      # DENY: loss 3 days after the policy ended (CLS-PER-006)
 make agent CLAIM=CLM-2024-1873 AS=alice      # run failed: claim not available (carol's claim)
 make agent CLAIM=CLM-2024-1873 AS=bob        # FLAG (provisional precedence: FLAG and ROUTE both signalled)

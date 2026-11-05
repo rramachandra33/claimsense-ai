@@ -68,6 +68,19 @@ def drop_unretrieved(output, retrieved):
     return output, dropped
 
 
+# Claim statuses that mean the claims system has already decided the claim (same list as the
+# console's Rerun question). A run on such a claim is a second opinion, and the note says so.
+DECIDED_STATUSES = ("approved", "denied", "closed", "settled", "paid")
+
+
+def second_opinion_line(claim_status):
+    """The note line for a run on an already decided claim; "" otherwise."""
+    if claim_status and claim_status.strip().lower() in DECIDED_STATUSES:
+        return (f"Second opinion: the claim was already {claim_status} in the claims system "
+                "when this assessment ran.")
+    return ""
+
+
 def agent_failure_deny(error):
     """The note when an agent could not finish: DENY, no citation, and why."""
     reason = (f"The automated assessment could not be completed ({error}). "
@@ -301,6 +314,9 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
         # Code adds what the outcome leaves out: signals for other outcomes and documentation gaps
         # (precedence, decided 2026-11-04). Code writes these lines, so no draft can drop them.
         additions = note_additions(draft.outcome, signals, gaps)
+        second_opinion = second_opinion_line(claim.get("claim_status"))
+        if second_opinion:
+            additions = (additions + " " + second_opinion).strip()
         if additions:
             draft = draft.model_copy(update={"summary": draft.summary.rstrip() + " " + additions})
             t.event(additions)
@@ -325,6 +341,7 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
                        "precedence": PRECEDENCE},
         "agent_outputs": {name: out.model_dump() for name, out in outputs.items()},
         "models": models_for(brain),
+        "claim_status_at_run": claim.get("claim_status"),
     }
     note["agent_outputs"]["draft_problems"] = problems
     note["agent_outputs"]["citation_problems"] = citation_problems

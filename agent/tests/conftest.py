@@ -35,6 +35,9 @@ def clean_up_runs():
         execute("""DELETE FROM claimsense.idempotency_keys WHERE note_id IN
                    (SELECT n.note_id FROM claims_mgmt.claim_notes n
                     JOIN claimsense.assessments a USING (assessment_id) WHERE a.run_id = %s)""", (run_id,))
+        execute("""DELETE FROM claims_mgmt.note_reviews WHERE note_id IN
+                   (SELECT n.note_id FROM claims_mgmt.claim_notes n
+                    JOIN claimsense.assessments a USING (assessment_id) WHERE a.run_id = %s)""", (run_id,))
         execute("""DELETE FROM claims_mgmt.claim_notes WHERE assessment_id IN
                    (SELECT assessment_id FROM claimsense.assessments WHERE run_id = %s)""", (run_id,))
         execute("DELETE FROM claimsense.assessments WHERE run_id = %s", (run_id,))

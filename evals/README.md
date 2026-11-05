@@ -47,8 +47,9 @@ course claims are never modified, and notes written during the run are deleted a
 
 ### The loss-location check
 
-With `CLAIMSENSE_LOCATION_CHECK=1`, a case's `with_location_check` expectations replace its own
-(EV-001 and EV-049 expect FLAG instead of APPROVE; EV-045 must cite CLS-FRD-007). The results file
+The check is on by default (decided 2026-11-04), so a case's `with_location_check` expectations
+replace its own (EV-001 and EV-049 expect FLAG instead of APPROVE; EV-045 must cite CLS-FRD-007).
+`CLAIMSENSE_LOCATION_CHECK=0` turns it off, and the plain expectations apply. The results file
 records whether the check was on.
 
 ### Precedence (decided 2026-11-04)
@@ -66,8 +67,8 @@ from the data import, now with their expected outcomes.
 
 A loss type code has no collision/comprehensive mapping for (e.g. mechanical breakdown) is a ROUTE:
 an adjuster decides which cover applies, if any. The note says the loss type is not mapped,
-naming CLS-COLL-001 and CLS-COMP-002, and cites CLS-COMP-002. EV-039 expects ROUTE (FLAG with the
-location check on, since its copy of CLM-2024-1800 keeps that claim's location mismatch).
+naming CLS-COLL-001 and CLS-COMP-002, and cites CLS-COMP-002. EV-039 expects FLAG with the location
+check on (its copy of CLM-2024-1800 keeps that claim's location mismatch), ROUTE with it off.
 
 ### VIN mismatch (decided 2026-11-04)
 

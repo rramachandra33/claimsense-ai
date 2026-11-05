@@ -72,7 +72,8 @@ CLAIMSENSE_DEV_LOGIN=1 make api
 Then, in another terminal:
 
 ```bash
-make agent CLAIM=CLM-2024-1800 AS=alice             # APPROVE
+make agent CLAIM=CLM-2024-3041 AS=alice             # APPROVE
+make agent CLAIM=CLM-2024-1800 AS=alice             # FLAG: the loss locations differ
 make agent CLAIM=CLM-2024-2822 AS=david             # DENY: loss 3 days after the policy ended
 make agent CLAIM=CLM-2024-1873 AS=alice             # refused: carol's claim
 cd agent && uv run claimsense-agent run --claim CLM-2024-1800 --user alice --demo-bad-draft
@@ -114,12 +115,14 @@ docker run --rm -p 8080:8080 -e RUNNER_PORT=8080 --network claimsense_default \
 curl localhost:8080/ping
 ```
 
-## The loss-location check (off by default)
+## The loss-location check (on by default, decided 2026-11-04)
 
-`CLAIMSENSE_LOCATION_CHECK=1` makes code compare the `Location` line of the FNOL with the police
-report's (`facts.locations_match`). A mismatch is a FLAG under CLS-FRD-007. Off, there is no such
-signal and the Claude risk and drafter agents are told not to FLAG for it: in the course data every
-police report (CLM-2024-1800, 1946, 2019, 2092) gives a different location from its FNOL.
+Code compares the `Location` line of the FNOL with the police report's (`facts.locations_match`).
+A mismatch is a FLAG under CLS-FRD-007, and the note says "FNOL and police report give different
+loss locations". In the course data that is CLM-2024-1800, 1946, 2019 and 2092; 1800 is therefore a
+FLAG, not an APPROVE (use 3041 or 2749 for a clean APPROVE). `CLAIMSENSE_LOCATION_CHECK=0` turns
+the check off, for data whose location fields are not comparable; the Claude risk and drafter
+agents are then told not to FLAG for it.
 
 ## Evaluation
 

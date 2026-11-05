@@ -148,6 +148,7 @@ CREATE TABLE claimsense.assessments (
     agent_outputs    JSONB NOT NULL,               -- typed output of each agent
     citations        TEXT[] NOT NULL DEFAULT '{}',
     models           JSONB NOT NULL,               -- model and prompt version per agent
+    claim_status_at_run TEXT,                      -- the claim's status in the claims system when the run started
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -166,6 +167,17 @@ CREATE TABLE claims_mgmt.claim_notes (
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- A note must cite clauses, unless it is a DENY that records why (questions 3 and 4).
     CHECK (cardinality(cited_clauses) > 0 OR (outcome = 'DENY' AND deny_reason IS NOT NULL))
+);
+
+-- An adjuster's review of a draft note: confirmed or rejected, once (decided 2026-11-04). The note
+-- itself stays append-only; its status reads from here. A rejection, and any review of an
+-- agent-failure DENY, carries a reason.
+CREATE TABLE claims_mgmt.note_reviews (
+    note_id      BIGINT PRIMARY KEY REFERENCES claims_mgmt.claim_notes (note_id),
+    decision     TEXT NOT NULL CHECK (decision IN ('confirmed', 'rejected')),
+    reviewed_by  TEXT NOT NULL REFERENCES claimsense.users (user_id),
+    reason       TEXT,
+    reviewed_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE claimsense.retrieval_log (

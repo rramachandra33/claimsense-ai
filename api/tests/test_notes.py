@@ -23,7 +23,8 @@ except psycopg.OperationalError:
     pytest.skip("database not running (run `make up`)", allow_module_level=True)
 
 client = TestClient(app)
-GROUPS = {"alice": "adjuster", "david": "adjuster", "bob": "senior-adjuster"}
+GROUPS = {"alice": "adjuster", "david": "adjuster", "bob": "senior-adjuster",
+          "carol": "fraud-investigator", "eve": "total-loss-appraiser"}
 CLAIM = "CLM-2024-2822"          # david's lapsed-policy claim
 
 
@@ -40,6 +41,9 @@ def run_id():
     rid = str(uuid.uuid4())
     yield rid
     execute("""DELETE FROM claimsense.idempotency_keys WHERE note_id IN
+                 (SELECT n.note_id FROM claims_mgmt.claim_notes n
+                    JOIN claimsense.assessments a USING (assessment_id) WHERE a.run_id = %s)""", (rid,))
+    execute("""DELETE FROM claims_mgmt.note_reviews WHERE note_id IN
                  (SELECT n.note_id FROM claims_mgmt.claim_notes n
                     JOIN claimsense.assessments a USING (assessment_id) WHERE a.run_id = %s)""", (rid,))
     execute("""DELETE FROM claims_mgmt.claim_notes WHERE assessment_id IN
@@ -210,3 +214,90 @@ def test_notes_are_listed_newest_first_with_their_assessment(run_id):
 def test_cannot_read_notes_on_a_claim_you_cannot_read():
     response = client.get(f"/api/v1/claims/{CLAIM}/notes", headers=headers("alice"))
     assert response.status_code == 403
+
+
+# --- reviews (confirm / reject) and the claim's status at run time --------------------------
+
+def written_note(run_id, **changes):
+    retrieve(run_id, "policy period lapse expiration")
+    response = client.post(f"/api/v1/claims/{CLAIM}/notes", json=deny_note(run_id, **changes),
+                           headers=headers("david", "k-" + run_id))
+    return response.json()["note"]["note_id"]
+
+
+def review(note_id, user_id, decision, reason=None, claim_id=CLAIM):
+    return client.post(f"/api/v1/claims/{claim_id}/notes/{note_id}/review",
+                       json={"decision": decision, "reason": reason}, headers=headers(user_id))
+
+
+def listed(note_id):
+    notes = client.get(f"/api/v1/claims/{CLAIM}/notes", headers=headers("david")).json()["notes"]
+    return next(n for n in notes if n["note_id"] == note_id)
+
+
+def test_an_adjuster_confirms_a_draft_once_and_it_is_audited(run_id):
+    note_id = written_note(run_id)
+    response = review(note_id, "david", "confirmed")
+    assert response.status_code == 201
+    assert response.json()["review"]["reviewed_by"] == "david"
+    note = listed(note_id)
+    assert note["status"] == "confirmed" and note["reviewed_by"] == "david"
+    again = review(note_id, "bob", "rejected", "second look")
+    assert again.status_code == 409 and again.json()["error"]["code"] == "already_reviewed"
+    rows = fetch_all("""SELECT decision, reason FROM claimsense.audit_log
+                        WHERE action = 'review_note' AND resource_id = %s AND resource_type = 'claim_note'
+                        ORDER BY audit_id""", (str(note_id),))
+    assert ("allow", "confirmed") in [(r["decision"], r["reason"]) for r in rows]
+
+
+def test_a_rejection_needs_a_reason(run_id):
+    note_id = written_note(run_id)
+    response = review(note_id, "david", "rejected")
+    assert response.status_code == 400 and response.json()["error"]["code"] == "reason_required"
+    assert review(note_id, "david", "rejected", "the policy was renewed in time").status_code == 201
+    assert listed(note_id)["review_reason"] == "the policy was renewed in time"
+
+
+def test_an_agent_failure_deny_needs_a_reason_even_to_confirm(run_id):
+    note_id = written_note(run_id, decision_source="agent_failure", cited_clauses=[],
+                           deny_reason="An agent could not finish.")
+    response = review(note_id, "david", "confirmed")
+    assert response.status_code == 400 and response.json()["error"]["code"] == "reason_required"
+    assert review(note_id, "david", "confirmed", "checked by hand: lapsed").status_code == 201
+
+
+def test_only_people_who_may_read_the_claim_may_review(run_id):
+    note_id = written_note(run_id)
+    assert review(note_id, "alice", "confirmed").status_code == 403          # not her claim
+    assert review(note_id, "david", "maybe").status_code == 400
+    assert review(note_id, "david", "confirmed", claim_id="CLM-2024-1800").status_code == 403
+
+
+def test_a_note_on_another_claim_is_not_found(run_id):
+    note_id = written_note(run_id)
+    response = client.post(f"/api/v1/claims/CLM-2024-2165/notes/{note_id}/review",
+                           json={"decision": "confirmed"}, headers=headers("bob"))
+    assert response.status_code == 404
+
+
+def test_the_claim_status_at_run_time_is_kept(run_id):
+    note_id = written_note(run_id, claim_status_at_run="Approved")
+    assert listed(note_id)["claim_status_at_run"] == "Approved"
+
+
+def test_fraud_investigators_and_appraisers_review_only(run_id):
+    note_id = written_note(run_id)
+    # carol and eve cannot read david's claim at all; check the role rule itself.
+    from claimsense_api.notes import ReviewRequest, NoteError, review_note
+    for user_id in ("carol", "eve"):
+        user = {"user_id": user_id, "user_group": GROUPS[user_id]}
+        with pytest.raises(NoteError) as refused:
+            review_note(user, CLAIM, note_id, ReviewRequest(decision="confirmed"))
+        assert refused.value.status == 403
+
+
+def test_above_25000_only_a_senior_adjuster_confirms(run_id):
+    note_id = written_note(run_id, code_facts={"facts": {"net_payable_if_covered_usd": 30200}})
+    response = review(note_id, "david", "confirmed")
+    assert response.status_code == 403 and response.json()["error"]["code"] == "senior_required"
+    assert review(note_id, "bob", "confirmed").status_code == 201

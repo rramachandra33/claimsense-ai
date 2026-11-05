@@ -62,11 +62,15 @@ export type Note = {
   summary: string;
   cited_clauses: string[];
   deny_reason: string | null;
-  status: string;
+  status: string;                       // draft_pending_confirmation | confirmed | rejected
   author: string;
   created_at: string;
+  reviewed_by: string | null;
+  review_reason: string | null;
+  reviewed_at: string | null;
   run_id: string;
   decision_source: "model" | "deterministic_fallback" | "agent_failure";
+  claim_status_at_run: string | null;   // the claim's status when the run started (null on older notes)
   code_facts: {
     facts: Record<string, unknown> & {
       in_force_at_loss: boolean;
@@ -76,7 +80,8 @@ export type Note = {
     };
     signals: Signal[];
     documentation_gaps: Gap[];
-    provisional_precedence: Outcome[];
+    precedence?: Outcome[];             // since 2026-11-04
+    provisional_precedence?: Outcome[]; // older notes
   };
   agent_outputs: Record<string, unknown> & { draft_problems?: string[]; usage?: Usage };
   models: Record<string, string>;

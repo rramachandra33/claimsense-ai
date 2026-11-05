@@ -25,7 +25,7 @@ def assess(live_api, user_id, group, claim_id, **options):
 
 def test_clean_claim_is_approved_with_retrieved_citations(live_api):
     from claimsense_api.db import fetch_all, fetch_one
-    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-3041")
     assert result.status == "written"
     assert result.outcome == "APPROVE"
     assert result.decision_source == "model"
@@ -38,11 +38,17 @@ def test_clean_claim_is_approved_with_retrieved_citations(live_api):
 
     note = fetch_one("SELECT * FROM claims_mgmt.claim_notes WHERE note_id = %s", (result.note_id,))
     assert note["outcome"] == "APPROVE"
+    # CLM-2024-3041 is already Approved in the claims system: the note says this is a second opinion
+    assert note["summary"].endswith("Second opinion: the claim was already Approved in the claims "
+                                    "system when this assessment ran.")
+    assessment = fetch_one("SELECT claim_status_at_run FROM claimsense.assessments WHERE run_id = %s",
+                           (result.run_id,))
+    assert assessment["claim_status_at_run"] == "Approved"
 
 
 def test_each_agent_acted_for_alice_with_its_own_token(live_api):
     from claimsense_api.db import fetch_all
-    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-3041")
     rows = fetch_all("""SELECT DISTINCT actor FROM claimsense.audit_log
                         WHERE run_id = %s AND on_behalf_of = 'alice'""", (result.run_id,))
     assert sorted(r["actor"] for r in rows) == ["coverage", "drafter", "reader", "risk"]
@@ -61,7 +67,7 @@ def test_an_agent_that_cannot_finish_leads_to_a_deny_note(live_api, monkeypatch)
         raise AgentFailed("risk: MaxTurnsExceeded: Max turns (15) exceeded")
 
     monkeypatch.setattr(mock, "risk", risk_runs_out_of_turns)
-    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-3041")
     assert result.status == "written" and result.note_id is not None
     assert result.outcome == "DENY"
     assert result.decision_source == "agent_failure"
@@ -78,7 +84,7 @@ def test_coverage_citations_that_were_not_retrieved_are_removed(live_api, monkey
         return output.model_copy(update={"cited_clauses": output.cited_clauses + ["CLS-PAY-012"]})
 
     monkeypatch.setattr(mock, "coverage", coverage_citing_an_unretrieved_clause)
-    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800")
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-3041")
     assert result.problems == ["coverage agent cited CLS-PAY-012, which no clause search returned "
                                "in this run; removed"]
     assert result.outcome == "APPROVE" and result.decision_source == "model"
@@ -104,7 +110,7 @@ def test_adjuster_cannot_assess_someone_elses_claim(live_api):
 def test_draft_citing_a_made_up_clause_is_denied(live_api):
     """The demo bad draft is an APPROVE citing CLS-XXX-999, which is not in the manual."""
     from claimsense_api.db import fetch_one
-    result = assess(live_api, "alice", "adjuster", "CLM-2024-1800", bad_citation="CLS-XXX-999")
+    result = assess(live_api, "alice", "adjuster", "CLM-2024-3041", bad_citation="CLS-XXX-999")
     assert result.status == "written"
     assert result.outcome == "DENY"
     assert result.decision_source == "deterministic_fallback"

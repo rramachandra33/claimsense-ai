@@ -46,9 +46,9 @@ def test_the_location_check_switches_expectations(monkeypatch):
     location_case = {"case_id": "EV-999", "expect": {"outcome": "APPROVE"},
                      "with_location_check": {"outcome": "FLAG"}}
     result = {"status": "written", "outcome": "FLAG"}
-    monkeypatch.delenv("CLAIMSENSE_LOCATION_CHECK", raising=False)
+    monkeypatch.setenv("CLAIMSENSE_LOCATION_CHECK", "0")
     assert score(location_case, result) == ["outcome FLAG, expected APPROVE"]
-    monkeypatch.setenv("CLAIMSENSE_LOCATION_CHECK", "1")
+    monkeypatch.delenv("CLAIMSENSE_LOCATION_CHECK", raising=False)      # on by default
     assert score(location_case, result) == []
 
 

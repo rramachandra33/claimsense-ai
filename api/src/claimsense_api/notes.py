@@ -30,6 +30,7 @@ class NoteRequest(BaseModel):
     code_facts: dict = {}
     agent_outputs: dict = {}
     models: dict = {}
+    claim_status_at_run: str | None = None
 
 
 class NoteError(Exception):
@@ -115,12 +116,12 @@ def write_note(user, claim_id, note, idem_key):
             assessment = conn.execute(
                 """INSERT INTO claimsense.assessments
                      (run_id, claim_id, on_behalf_of, outcome, decision_source, code_facts,
-                      agent_outputs, citations, models)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                      agent_outputs, citations, models, claim_status_at_run)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    RETURNING assessment_id""",
                 (note.run_id, claim_id, user["user_id"], note.outcome, note.decision_source,
                  json.dumps(note.code_facts), json.dumps(note.agent_outputs), note.cited_clauses,
-                 json.dumps(note.models)),
+                 json.dumps(note.models), note.claim_status_at_run),
             ).fetchone()
             saved = conn.execute(
                 """INSERT INTO claims_mgmt.claim_notes
@@ -142,3 +143,59 @@ def write_note(user, claim_id, note, idem_key):
         if previous:
             return replay_or_conflict(previous, this_hash), True
         raise NoteError(409, "run_already_recorded", "A draft for this run_id was already saved.")
+
+
+# ---- reviews: an adjuster confirms or rejects a draft (decided 2026-11-04) -------------------
+
+REVIEW_DECISIONS = ("confirmed", "rejected")
+
+# Who may review drafts (open question 8, confirmed 2026-10-26): adjusters and senior adjusters.
+# Fraud investigators and total-loss appraisers review only; service accounts never confirm.
+REVIEWER_GROUPS = ("adjuster", "senior-adjuster")
+SENIOR_CONFIRMATION_ABOVE = 25000      # CLS-PAY-012: above this, only a senior adjuster confirms
+
+
+class ReviewRequest(BaseModel):
+    decision: str
+    reason: str | None = None
+
+
+def review_note(user, claim_id, note_id, review):
+    """Record one review of a draft note. Raises NoteError. Returns the review row.
+
+    Rules: only adjusters and senior adjusters review; confirmed or rejected; once per note; a
+    rejection needs a reason, and so does any review of an agent-failure DENY (code wrote it because
+    an agent could not finish); confirming a draft whose net payable is above $25,000 needs a senior
+    adjuster (CLS-PAY-012)."""
+    if user["user_group"] not in REVIEWER_GROUPS:
+        raise NoteError(403, "forbidden", "Your role may read drafts but not confirm or reject them.")
+    if review.decision not in REVIEW_DECISIONS:
+        raise NoteError(400, "invalid_argument", "decision must be confirmed or rejected.")
+    reason = (review.reason or "").strip() or None
+    if reason and len(reason) > 1000:
+        raise NoteError(400, "invalid_argument", "reason must be at most 1000 characters.")
+    note = fetch_one("""SELECT n.note_id, a.decision_source,
+                               (a.code_facts -> 'facts' ->> 'net_payable_if_covered_usd')::numeric AS net_payable
+                          FROM claims_mgmt.claim_notes n
+                          JOIN claimsense.assessments a USING (assessment_id)
+                         WHERE n.note_id = %s AND n.claim_id = %s""", (note_id, claim_id))
+    if note is None:
+        raise NoteError(404, "not_found", "No such note on this claim.")
+    if review.decision == "rejected" and not reason:
+        raise NoteError(400, "reason_required", "Give a reason for rejecting the draft.")
+    if note["decision_source"] == "agent_failure" and not reason:
+        raise NoteError(400, "reason_required",
+                        "This DENY was written because an agent could not finish: give the reason for your review.")
+    if (review.decision == "confirmed" and note["net_payable"] is not None
+            and note["net_payable"] > SENIOR_CONFIRMATION_ABOVE and user["user_group"] != "senior-adjuster"):
+        raise NoteError(403, "senior_required",
+                        "Net payable is above $25,000: only a senior adjuster may confirm this draft (CLS-PAY-012).")
+    try:
+        with connect() as conn:
+            return conn.execute(
+                """INSERT INTO claims_mgmt.note_reviews (note_id, decision, reviewed_by, reason)
+                   VALUES (%s, %s, %s, %s) RETURNING *""",
+                (note_id, review.decision, user["user_id"], reason),
+            ).fetchone()
+    except psycopg.errors.UniqueViolation:
+        raise NoteError(409, "already_reviewed", "This draft has already been reviewed.")

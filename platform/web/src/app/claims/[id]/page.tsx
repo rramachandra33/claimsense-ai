@@ -42,7 +42,7 @@ export default async function ClaimPage({ params }: { params: { id: string } }) 
             {!notesResult.ok ? (
               <ApiErrorPanel status={notesResult.status} message={notesResult.error.message} />
             ) : (
-              <NotesList notes={notesResult.data.notes} />
+              <NotesList notes={notesResult.data.notes} canReview={session.group === "adjuster" || session.group === "senior-adjuster"} />
             )}
           </div>
         </Panel>

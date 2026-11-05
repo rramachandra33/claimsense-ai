@@ -203,10 +203,9 @@ Write:
 - deny_reason: one sentence for a DENY; null otherwise."""
 
 
-# With the location check off (the default), the FNOL and police report disagreeing on where the
-# loss happened, or on how many vehicles were involved, is not a reason to FLAG: in the course data
-# every police report disagrees with its FNOL. With CLAIMSENSE_LOCATION_CHECK=1, code checks the
-# locations and signals FLAG itself.
+# The location check is on by default: code compares the locations and signals FLAG itself. With
+# CLAIMSENSE_LOCATION_CHECK=0 (off), the FNOL and police report disagreeing on where the loss
+# happened, or on how many vehicles were involved, is not a reason to FLAG.
 LOCATION_CHECK_OFF = """
 Do not treat a different loss location, or a different number of vehicles, between the FNOL and the
 police report as a fraud indicator or a reason to FLAG. You may mention it."""

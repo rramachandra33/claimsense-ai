@@ -92,3 +92,32 @@ export async function runAssessment(claimId: string): Promise<ApiResult<RunResul
     };
   }
 }
+
+/** Confirm or reject a draft note as the signed-in user. The API checks who may, and audits it. */
+export async function reviewNote(
+  claimId: string, noteId: number, decision: "confirmed" | "rejected", reason: string,
+): Promise<ApiResult<unknown>> {
+  const session = getSession();
+  try {
+    const response = await fetch(`${API_URL}/api/v1/claims/${claimId}/notes/${noteId}/review`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(session ? { Authorization: `Bearer ${session.token}` } : {}),
+      },
+      body: JSON.stringify({ decision, reason: reason || null }),
+      cache: "no-store",
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      return { ok: false, status: response.status, error: body.error };
+    }
+    return { ok: true, status: response.status, data: body };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      error: { code: "api_unreachable", message: `The ClaimSense API at ${API_URL} is not reachable.` },
+    };
+  }
+}

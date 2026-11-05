@@ -13,7 +13,7 @@ def bearer(user_id, group):
 
 
 def test_run_writes_a_note_for_the_signed_in_adjuster(live_api):
-    response = runner.post("/runs", json={"claim_id": "CLM-2024-1800"}, headers=bearer("alice", "adjuster"))
+    response = runner.post("/runs", json={"claim_id": "CLM-2024-3041"}, headers=bearer("alice", "adjuster"))
     assert response.status_code == 200
     body = response.json()
     RUN_IDS.append(body["run_id"])
@@ -31,7 +31,7 @@ def test_run_on_a_claim_the_adjuster_cannot_read_fails_without_detail(live_api):
 
 
 def test_run_needs_a_token(live_api):
-    response = runner.post("/runs", json={"claim_id": "CLM-2024-1800"})
+    response = runner.post("/runs", json={"claim_id": "CLM-2024-3041"})
     assert response.status_code == 401
 
 
@@ -41,7 +41,7 @@ def test_ping_answers_the_agentcore_health_check():
 
 def test_invocation_runs_as_the_adjuster_in_the_payload(live_api):
     token = bearer("alice", "adjuster")["Authorization"].removeprefix("Bearer ")
-    response = runner.post("/invocations", json={"claim_id": "CLM-2024-1800", "user_token": token})
+    response = runner.post("/invocations", json={"claim_id": "CLM-2024-3041", "user_token": token})
     assert response.status_code == 200
     body = response.json()
     RUN_IDS.append(body["run_id"])
@@ -58,7 +58,7 @@ def test_invocation_keeps_the_access_rules(live_api):
 
 
 def test_invocation_needs_the_adjusters_token(live_api):
-    response = runner.post("/invocations", json={"claim_id": "CLM-2024-1800"})
+    response = runner.post("/invocations", json={"claim_id": "CLM-2024-3041"})
     assert response.status_code == 401
 
 
@@ -79,11 +79,11 @@ def test_runs_are_forwarded_to_agentcore_when_a_runtime_is_set(monkeypatch):
     monkeypatch.setenv("CLAIMSENSE_AGENTCORE_RUNTIME_ARN", "arn:aws:bedrock-agentcore:us-east-1:1:runtime/x")
     monkeypatch.setattr("boto3.client", lambda *args, **kwargs: FakeAgentCore())
     headers = bearer("alice", "adjuster")
-    response = runner.post("/runs", json={"claim_id": "CLM-2024-1800"}, headers=headers)
+    response = runner.post("/runs", json={"claim_id": "CLM-2024-3041"}, headers=headers)
     assert response.json()["outcome"] == "APPROVE"
     assert sent["agentRuntimeArn"].endswith("runtime/x")
     assert len(sent["runtimeSessionId"]) >= 33
     payload = json.loads(sent["payload"])
-    assert payload == {"claim_id": "CLM-2024-1800",
+    assert payload == {"claim_id": "CLM-2024-3041",
                        "user_token": headers["Authorization"].removeprefix("Bearer ")}
     assert runner_module.agentcore_runtime_arn()

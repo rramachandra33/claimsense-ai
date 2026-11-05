@@ -20,7 +20,7 @@ from .auth import AuthError, InactiveUser, get_user, make_dev_token
 from .db import execute, fetch_all, fetch_one
 from pydantic import BaseModel
 
-from .notes import NoteError, NoteRequest, check_note, write_note
+from .notes import NoteError, NoteRequest, ReviewRequest, check_note, review_note, write_note
 from .obo import AGENT_SCOPES, OBO_LIFETIME_SECONDS, make_obo_token
 from .ratelimit import allow_request
 
@@ -353,13 +353,40 @@ def list_notes(claim_id: str, authorization: str = Header(default=None)):
         raise ApiError(403, "forbidden", "This agent is not allowed to do that.")
     load_claim_for(user, claim_id, "list_notes")
     notes = fetch_all("""SELECT n.note_id, n.claim_id, n.on_behalf_of, n.outcome, n.summary,
-                                n.cited_clauses, n.deny_reason, n.status, n.author, n.created_at,
-                                a.run_id, a.decision_source, a.code_facts, a.agent_outputs, a.models
+                                n.cited_clauses, n.deny_reason, COALESCE(r.decision, n.status) AS status,
+                                n.author, n.created_at,
+                                r.reviewed_by, r.reason AS review_reason, r.reviewed_at,
+                                a.run_id, a.decision_source, a.claim_status_at_run,
+                                a.code_facts, a.agent_outputs, a.models
                            FROM claims_mgmt.claim_notes n
                            JOIN claimsense.assessments a USING (assessment_id)
+                           LEFT JOIN claims_mgmt.note_reviews r USING (note_id)
                           WHERE n.claim_id = %s
                           ORDER BY n.note_id DESC""", (claim_id,))
     return {"claim_id": claim_id, "notes": notes, "count": len(notes)}
+
+
+@app.post("/api/v1/claims/{claim_id}/notes/{note_id}/review", status_code=201)
+def review_draft(claim_id: str, note_id: int, review: ReviewRequest,
+                 authorization: str = Header(default=None)):
+    """An adjuster confirms or rejects a draft note, once. The reviewer must be able to read the claim
+    and be an adjuster or senior adjuster (above $25,000 net payable, only a senior adjuster
+    confirms); agents may not. The note stays as written; the review is recorded beside it."""
+    user = require_user(authorization, "review_note", "claim_note", str(note_id))
+    if user["obo"]:
+        log_audit("review_note", "deny", user=user, resource_type="claim_note", resource_id=str(note_id),
+                  reason="agents may not review notes")
+        raise ApiError(403, "forbidden", "This agent is not allowed to do that.")
+    load_claim_for(user, claim_id, "review_note")
+    try:
+        saved = review_note(user, claim_id, note_id, review)
+    except NoteError as e:
+        log_audit("review_note", "deny", user=user, resource_type="claim_note", resource_id=str(note_id),
+                  reason=f"{e.code}: {e.message}", detail={"claim_id": claim_id})
+        raise ApiError(e.status, e.code, e.message)
+    log_audit("review_note", "allow", user=user, resource_type="claim_note", resource_id=str(note_id),
+              reason=saved["decision"], detail={"claim_id": claim_id, "reason": saved["reason"]})
+    return {"review": saved}
 
 
 @app.post("/api/v1/obo/token")

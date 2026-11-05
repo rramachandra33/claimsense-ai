@@ -3,6 +3,15 @@ import { OutcomeBadge } from "@/components/badges";
 import { Empty } from "@/components/ui";
 import { formatCost, formatDateTime, formatUsd } from "@/lib/format";
 import type { Note } from "@/lib/types";
+import { ReviewNote } from "./ReviewNote";
+
+const DECIDED_STATUSES = ["approved", "denied", "closed", "settled", "paid"];
+
+function StatusTag({ status }: { status: string }) {
+  const colour = status === "confirmed" ? "bg-emerald-100 text-emerald-800"
+    : status === "rejected" ? "bg-rose-100 text-rose-800" : "bg-slate-100 text-slate-600";
+  return <span className={`rounded-md px-2 py-0.5 text-xs ${colour}`}>{status.replace(/_/g, " ")}</span>;
+}
 
 // The order the pipeline runs the agents in.
 const AGENT_ORDER = ["reader", "coverage", "risk", "drafter"];
@@ -27,7 +36,7 @@ function SourceTag({ source }: { source: Note["decision_source"] }) {
 }
 
 /** One draft note: the recommendation, its citations, and how it was reached. */
-function NoteCard({ note }: { note: Note }) {
+function NoteCard({ note, canReview }: { note: Note; canReview: boolean }) {
   const facts = note.code_facts.facts;
   const problems = note.agent_outputs.draft_problems ?? [];
   const models = Array.from(new Set(Object.values(note.models).map((m) => m.split("/").pop()))).join(", ");
@@ -38,10 +47,13 @@ function NoteCard({ note }: { note: Note }) {
     <article className="rounded-lg border border-claimsense-line p-4">
       <header className="flex flex-wrap items-center gap-2">
         <OutcomeBadge outcome={note.outcome} />
-        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-          {note.status.replace(/_/g, " ")}
-        </span>
+        <StatusTag status={note.status} />
         <SourceTag source={note.decision_source} />
+        {note.claim_status_at_run && DECIDED_STATUSES.includes(note.claim_status_at_run.toLowerCase()) ? (
+          <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-800 ring-1 ring-amber-200">
+            second opinion: claim was {note.claim_status_at_run}
+          </span>
+        ) : null}
         <span className="ml-auto text-xs text-claimsense-muted">
           Note {note.note_id} · {formatDateTime(note.created_at)} · for {note.on_behalf_of}
         </span>
@@ -56,6 +68,18 @@ function NoteCard({ note }: { note: Note }) {
         <span>Cites</span>
         {note.cited_clauses.length ? note.cited_clauses.map((c) => <ClauseLink key={c} id={c} />) : <span>no clause</span>}
       </div>
+
+      {note.reviewed_by ? (
+        <p className={`mt-3 text-xs ${note.status === "confirmed" ? "text-emerald-800" : "text-rose-800"}`}>
+          <span className="font-semibold">{note.status === "confirmed" ? "Confirmed" : "Rejected"} by {note.reviewed_by}</span>
+          {note.reviewed_at ? ` · ${formatDateTime(note.reviewed_at)}` : ""}
+          {note.review_reason ? ` · ${note.review_reason}` : ""}
+        </p>
+      ) : canReview ? (
+        <ReviewNote claimId={note.claim_id} noteId={note.note_id} agentFailure={note.decision_source === "agent_failure"} />
+      ) : (
+        <p className="mt-3 text-xs text-claimsense-muted">Awaiting an adjuster&apos;s review. Your role may read drafts but not confirm them.</p>
+      )}
 
       <details className="mt-3 text-sm">
         <summary className="cursor-pointer text-xs font-medium text-claimsense-primary">How this was reached</summary>
@@ -82,7 +106,9 @@ function NoteCard({ note }: { note: Note }) {
               <p className="mt-1 text-xs text-slate-500">None.</p>
             )}
             <p className="mt-2 text-[11px] text-slate-400">
-              Precedence is provisional ({note.code_facts.provisional_precedence.join(" > ")}) until it is decided.
+              {note.code_facts.precedence
+                ? `Precedence: ${note.code_facts.precedence.join(" > ")}; the note lists the other signals.`
+                : `Precedence was provisional (${(note.code_facts.provisional_precedence ?? []).join(" > ")}) when this ran.`}
             </p>
           </div>
           <div>
@@ -135,13 +161,15 @@ function NoteCard({ note }: { note: Note }) {
   );
 }
 
-export function NotesList({ notes }: { notes: Note[] }) {
+/** The claim's notes. canReview: the signed-in user is an adjuster or senior adjuster (question 8);
+ * the API enforces this and the $25,000 senior rule itself. */
+export function NotesList({ notes, canReview }: { notes: Note[]; canReview: boolean }) {
   if (notes.length === 0) {
     return <Empty>No ClaimSense notes yet. Run an assessment to draft one.</Empty>;
   }
   return (
     <div className="space-y-3">
-      {notes.map((n) => <NoteCard key={n.note_id} note={n} />)}
+      {notes.map((n) => <NoteCard key={n.note_id} note={n} canReview={canReview} />)}
     </div>
   );
 }
