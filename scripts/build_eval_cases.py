@@ -78,6 +78,7 @@ def rule_outcomes(claim_id):
     if f["total_loss_candidate"] or claim["injuries_reported"] or f["senior_confirmation_required"]:
         found.add("ROUTE")
     if (claim["prior_claims_12mo"] >= 2 or claim["fraud_risk_score"] >= 0.70
+            or not f["vin_matches_policy"]
             or (not claim["police_report_filed"]
                 and (claim["injuries_reported"] or "airbag" in claim["damage_description"].lower()))):
         found.add("FLAG")
@@ -183,9 +184,7 @@ add("Medical report on a claim with no injuries", "variation", "alice", base_cla
     status="written", outcome="FLAG", must_cite=["CLS-INJ-008"])
 add("Claim VIN does not match the policy VIN", "variation", "alice", base_claim="CLM-2024-1800",
     changes={"claim": {"vehicle_vin": "1HGCM82633A004352"}},
-    status="written", outcome_not=["APPROVE"],
-    proposed_rule="No code rule yet: a VIN mismatch is recorded as a fact but signals nothing. "
-                  "Proposed: FLAG for review before payment.")
+    status="written", outcome="FLAG", must_cite=["CLS-FRD-007"])
 add("Liability Only policy: no own-vehicle damage cover", "variation", "alice",
     base_claim="CLM-2024-1800",
     changes={"policy": {"coverage_type": "Liability Only", "collision_coverage": False,

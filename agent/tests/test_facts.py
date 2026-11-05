@@ -218,3 +218,14 @@ def test_a_flag_for_documentation_alone_says_it_is_not_fraud():
 def test_nothing_to_add_on_a_clean_claim():
     assert note_additions("APPROVE", [], []) == ""
     assert note_additions("DENY", [DENY_LAPSED], []) == ""
+
+
+def test_a_vin_mismatch_is_a_fraud_indicator_shown_by_its_last_six_characters():
+    claim, policy, docs = next(c for c in course_claims() if c[0]["claim_id"] == "CLM-2024-1800")
+    claim = dict(claim, vehicle_vin="1HGCM82633A004352")
+    signals = outcome_signals(claim, compute_facts(claim, policy, docs))
+    flag = [s for s in signals if s["outcome"] == "FLAG"]
+    assert flag[0]["clause"] == "CLS-FRD-007"
+    assert "the claim's VIN (ending 004352) does not match the VIN on the policy" in flag[0]["reason"]
+    assert "1HGCM82633A" not in flag[0]["reason"]
+    assert code_outcome(signals, []) == "FLAG"

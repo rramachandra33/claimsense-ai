@@ -159,6 +159,14 @@ Nothing is dropped: after the draft checks, code adds to the note's summary (`no
 Code writes these lines, so no draft can leave them out. The three original cases are in
 `evals/precedence_cases.json`.
 
+## VIN mismatch (decided 2026-11-04)
+
+When the claim's VIN differs from the policy's, code adds a CLS-FRD-007 fraud indicator: "the
+claim's VIN (ending 004352) does not match the VIN on the policy" (only the last six characters go
+on the note). It is a FLAG, so the precedence rule applies: on a lapsed policy the note is a DENY
+that lists the FLAG under "Also needs". The risk agent's token cannot read the policy, so code does
+this check, not the agent.
+
 ## Provisional, still to decide
 
 * **Fraud threshold**: vendor score 0.70.

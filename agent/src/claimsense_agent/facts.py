@@ -184,6 +184,12 @@ def outcome_signals(claim, facts):
         signals.append({"outcome": "ROUTE", "clause": "CLS-PAY-012",
                         "reason": f"net payable {facts['net_payable_if_covered_usd']} > 25000, senior adjuster"})
     indicators = fraud_indicators(claim)
+    if facts["vin_matches_policy"] is False:
+        # Decided 2026-11-04: a claim on a vehicle that is not the one on the policy is a
+        # misrepresentation indicator (CLS-FRD-007), reviewed before payment. Only the end of the
+        # VIN goes on the note.
+        indicators.append(f"the claim's VIN (ending {claim['vehicle_vin'][-6:]}) does not match "
+                          "the VIN on the policy")
     if facts.get("loss_locations_match") is False:      # only set when the location check is on
         indicators.append("FNOL and police report give different loss locations")
     if indicators:

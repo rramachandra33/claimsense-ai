@@ -60,9 +60,15 @@ from the data import, now with their expected outcomes.
 
 ### Still to decide
 
-* **Proposed rules.** Two cases are not covered by any code rule yet, so the mock brain fails them
-  by design: a VIN mismatch (EV-035) and an unmapped loss type such as mechanical breakdown
-  (EV-039). Both currently get APPROVE; the proposal is that neither may. With the location check
-  on they pass, but only because their copies of CLM-2024-1800 keep its location mismatch.
+* **Proposed rules.** One case is not covered by any code rule yet, so the mock brain fails it by
+  design: an unmapped loss type such as mechanical breakdown (EV-039). It currently gets APPROVE;
+  the proposal is that it may not. With the location check on it passes, but only because its copy
+  of CLM-2024-1800 keeps its location mismatch.
+
+### VIN mismatch (decided 2026-11-04)
+
+A claim whose VIN differs from the policy's is a misrepresentation indicator under CLS-FRD-007:
+FLAG for review before payment, and the note says "the claim's VIN (ending …) does not match the
+VIN on the policy" (only the last six characters). EV-035 expects FLAG and a CLS-FRD-007 citation.
 
 The earlier 150 cases built on synthetic data are kept in `legacy/` for reference.

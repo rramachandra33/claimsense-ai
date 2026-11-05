@@ -577,11 +577,11 @@
     },
     "expect": {
       "status": "written",
-      "outcome_not": [
-        "APPROVE"
+      "outcome": "FLAG",
+      "must_cite": [
+        "CLS-FRD-007"
       ]
-    },
-    "proposed_rule": "No code rule yet: a VIN mismatch is recorded as a fact but signals nothing. Proposed: FLAG for review before payment."
+    }
   },
   {
     "case_id": "EV-036",
