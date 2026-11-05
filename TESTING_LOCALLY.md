@@ -1,153 +1,184 @@
-# Testing ClaimSense locally (MacBook, no AWS needed)
+# Run and test ClaimSense locally, from scratch
 
-Everything built so far runs on this Mac: PostgreSQL (Docker, port 5433), the data API (port 8000),
-the runner (port 8100, runs the four agents), the MCP server with its registry (port 8200; agents find it at `/registry/v0/servers`) and the
-console (port 3100). Docker Desktop must be running.
+Everything runs on a Mac with no AWS account (the mock agents), or with Claude on Amazon Bedrock if
+you have the `claimsense` AWS profile. The AWS deployment has its own guide: `DEPLOY_AND_TEST_ON_AWS.md`.
 
-## 1. Start
+What runs: PostgreSQL (Docker, port **5433**, so a PostgreSQL already on 5432 is untouched), the data
+API (8000), the MCP server and its registry (8200), the runner that runs the four agents (8100) and
+the console (3100).
 
-**Option 1: the whole stack in Docker, one command**
+## 1. Prerequisites (once)
+
+| Tool | Check | Notes |
+|---|---|---|
+| Docker Desktop | `docker --version` | must be running |
+| Node.js 22 | `node -v` | the console |
+| Python 3.12+ and uv | `python3 -V`, `uv --version` | https://docs.astral.sh/uv/ |
+| make, git, curl | | come with the Xcode command-line tools |
+| AWS CLI v2 (optional) | `aws --version` | only for Claude (step 5) |
 
 ```bash
+git clone https://github.com/rramachandra33/claimsense-ai.git ~/raju/CLAIMSENSE-AI   # private repo
 cd ~/raju/CLAIMSENSE-AI
+make doctor          # lists anything missing
+```
+
+## 2. Start
+
+**Option A: the whole stack in Docker (recommended for testing)**
+
+```bash
 make stack                    # db, seed, api :8000, mcp :8200, runner :8100, console :3100 (first build: a few minutes)
-make stack BRAIN=bedrock      # the same, with Claude in the runner (needs a current `aws login --profile claimsense`)
-make stack-logs               # follow the api, runner and console logs
+make stack-logs               # follow the logs; make stack-down to stop
 ```
 
-`make stack` writes `.env` with a random token secret the first time. It stops `make up`'s database
-first (both use the container name `claimsense-db` and port 5433), so `make eval` and `make test`
-work against the stack's database too. Each start reloads the course data. A console sign-in from
-before a new secret shows "Missing, expired or invalid token": sign out and in again.
+The first `make stack` writes `.env` with a random token secret. Every start reloads the course
+data (20 claims), which removes earlier notes and reviews. After a new secret, a console sign-in
+from before shows "Missing, expired or invalid token": sign out and in again.
 
-**Option 2: each service in its own terminal** (faster to change code)
+**Option B: each service in its own terminal (faster when changing code)**
 
 ```bash
-# Terminal 1: database + data API
-cd ~/raju/CLAIMSENSE-AI
-make up                                   # only if the database is not already running
+make up                                                                     # terminal 1: database + course data
 export CLAIMSENSE_JWT_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
-CLAIMSENSE_DEV_LOGIN=1 make api           # http://localhost:8000
-
-# Terminal 2: MCP server + registry (the agents' only way to the data)
-cd ~/raju/CLAIMSENSE-AI
-make mcp                                  # http://localhost:8200/registry/v0/servers
-
-# Terminal 3: runner (what the Run assessment button calls; mock agents, no AWS)
-cd ~/raju/CLAIMSENSE-AI
-make runner                               # http://localhost:8100/health
-
-# Terminal 4: console
-cd ~/raju/CLAIMSENSE-AI
-make web                                  # http://localhost:3100
+CLAIMSENSE_DEV_LOGIN=1 make api                                             # terminal 1: API :8000
+make mcp                                                                    # terminal 2: MCP :8200
+make runner                                                                 # terminal 3: runner :8100
+make web                                                                    # terminal 4: console :3100
 ```
 
-Order: database first; the API, runner and console in any order after that.
+Use the same `CLAIMSENSE_JWT_SECRET` in every terminal that needs one (the API, `make token`, the
+batch command). `make up` and `make stack` share the container name: starting one stops the other.
 
-## 2. Test
+## 3. Test every feature in the console (http://localhost:3100)
 
-**A. Console** (http://localhost:3100): sign in by user id and compare.
+Sign in by typing a user id (development sign-in; Cognito replaces it on a real deployment).
+
+### 3.1 Access by role
 
 | Sign in as | Expect |
 |---|---|
-| alice | 6 claims; `/claims/CLM-2024-1873` shows "Not available" |
-| david | 6 claims; `/claims/CLM-2024-2822` shows the lapsed policy (ended 2024-01-28, loss 2024-01-31) |
-| bob | all 20 claims |
-| carol | 3 claims; `/documents/DOC-00007` shows the pending-OCR notice |
-| eve | 4 claims (2 assigned + 2 total-loss candidates) |
-| frank | refused (suspended) |
+| `alice` (adjuster) | 6 claims; `/claims/CLM-2024-1873` shows "Not available" |
+| `david` (adjuster) | 6 claims |
+| `bob` (senior adjuster) | all 20 claims |
+| `carol` (fraud investigator) | 3 claims; no Confirm/Reject buttons on drafts |
+| `eve` (total-loss appraiser) | 4 claims; no Confirm/Reject buttons |
+| `frank` | refused (suspended) |
+| `claimsense-batch` | refused (a service account cannot sign in) |
 
-The Policy manual page never shows `CLS-ADM-013`, the injected clause, whatever you search for.
+The **Policy manual** page never shows `CLS-ADM-013` (an injected clause), whatever you search.
 
-**Run assessment** (top of every claim page): click it to run the four agents and write a draft note.
-Try `/claims/CLM-2024-1800` as alice (APPROVE) and `/claims/CLM-2024-2822` as david (DENY). Each note
-shows its citations; "How this was reached" shows the code facts, the signals, and each agent's output.
-Every click adds a new note. If the runner is not running, the page says so.
+### 3.2 Run assessment and the decision rules (mock agents, about 1 s each)
 
-**B. API test page:** http://localhost:8000/docs. Paste a token into `authorization` as `Bearer <token>`.
-Get one with `make token USER=alice` (same `CLAIMSENSE_JWT_SECRET` as the API) or from `/api/v1/dev/login`.
+| Claim, as | Expect |
+|---|---|
+| CLM-2024-3041, alice | first a question "It is already approved. Rerun it?" (the claim is Approved): **Cancel** runs nothing; **Rerun** shows a spinner and a seconds counter, then **APPROVE** citing CLS-COLL-001, CLS-PER-006, CLS-DED-004, and the label "second opinion: claim was Approved" |
+| CLM-2024-2165, alice | no question (Pending Review): a draft straight away |
+| CLM-2024-1800, alice | **FLAG**: the FNOL and police report give different loss locations (CLS-FRD-007) |
+| CLM-2024-2822, david | **DENY**: the loss is 3 days after the policy ended (CLS-PER-006) |
+| CLM-2024-1873, bob | **FLAG** (fraud indicators), and the note ends with "Also needs: ROUTE: net payable 30200 > 25000, senior adjuster (CLS-PAY-012)" and "Pending documentation: …" (precedence DENY > FLAG > ROUTE > APPROVE) |
+| CLM-2024-3114, bob | **DENY** (liability-only policy), with "Also needs" for the total-loss ROUTE |
 
-**C. Agent (OBO) tokens by hand** (another terminal):
+Every note is a **draft pending confirmation**. "How this was reached" shows the code facts, the
+signals, each agent's output and, on Claude, tokens and cost per agent.
+
+### 3.3 Confirm or reject a draft
+
+On a draft, as alice or david (or bob):
+
+1. **Reject** with an empty reason: refused, "Give a reason."
+2. **Reject** with a reason: the note shows **rejected**, "Rejected by alice · time · reason".
+3. **Confirm** another draft: **confirmed**, "Confirmed by …".
+4. A reviewed draft has no buttons any more (one review per draft).
+
+The $25,000 rule (only a senior adjuster confirms above $25,000 net payable) and the
+agent-failure rule (a reason is required to confirm) are covered by `make api-test`: in the course
+data no adjuster's own claim is above $25,000.
+
+### 3.4 The batch assessment (free, mock agents)
+
+The scheduled batch runs on AWS; locally the same code runs through the local runner:
+
+```bash
+export $(grep ^CLAIMSENSE_JWT_SECRET .env)     # Option A; with Option B, use your exported secret
+cd batch
+CLAIMS_API_URL=http://localhost:8000 uv run claimsense-batch --runner http://localhost:8100
+```
+
+Expect "14 open claims need an assessment" (13 if you already ran one of them), one line per claim
+(all `written`), and `"failures": 0`. Run it again: **0** claims (nothing changed). The notes show
+"for <assigned adjuster> · by the scheduled batch". To see change detection, change a document and
+run the batch again: that claim is picked with "documents changed since the last assessment":
+
+```bash
+docker exec claimsense-db psql -U claimsense -d claimsense -c \
+  "UPDATE doc_store.documents SET ocr_text = ocr_text || ' (amended)' WHERE document_id = 'DOC-00010';"
+```
+
+(`make stack` or `make up` reloads the course data afterwards.)
+
+### 3.5 Personal details and bad drafts
+
+```bash
+cd agent && uv run claimsense-agent run --claim CLM-2024-3041 --user alice --demo-bad-draft
+# a draft citing a made-up clause CLS-XXX-999 → DENY, decided by code (deterministic_fallback)
+```
+
+Addresses in a note show as `[address]`.
+
+## 4. Automated tests and the evaluation (need only the database: `make up` or `make stack`)
+
+```bash
+make api-test     # 88 tests: access, notes, reviews, the batch account, rate limit, Lambda handler
+make mcp-test     # 9 tests: the MCP server and registry over HTTP
+make test         # 75 tests (+1 opt-in Claude test): the pipeline end to end
+cd batch && uv run --extra dev pytest -q && cd ..      # 5 tests: the batch loop
+uv run --with pytest pytest platform/db/seed -q          # 4 tests: seed and guardrail
+make eval         # the 60-case evaluation, mock: expect 60/60 (about 1 minute, free)
+CLAIMSENSE_LOCATION_CHECK=0 make eval                  # with the location check off: also 60/60
+```
+
+## 5. Claude instead of the mock agents (optional; Bedrock costs a few cents a run)
+
+```bash
+aws login --profile claimsense                  # sign in as the IAM user (a private window if the browser is on root)
+aws sts get-caller-identity --profile claimsense
+make stack BRAIN=bedrock                        # or: make runner BRAIN=bedrock in Option B
+make agent CLAIM=CLM-2024-1800 AS=alice BRAIN=bedrock    # about 40 s, about $0.08
+make golden                                     # the 60 cases on Claude: about 30 minutes and $3.50
+```
+
+## 6. Look inside
+
+```bash
+# API test page (paste a token as "Bearer <token>"): http://localhost:8000/docs
+make token USER=alice                          # needs CLAIMSENSE_JWT_SECRET
+curl -s localhost:8200/registry/v0/servers     # the MCP registry
+
+# notes, reviews and the audit trail
+docker exec claimsense-db psql -U claimsense -d claimsense -c \
+  "SELECT n.note_id, n.claim_id, n.outcome, n.on_behalf_of, n.author, r.decision
+     FROM claims_mgmt.claim_notes n LEFT JOIN claims_mgmt.note_reviews r USING (note_id) ORDER BY 1 DESC LIMIT 10;"
+docker exec claimsense-db psql -U claimsense -d claimsense -c \
+  "SELECT ts, user_id, actor, action, resource_id, decision, reason FROM claimsense.audit_log ORDER BY audit_id DESC LIMIT 20;"
+```
+
+Agent (OBO) tokens by hand, with Option B's API running:
 
 ```bash
 ALICE=$(curl -s -X POST localhost:8000/api/v1/dev/login -H 'Content-Type: application/json' \
   -d '{"user_id":"alice"}' | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
-
 OBO=$(curl -s -X POST localhost:8000/api/v1/obo/token -H "Authorization: Bearer $ALICE" \
   -H 'Content-Type: application/json' \
   -d "{\"claim_id\":\"CLM-2024-1800\",\"agent\":\"coverage\",\"run_id\":\"$(uuidgen)\"}" \
   | python3 -c 'import sys,json; print(json.load(sys.stdin)["token"])')
-
 curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims/CLM-2024-1800            # 200 its claim
 curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims/CLM-2024-2092            # 403 bound to 1800
 curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims/CLM-2024-1800/documents  # 403 no documents scope
-curl -H "Authorization: Bearer $OBO" "localhost:8000/api/v1/clauses?q=collision"           # 200 coverage may search
 curl -H "Authorization: Bearer $OBO" localhost:8000/api/v1/claims                          # 403 agents cannot list
 ```
 
-The OBO token expires after 5 minutes; ask for a new one if you get 401.
+## 7. Stop
 
-**D. Automated tests** (need only the database):
-
-```bash
-make api-test     # 73 tests (incl. rate limit and the Lambda handler)
-make mcp-test     # 8 tests (over HTTP, including the registry)
-make test         # 38 tests (+1 Bedrock test, opt-in): the agent pipeline end to end (starts its own API and MCP server)
-uv run --with pytest pytest platform/db/seed -q    # 4 tests
-```
-
-**E. The evaluation suite** (60 cases; only the database is needed, it starts its own API):
-
-```bash
-make eval                    # mock: about 2 minutes, free; expect 60/60
-make eval BRAIN=bedrock      # Claude: about 30 minutes and $3.50
-CLAIMSENSE_LOCATION_CHECK=0 make eval   # with the loss-location check off: expect 60/60
-```
-
-**F. Claude instead of the mock agents (Bedrock; a few cents and about 40 s a run)**
-
-```bash
-aws sts get-caller-identity --profile claimsense   # must show user/rramachandra33; if expired:
-aws login --profile claimsense                     # sign in as the IAM user (use a private window)
-make agent CLAIM=CLM-2024-1800 AS=alice BRAIN=bedrock
-make runner BRAIN=bedrock                          # then Run assessment in the console uses Claude
-```
-
-CLM-2024-1800's FNOL and police report give different loss locations (so do the police reports of
-1946, 2019 and 2092). Code compares the two locations, and a mismatch is a FLAG (CLS-FRD-007): on
-by default since 2026-11-04; `CLAIMSENSE_LOCATION_CHECK=0` turns it off. For a clean APPROVE use
-CLM-2024-3041 or 2749 (alice). Addresses in a note show as `[address]`.
-
-**G. Run the four agents from the terminal** (mock brain, no AWS; with `make api` and `make mcp` running):
-
-```bash
-make agent CLAIM=CLM-2024-3041 AS=alice      # APPROVE, cites CLS-COLL-001, CLS-PER-006, CLS-DED-004
-make agent CLAIM=CLM-2024-1800 AS=alice      # FLAG: FNOL and police report give different loss locations
-make agent CLAIM=CLM-2024-2822 AS=david      # DENY: loss 3 days after the policy ended (CLS-PER-006)
-make agent CLAIM=CLM-2024-1873 AS=alice      # run failed: claim not available (carol's claim)
-make agent CLAIM=CLM-2024-1873 AS=bob        # FLAG (provisional precedence: FLAG and ROUTE both signalled)
-cd agent && uv run claimsense-agent run --claim CLM-2024-1800 --user alice --demo-bad-draft
-                                             # cites made-up CLS-XXX-999: DENY, decision_source deterministic_fallback
-```
-
-Each run prints a trace (code facts, each agent, the draft check, the note write) and writes one note.
-The notes appear on the claim page in the console. Or see them in the database:
-
-```bash
-cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claimsense -c \
-  "SELECT note_id, claim_id, outcome, cited_clauses, created_at FROM claims_mgmt.claim_notes ORDER BY note_id DESC LIMIT 10;"
-```
-
-**H. See the audit trail:**
-
-```bash
-cd platform/db && docker compose exec claimsense-db psql -U claimsense -d claimsense -c \
-  "SELECT ts, user_id, actor, action, resource_id, decision, reason FROM claimsense.audit_log ORDER BY audit_id DESC LIMIT 20;"
-```
-
-## 3. Stop
-
-Docker stack: `make stack-down` (data kept until the next start reloads it).
-
-Separate terminals: Ctrl+C in each terminal. `make down` stops the database (data kept); `make up`
-brings it back (it also reloads the course data, which clears drafts and the audit log).
+`make stack-down` (Option A) or Ctrl+C in each terminal and `make down` (Option B). The data stays
+until the next start reloads it; `make clean` deletes the database volume.

@@ -16,7 +16,8 @@ make stack        # the whole stack in Docker; console on http://localhost:3100 
 make eval         # the 60-case evaluation (mock brain, free)
 ```
 
-Details, and running each service on its own: `TESTING_LOCALLY.md`. `make help` lists every target.
+Run and test everything locally, from scratch: `TESTING_LOCALLY.md`. Deploy and test on AWS, from
+scratch: `DEPLOY_AND_TEST_ON_AWS.md`. Every decision, dated: `DECISIONS.md`. `make help` lists every target.
 
 ## Status
 

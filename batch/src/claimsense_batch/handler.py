@@ -11,6 +11,9 @@
 Every note it writes is a draft for the claim's assigned adjuster to confirm. A failed claim does
 not stop the batch. The API applies all access rules: the batch account reads open claims only.
 
+Locally there is no AgentCore: `claimsense-batch --runner http://localhost:8100` runs one batch
+through the local runner's /invocations (the same contract), for free with the mock agents.
+
 Settings (environment variables):
     CLAIMS_API_URL            the Claims API (the Lambda Function URL)
     AGENTCORE_RUNTIME_ARN     the runtime that runs the four agents
@@ -80,6 +83,18 @@ def run_on_agentcore(token, claim_id):
         return {"claim_id": claim_id, "status": "error", "problems": [f"{type(e).__name__}: {e}"]}
 
 
+def run_on_runner(runner_url, token, claim_id):
+    """Run one claim on a runner's /invocations (the AgentCore contract), for local testing."""
+    body = json.dumps({"claim_id": claim_id, "user_token": token}).encode()
+    request = urllib.request.Request(runner_url.rstrip("/") + "/invocations", data=body,
+                                     headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=300) as response:
+            return json.loads(response.read())
+    except Exception as e:
+        return {"claim_id": claim_id, "status": "error", "problems": [f"{type(e).__name__}: {e}"]}
+
+
 def publish(summary):
     """The batch summary as CloudWatch metrics. A failure here never fails the batch."""
     if os.environ.get("CLAIMSENSE_METRICS") != "1":
@@ -143,3 +158,30 @@ def handler(event, context):
     print(json.dumps({"batch": summary}))
     publish(summary)
     return summary
+
+
+def main():
+    """One batch from the command line, through a local runner instead of AgentCore:
+        CLAIMS_API_URL=http://localhost:8000 CLAIMSENSE_JWT_SECRET=... claimsense-batch --runner http://localhost:8100
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run one batch assessment through a local runner.")
+    parser.add_argument("--runner", default="http://localhost:8100", help="the runner's base URL")
+    args = parser.parse_args()
+    max_claims = int(os.environ.get("BATCH_MAX_CLAIMS", "25"))
+    budget = float(os.environ.get("BATCH_DAILY_BUDGET_USD", "5"))
+    parallel = int(os.environ.get("BATCH_PARALLEL", "3"))
+    token = batch_token()
+    answer = get_candidates(token, max_claims)
+    print(f"{answer['needing_assessment']} open claims need an assessment; "
+          f"${answer['spent_today_usd']:.2f} spent by batches today")
+    summary = run_batch(lambda claim_id: run_on_runner(args.runner, token, claim_id), answer, max_claims,
+                        budget, parallel, lambda: 15 * 60 * 1000)
+    for r in summary["results"]:
+        print(f"  {r['claim_id']}  {r['status']:<8} {r.get('outcome') or '':<8} note {r.get('note_id')}")
+    print(json.dumps({k: v for k, v in summary.items() if k != "results"}, indent=2))
+
+
+if __name__ == "__main__":
+    main()

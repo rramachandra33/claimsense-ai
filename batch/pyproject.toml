@@ -11,6 +11,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 
+[project.scripts]
+claimsense-batch = "claimsense_batch.handler:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
