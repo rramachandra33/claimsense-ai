@@ -174,6 +174,14 @@ def outcome_signals(claim, facts):
             clause = "CLS-COLL-001"
         signals.append({"outcome": "DENY", "clause": clause,
                         "reason": f"no {facts['loss_category']} cover on this policy"})
+    if facts["loss_category"] is None:
+        # Decided 2026-11-04: a loss type code has no mapping for gets no cover decision from code.
+        # ROUTE to an adjuster to decide which cover applies, if any. Cited under CLS-COMP-002, the
+        # catch-all for loss other than collision; the reason names both insuring clauses.
+        signals.append({"outcome": "ROUTE", "clause": "CLS-COMP-002",
+                        "reason": f"loss type '{claim['incident_type']}' is not mapped to collision "
+                                  "(CLS-COLL-001) or comprehensive (CLS-COMP-002) cover, so an "
+                                  "adjuster must decide which cover applies, if any"})
     if facts["total_loss_candidate"]:
         signals.append({"outcome": "ROUTE", "clause": "CLS-TL-005",
                         "reason": f"repair/ACV {facts['repair_to_acv_ratio']} ≥ 0.75, total-loss appraiser"})
@@ -218,7 +226,9 @@ def rule_clauses(facts, signals, gaps):
     whatever the agents chose to search for.
     """
     insuring = {"collision": "CLS-COLL-001", "comprehensive": "CLS-COMP-002"}.get(facts["loss_category"])
-    candidates = [insuring, "CLS-PER-006", "CLS-DED-004"]
+    # An unmapped loss type: both insuring clauses, so the note can show neither clearly applies.
+    insuring_clauses = [insuring] if insuring else ["CLS-COLL-001", "CLS-COMP-002"]
+    candidates = insuring_clauses + ["CLS-PER-006", "CLS-DED-004"]
     candidates += [s["clause"] for s in signals] + [g["clause"] for g in gaps]
     clauses = []
     for clause in candidates:

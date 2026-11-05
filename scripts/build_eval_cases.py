@@ -207,9 +207,8 @@ add("Loss type the rules do not map (mechanical breakdown)", "variation", "alice
     base_claim="CLM-2024-1800",
     changes={"claim": {"incident_type": "Mechanical breakdown",
                        "incident_description": "Engine seized on the highway; no collision."}},
-    status="written", outcome_not=["APPROVE"],
-    proposed_rule="No code rule yet: an unmapped loss type has no cover decision. Mechanical "
-                  "breakdown is excluded (CLS-EXC-010). Proposed: never APPROVE without a mapped loss type.")
+    status="written", outcome="ROUTE", must_cite=["CLS-COMP-002"],
+    with_location_check={"outcome": "FLAG", "must_cite": ["CLS-FRD-007"]})
 add("Status field says Active, but the policy had lapsed", "variation", "alice",
     base_claim="CLM-2024-1800",
     changes={"policy": {"policy_end": "2024-02-10", "policy_status": "Active"}},

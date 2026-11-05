@@ -60,10 +60,14 @@ from the data import, now with their expected outcomes.
 
 ### Still to decide
 
-* **Proposed rules.** One case is not covered by any code rule yet, so the mock brain fails it by
-  design: an unmapped loss type such as mechanical breakdown (EV-039). It currently gets APPROVE;
-  the proposal is that it may not. With the location check on it passes, but only because its copy
-  of CLM-2024-1800 keeps its location mismatch.
+* **Proposed rules.** None left: every case's expectation follows a decided rule.
+
+### Unmapped loss type (decided 2026-11-04)
+
+A loss type code has no collision/comprehensive mapping for (e.g. mechanical breakdown) is a ROUTE:
+an adjuster decides which cover applies, if any. The note says the loss type is not mapped,
+naming CLS-COLL-001 and CLS-COMP-002, and cites CLS-COMP-002. EV-039 expects ROUTE (FLAG with the
+location check on, since its copy of CLM-2024-1800 keeps that claim's location mismatch).
 
 ### VIN mismatch (decided 2026-11-04)
 

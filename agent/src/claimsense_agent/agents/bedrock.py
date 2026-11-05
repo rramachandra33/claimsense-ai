@@ -184,7 +184,8 @@ Outcomes:
 - APPROVE: covered, and nothing needs a person beyond normal confirmation.
 - FLAG: fraud indicators, or documentation gaps, that need review before any payment.
 - ROUTE: needs a specialist: total-loss appraiser, injury-qualified adjuster, or a senior adjuster
-  for net payable above $25,000.
+  for net payable above $25,000; or an adjuster to decide the cover, when code has no mapping for
+  the loss type.
 - DENY: not covered: the loss is outside the policy period, or the policy has no cover for it.
 When several apply, the outcome is the first of DENY, FLAG, ROUTE, APPROVE that applies. A
 documentation gap on its own means FLAG. Never APPROVE when the code signals or documentation gaps

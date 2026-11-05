@@ -229,3 +229,15 @@ def test_a_vin_mismatch_is_a_fraud_indicator_shown_by_its_last_six_characters():
     assert "the claim's VIN (ending 004352) does not match the VIN on the policy" in flag[0]["reason"]
     assert "1HGCM82633A" not in flag[0]["reason"]
     assert code_outcome(signals, []) == "FLAG"
+
+
+def test_an_unmapped_loss_type_is_routed_to_an_adjuster_to_decide_the_cover():
+    claim, policy, docs = next(c for c in course_claims() if c[0]["claim_id"] == "CLM-2024-3041")
+    claim = dict(claim, incident_type="Mechanical breakdown")
+    facts = compute_facts(claim, policy, docs)
+    signals = outcome_signals(claim, facts)
+    assert signals == [{"outcome": "ROUTE", "clause": "CLS-COMP-002",
+                        "reason": "loss type 'Mechanical breakdown' is not mapped to collision "
+                                  "(CLS-COLL-001) or comprehensive (CLS-COMP-002) cover, so an "
+                                  "adjuster must decide which cover applies, if any"}]
+    assert code_outcome(signals, documentation_gaps(facts)) == "ROUTE"

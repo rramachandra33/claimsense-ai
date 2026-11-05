@@ -666,13 +666,19 @@
         "incident_description": "Engine seized on the highway; no collision."
       }
     },
-    "expect": {
-      "status": "written",
-      "outcome_not": [
-        "APPROVE"
+    "with_location_check": {
+      "outcome": "FLAG",
+      "must_cite": [
+        "CLS-FRD-007"
       ]
     },
-    "proposed_rule": "No code rule yet: an unmapped loss type has no cover decision. Mechanical breakdown is excluded (CLS-EXC-010). Proposed: never APPROVE without a mapped loss type."
+    "expect": {
+      "status": "written",
+      "outcome": "ROUTE",
+      "must_cite": [
+        "CLS-COMP-002"
+      ]
+    }
   },
   {
     "case_id": "EV-040",

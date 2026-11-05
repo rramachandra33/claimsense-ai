@@ -167,6 +167,14 @@ on the note). It is a FLAG, so the precedence rule applies: on a lapsed policy t
 that lists the FLAG under "Also needs". The risk agent's token cannot read the policy, so code does
 this check, not the agent.
 
+## Unmapped loss type (decided 2026-11-04)
+
+`LOSS_CATEGORY` in `facts.py` maps each loss type to collision or comprehensive. A type it does not
+list (for example "Mechanical breakdown") gets no cover decision from code: it is a ROUTE signal,
+"loss type '…' is not mapped to collision (CLS-COLL-001) or comprehensive (CLS-COMP-002) cover, so
+an adjuster must decide which cover applies, if any", cited under CLS-COMP-002. Both insuring
+clauses are retrieved in the run. A new loss type is added to `LOSS_CATEGORY`, not guessed.
+
 ## Provisional, still to decide
 
 * **Fraud threshold**: vendor score 0.70.
