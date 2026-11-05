@@ -101,8 +101,16 @@ def replay_or_conflict(previous, this_hash):
     return read_note(previous["note_id"])
 
 
-def write_note(user, claim_id, note, idem_key):
-    """Save the assessment and the note in one transaction. Returns (note, replayed)."""
+def write_note(user, claim, note, idem_key):
+    """Save the assessment and the note in one transaction. Returns (note, replayed).
+
+    A note from the batch assessment (the batch-service account) is written for the claim's
+    assigned adjuster, with author "claimsense-batch"; the audit log records the batch account.
+    Every assessment keeps the fingerprint of the claim's documents, for batch change detection."""
+    claim_id = claim["claim_id"]
+    batch = user["user_group"] == "batch-service"
+    on_behalf_of = claim["assigned_adjuster"] if batch else user["user_id"]
+    author = "claimsense-batch" if batch else "claimsense"
     this_hash = request_hash(claim_id, note)
 
     previous = find_previous(user["user_id"], idem_key)
@@ -116,20 +124,21 @@ def write_note(user, claim_id, note, idem_key):
             assessment = conn.execute(
                 """INSERT INTO claimsense.assessments
                      (run_id, claim_id, on_behalf_of, outcome, decision_source, code_facts,
-                      agent_outputs, citations, models, claim_status_at_run)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                      agent_outputs, citations, models, claim_status_at_run, trigger, documents_fingerprint)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, claimsense.documents_fingerprint(%s))
                    RETURNING assessment_id""",
-                (note.run_id, claim_id, user["user_id"], note.outcome, note.decision_source,
+                (note.run_id, claim_id, on_behalf_of, note.outcome, note.decision_source,
                  json.dumps(note.code_facts), json.dumps(note.agent_outputs), note.cited_clauses,
-                 json.dumps(note.models), note.claim_status_at_run),
+                 json.dumps(note.models), note.claim_status_at_run, "batch" if batch else "manual",
+                 claim_id),
             ).fetchone()
             saved = conn.execute(
                 """INSERT INTO claims_mgmt.claim_notes
-                     (claim_id, assessment_id, on_behalf_of, outcome, summary, cited_clauses, deny_reason)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s)
+                     (claim_id, assessment_id, on_behalf_of, outcome, summary, cited_clauses, deny_reason, author)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                    RETURNING *""",
-                (claim_id, assessment["assessment_id"], user["user_id"], note.outcome, note.summary,
-                 note.cited_clauses, note.deny_reason),
+                (claim_id, assessment["assessment_id"], on_behalf_of, note.outcome, note.summary,
+                 note.cited_clauses, note.deny_reason, author),
             ).fetchone()
             conn.execute(
                 """INSERT INTO claimsense.idempotency_keys (user_id, idem_key, request_hash, note_id)

@@ -23,7 +23,7 @@ CREATE TABLE claimsense.users (
     user_id     TEXT PRIMARY KEY,
     full_name   TEXT NOT NULL,
     user_group  TEXT CHECK (user_group IN
-                  ('adjuster', 'senior-adjuster', 'fraud-investigator', 'total-loss-appraiser')),
+                  ('adjuster', 'senior-adjuster', 'fraud-investigator', 'total-loss-appraiser', 'batch-service')),
     status      TEXT NOT NULL CHECK (status IN ('active', 'suspended')),
     test_only   BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -136,6 +136,16 @@ CREATE TABLE claimsense.clause_quarantine (
 -- ---------------------------------------------------------------------------
 
 -- One full draft per pipeline run; never edited (a re-run adds a row).
+-- A fingerprint of one claim's documents (id, OCR status, hash of the text). The batch assessment
+-- compares it with the one stored on the claim's last assessment to see whether documents changed.
+CREATE FUNCTION claimsense.documents_fingerprint(p_claim_id TEXT) RETURNS TEXT
+LANGUAGE sql STABLE AS $$
+    SELECT md5(coalesce(string_agg(document_id || ':' || ocr_status || ':' || coalesce(md5(ocr_text), ''),
+                                   '|' ORDER BY document_id), ''))
+      FROM doc_store.documents
+     WHERE claim_id = p_claim_id
+$$;
+
 CREATE TABLE claimsense.assessments (
     assessment_id    BIGSERIAL PRIMARY KEY,
     run_id           UUID NOT NULL UNIQUE,
@@ -149,6 +159,8 @@ CREATE TABLE claimsense.assessments (
     citations        TEXT[] NOT NULL DEFAULT '{}',
     models           JSONB NOT NULL,               -- model and prompt version per agent
     claim_status_at_run TEXT,                      -- the claim's status in the claims system when the run started
+    trigger          TEXT NOT NULL DEFAULT 'manual' CHECK (trigger IN ('manual', 'batch')),
+    documents_fingerprint TEXT,                    -- the claim's documents when the note was written (batch change detection)
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

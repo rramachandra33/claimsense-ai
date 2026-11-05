@@ -31,3 +31,4 @@ evals/results/
 
 # Lambda package built by deploy/lambda/deploy.sh
 deploy/lambda/.build/
+deploy/batch/.build/

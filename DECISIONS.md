@@ -102,13 +102,15 @@ the EC2 instance until Cognito replaces it; both share the token secret.
 `CLAIMSENSE_COOKIE_SECURE=0` on EC2 while the console is plain HTTP (a Secure cookie would be
 dropped). Turn it back on behind HTTPS.
 
-## Next round (decided 2026-11-04, not built yet)
-
-### Batch assessment
-Every 4 hours, assess open claims (Pending Review, Under Investigation, Escalated) never assessed or
-whose documents changed since the last assessment (a document fingerprint stored on the
-assessment). Runs as a `claimsense-batch` service account; at most 25 claims a batch and $5 a day;
-EventBridge Scheduler → Lambda → AgentCore. Notes stay drafts for a person to confirm.
+## Batch assessment · decided 2026-11-04, built 2026-11-05
+Every 4 hours (EventBridge Scheduler → Lambda `claimsense-batch` → AgentCore), assess open claims
+(Pending Review, Under Investigation, Escalated) never assessed or whose documents changed since the
+last assessment: a fingerprint of the claim's documents is stored on each assessment, so the
+client's documents table needs no change. Runs as the `claimsense-batch` service account (reads open
+claims only, cannot sign in or confirm); notes are drafts for the assigned adjuster, author
+`claimsense-batch`. At most 25 claims a batch and $5 a day; no retries (the next batch picks up a
+failed claim). The "skip documents changed in the last hour" idea was dropped: the document store has
+no change times. `deploy/batch/README.md`.
 
 ## The original open questions (26 Oct 2026, summary)
 

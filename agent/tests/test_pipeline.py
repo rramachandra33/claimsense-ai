@@ -150,3 +150,20 @@ def test_an_agent_is_refused_outside_its_scopes(live_api):
     client = ApiClient(make_dev_token("alice", "adjuster"), base_url=live_api)
     with pytest.raises(ToolRefused, match="get_policy refused"):
         asyncio.run(run_agent(client, "CLM-2024-1800", str(uuid.uuid4()), "drafter", nosy_drafter))
+
+
+def test_the_batch_account_assesses_an_open_claim_for_its_adjuster(live_api):
+    """The scheduled batch runs the same pipeline with the claimsense-batch token: the note is a
+    draft for the assigned adjuster (alice), written by the batch."""
+    from claimsense_api.db import fetch_one
+    result = assess(live_api, "claimsense-batch", "batch-service", "CLM-2024-2165")
+    assert result.status == "written", result.problems
+    note = fetch_one("SELECT on_behalf_of, author FROM claims_mgmt.claim_notes WHERE note_id = %s",
+                     (result.note_id,))
+    assert note == {"on_behalf_of": "alice", "author": "claimsense-batch"}
+
+
+def test_the_batch_account_cannot_assess_a_decided_claim(live_api):
+    result = assess(live_api, "claimsense-batch", "batch-service", "CLM-2024-1800")
+    assert result.status == "failed"
+    assert result.problems == ["claim not available (403 forbidden)"]

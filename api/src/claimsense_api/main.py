@@ -20,6 +20,7 @@ from .auth import AuthError, InactiveUser, get_user, make_dev_token
 from .db import execute, fetch_all, fetch_one
 from pydantic import BaseModel
 
+from .batch import candidates, spent_today_usd
 from .notes import NoteError, NoteRequest, ReviewRequest, check_note, review_note, write_note
 from .obo import AGENT_SCOPES, OBO_LIFETIME_SECONDS, make_obo_token
 from .ratelimit import allow_request
@@ -111,6 +112,9 @@ def dev_login(body: DevLoginRequest):
     if user is None:
         log_audit("dev_login", "deny", reason=f"unknown user {body.user_id}")
         raise ApiError(401, "unauthenticated", "Unknown user.")
+    if user["user_group"] == "batch-service":
+        log_audit("dev_login", "deny", user=user, reason="service accounts cannot sign in")
+        raise ApiError(403, "forbidden", "This account cannot sign in.")
     log_audit("dev_login", "allow", user=user)
     return {"token": make_dev_token(user["user_id"], user["user_group"]),
             "user_id": user["user_id"], "full_name": user["full_name"], "group": user["user_group"]}
@@ -314,12 +318,12 @@ def create_note(claim_id: str, note: NoteRequest, authorization: str = Header(de
         log_audit("write_note", "deny", user=user, resource_type="claim", resource_id=claim_id,
                   reason="agents may not write notes")
         raise ApiError(403, "forbidden", "This agent is not allowed to do that.")
-    load_claim_for(user, claim_id, "write_note")
+    claim = load_claim_for(user, claim_id, "write_note")
     if not idempotency_key or len(idempotency_key) > 200:
         raise ApiError(400, "invalid_argument", "An Idempotency-Key header (up to 200 characters) is required.")
     try:
         check_note(note)
-        saved, replayed = write_note(user, claim_id, note, idempotency_key)
+        saved, replayed = write_note(user, claim, note, idempotency_key)
     except NoteError as e:
         log_audit("write_note", "deny", user=user, resource_type="claim", resource_id=claim_id,
                   reason=f"{e.code}: {e.message}", detail={"run_id": note.run_id})
@@ -387,6 +391,23 @@ def review_draft(claim_id: str, note_id: int, review: ReviewRequest,
     log_audit("review_note", "allow", user=user, resource_type="claim_note", resource_id=str(note_id),
               reason=saved["decision"], detail={"claim_id": claim_id, "reason": saved["reason"]})
     return {"review": saved}
+
+
+@app.get("/api/v1/batch/candidates")
+def batch_candidates(limit: int = 25, authorization: str = Header(default=None)):
+    """For the scheduled batch assessment only: the open claims that need an assessment (never
+    assessed, or documents changed since the last one), and what batch runs have cost today."""
+    user = require_user(authorization, "batch_candidates", "claims")
+    if user["obo"] or user["user_group"] != "batch-service":
+        log_audit("batch_candidates", "deny", user=user, resource_type="claims",
+                  reason="only the batch service account")
+        raise ApiError(403, "forbidden", "Only the batch assessment may do that.")
+    limit = max(0, min(limit, 100))
+    picked, total = candidates(limit)
+    spent = spent_today_usd()
+    log_audit("batch_candidates", "allow", user=user, resource_type="claims",
+              reason=f"{len(picked)} of {total} claims picked", detail={"spent_today_usd": spent})
+    return {"claims": picked, "count": len(picked), "needing_assessment": total, "spent_today_usd": spent}
 
 
 @app.post("/api/v1/obo/token")

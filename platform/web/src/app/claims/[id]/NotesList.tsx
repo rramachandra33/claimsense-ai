@@ -56,6 +56,7 @@ function NoteCard({ note, canReview }: { note: Note; canReview: boolean }) {
         ) : null}
         <span className="ml-auto text-xs text-claimsense-muted">
           Note {note.note_id} · {formatDateTime(note.created_at)} · for {note.on_behalf_of}
+          {note.author === "claimsense-batch" ? " · by the scheduled batch" : ""}
         </span>
       </header>
 

@@ -6,6 +6,8 @@ open question 8 (docs/ClaimSense-AI-Users-and-Access-Rules.pdf).
 from decimal import Decimal
 
 FRAUD_QUEUE_SCORE = Decimal("0.70")   # provisional threshold (open question 6)
+# The scheduled batch assessment reads open claims only (decided 2026-11-04).
+OPEN_STATUSES = ("Pending Review", "Under Investigation", "Escalated")
 TOTAL_LOSS_RATIO = Decimal("0.75")    # CLS-TL-005: repair >= 75% of ACV
 
 
@@ -14,6 +16,10 @@ def can_read_claim(user, claim):
     group = user["user_group"]
     if group is None:
         return False, "user has no group"
+    if group == "batch-service":
+        if claim["claim_status"] in OPEN_STATUSES:
+            return True, "batch: open claim"
+        return False, f"batch: claim is {claim['claim_status']}, not open"
     if claim["assigned_adjuster"] == user["user_id"]:
         return True, "assigned"
     if group == "senior-adjuster":

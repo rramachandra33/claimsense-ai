@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WriteItsOwnLogs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/lambda/claimsense-batch*"
+    },
+    {
+      "Sid": "RunClaimsOnTheAgentCoreRuntime",
+      "Effect": "Allow",
+      "Action": "bedrock-agentcore:InvokeAgentRuntime",
+      "Resource": [
+        "arn:aws:bedrock-agentcore:us-east-1:ACCOUNT:runtime/claimsense_runner-*",
+        "arn:aws:bedrock-agentcore:us-east-1:ACCOUNT:runtime/claimsense_runner-*/runtime-endpoint/*"
+      ]
+    },
+    {
+      "Sid": "PublishTheBatchSummary",
+      "Effect": "Allow",
+      "Action": "cloudwatch:PutMetricData",
+      "Resource": "*",
+      "Condition": { "StringEquals": { "cloudwatch:namespace": "ClaimSense" } }
+    }
+  ]
+}

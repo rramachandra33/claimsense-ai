@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageTheBatchSchedule",
+      "Effect": "Allow",
+      "Action": ["scheduler:CreateSchedule", "scheduler:UpdateSchedule", "scheduler:GetSchedule",
+                 "scheduler:DeleteSchedule"],
+      "Resource": "arn:aws:scheduler:us-east-1:ACCOUNT:schedule/default/claimsense-*"
+    },
+    {
+      "Sid": "GiveTheBatchFunctionItsRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::ACCOUNT:role/claimsense-batch-lambda",
+      "Condition": { "StringEquals": { "iam:PassedToService": "lambda.amazonaws.com" } }
+    },
+    {
+      "Sid": "GiveTheScheduleItsRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::ACCOUNT:role/claimsense-batch-scheduler",
+      "Condition": { "StringEquals": { "iam:PassedToService": "scheduler.amazonaws.com" } }
+    }
+  ]
+}
