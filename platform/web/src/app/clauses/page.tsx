@@ -1,17 +1,37 @@
 import { AppShell } from "@/components/AppShell";
 import { ApiErrorPanel, Empty, Panel } from "@/components/ui";
 import { requireSession } from "@/lib/auth";
-import { apiGet } from "@/lib/claimsense";
+import { apiGet, type ApiResult } from "@/lib/claimsense";
 import type { Clause } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+// A clause id such as CLS-FRD-007. The word search cannot find ids (they are not in the clause
+// text), so an id opens that one clause instead; the links on notes use this.
+const CLAUSE_ID = /^CLS-[A-Z]+-\d+$/i;
+
+type SearchResult = ApiResult<{ clauses: Clause[]; count: number }>;
+
+async function findClauses(q: string): Promise<SearchResult> {
+  if (!CLAUSE_ID.test(q)) {
+    return apiGet<{ clauses: Clause[]; count: number }>(`/api/v1/clauses?q=${encodeURIComponent(q)}&top_k=8`);
+  }
+  const one = await apiGet<{ clause: Omit<Clause, "score"> }>(`/api/v1/clauses/${encodeURIComponent(q.toUpperCase())}`);
+  if (one.ok) {
+    return { ok: true, status: 200, data: { clauses: [{ ...one.data.clause, score: 1 }], count: 1 } };
+  }
+  if (one.status === 404) {
+    // Same answer for a clause that never existed and one quarantined at load time.
+    return { ok: true, status: 200, data: { clauses: [], count: 0 } };
+  }
+  return one;
+}
+
 export default async function ClausesPage({ searchParams }: { searchParams: { q?: string } }) {
   const session = requireSession();
   const q = (searchParams.q ?? "").trim();
-  const result = q.length >= 3
-    ? await apiGet<{ clauses: Clause[]; count: number }>(`/api/v1/clauses?q=${encodeURIComponent(q)}&top_k=8`)
-    : null;
+  const byId = CLAUSE_ID.test(q);
+  const result = q.length >= 3 ? await findClauses(q) : null;
 
   return (
     <AppShell session={session} title="Policy manual" crumbs={[{ label: "Policy manual" }]}>
@@ -22,7 +42,7 @@ export default async function ClausesPage({ searchParams }: { searchParams: { q?
             name="q"
             type="search"
             defaultValue={q}
-            placeholder="e.g. pothole, total loss, policy period"
+            placeholder="e.g. pothole, total loss, policy period, or a clause id such as CLS-FRD-007"
             className="h-9 flex-1 rounded-lg border border-claimsense-line px-3 text-sm focus:border-claimsense-primary focus:outline-none focus:ring-1 focus:ring-claimsense-primary"
           />
           <button type="submit" className="rounded-lg bg-claimsense-primary px-4 text-sm font-semibold text-white hover:bg-claimsense-deep">
@@ -41,7 +61,7 @@ export default async function ClausesPage({ searchParams }: { searchParams: { q?
         ) : (
           result.data.clauses.map((c) => (
             <Panel key={c.clause_id} title={<span><span className="font-mono">{c.clause_id}</span> · {c.title}</span>}
-                   action={<span className="text-xs tabular-nums text-slate-400">score {Number(c.score).toFixed(3)}</span>}>
+                   action={<span className="text-xs tabular-nums text-slate-400">{byId ? "clause id" : `score ${Number(c.score).toFixed(3)}`}</span>}>
               <p className="text-sm leading-relaxed text-claimsense-ink">{c.text}</p>
             </Panel>
           ))
