@@ -70,8 +70,24 @@ deploy/observability/setup.sh        # dashboards and alarms
 SCHEDULE_STATE=DISABLED deploy/batch/deploy.sh   # the batch Lambda and its schedule, paused; applies the DB change
 ```
 
-The console is at `http://<instance public DNS>:3100`; the security group allows 3100 and 22 only
-from the IP that created it (add your new IP to `claimsense-sg` if it changes).
+The console is at `http://<public DNS>:3100`. **`<public DNS>` everywhere in this guide** is the
+instance's public address, for example `ec2-18-208-221-165.compute-1.amazonaws.com`. It changes
+every time the instance is stopped and started, so look it up after each start (`deploy/ec2/deploy.sh`
+also prints it at the end):
+
+```bash
+aws ec2 describe-instances --filters Name=tag:Project,Values=claimsense Name=instance-state-name,Values=running \
+  --query 'Reservations[0].Instances[0].PublicDnsName' --output text
+```
+
+The security group allows 3100 and 22 only from the IP that created it. If the page times out,
+compare `curl -s https://checkip.amazonaws.com` with the inbound rules of `claimsense-sg` and add
+your new IP. Or use an SSH tunnel and open `http://localhost:3100` (stop a local `make stack` first,
+it uses the same port):
+
+```bash
+ssh -i ~/.ssh/claimsense-key.pem -N -L 3100:localhost:3100 ec2-user@<public DNS>
+```
 
 **Updating later** (after a push and a green CI): re-run only what changed. `deploy/ec2/deploy.sh`
 reloads the course data (it removes notes); to keep them, update the containers instead:

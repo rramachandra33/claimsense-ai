@@ -33,7 +33,7 @@ stack-down: ## stop the Docker stack (data survives)
 	docker compose down
 
 stack-logs: ## follow the Docker stack's logs
-	docker compose logs --follow api mcp runner web
+	docker compose logs --follow --timestamps api mcp runner web
 
 up: ## Postgres + schema + course-fixture seed (one command)
 	@docker compose down 2>/dev/null || true      # the Docker stack uses the same container name
