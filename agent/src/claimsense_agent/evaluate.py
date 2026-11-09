@@ -88,6 +88,15 @@ def change_documents(documents, changes, user, upload_date):
     return documents
 
 
+def with_new_ids(text, new_ids):
+    """The document text with the base claim's ids (claim, policy, documents) swapped for the copy's."""
+    if not text:
+        return text
+    for old, new in new_ids.items():
+        text = text.replace(old, new)
+    return text
+
+
 def remove_temp_claim(number):
     """Delete a temporary claim and everything written about it."""
     claim_id, policy_id = temp_ids(number)
@@ -114,6 +123,7 @@ def create_temp_claim(case, number):
                             (case["base_claim"],))
     changes = case.get("changes", {})
     claim_id, policy_id = temp_ids(number)
+    new_ids = {case["base_claim"]: claim_id, policy["policy_id"]: policy_id}
 
     policy["policy_id"] = policy_id
     policy.update(with_dates(changes.get("policy", {})))
@@ -121,9 +131,16 @@ def create_temp_claim(case, number):
     claim.update(with_dates(changes.get("claim", {})))
     documents = change_documents(documents, changes.get("documents", []), case["user"],
                                  claim["incident_date"])
+    # The copy gets new ids, so the documents' text must name them too: a claim form that still
+    # says CLM-2024-3041 on claim CLM-9000-0022 is a real mismatch, and Claude rightly flags it.
     for i, doc in enumerate(documents):
-        doc["document_id"] = f"DOC-{90000 + number * 10 + i}"
+        new_document_id = f"DOC-{90000 + number * 10 + i}"
+        if doc.get("document_id"):
+            new_ids[doc["document_id"]] = new_document_id
+        doc["document_id"] = new_document_id
         doc["claim_id"] = claim_id
+    for doc in documents:
+        doc["ocr_text"] = with_new_ids(doc["ocr_text"], new_ids)
 
     remove_temp_claim(number)            # in case an earlier run stopped half-way
     insert_row("policy_admin.policies", policy)
