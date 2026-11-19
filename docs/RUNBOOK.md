@@ -143,6 +143,10 @@ commit (`claimsense-<service>:<sha>`, and `claimsense-runner:arm64-<sha>` for Ag
    TAG=$GOOD deploy/agentcore/deploy.sh
    ```
 
+   The script ends with a smoke test (one dry run, no note written). If it prints `FAILED`, it has
+   already put the previous image back; pick an older `GOOD`. Every deploy runs the same test, so
+   a build that breaks only on Bedrock is rolled back automatically.
+
 4. **Roll back the Lambdas**, only if the bad change touched `api/` or `mcp_server/` (they are
    built from the checkout, not from an image):
 

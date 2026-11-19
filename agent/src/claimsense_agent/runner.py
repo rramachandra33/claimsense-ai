@@ -7,6 +7,8 @@ AgentCore:
 
     GET  /ping          health, answered with {"status": "Healthy"}
     POST /invocations   {"claim_id": "CLM-2024-1800", "user_token": "<the adjuster's token>"}
+                        add "dry_run": true to check a run end to end without writing a note
+                        (the smoke test after each AgentCore deploy)
 
 On AgentCore the caller signs the request with AWS credentials (SigV4), and that signature uses
 the Authorization header. So /invocations takes the adjuster's token in the body instead.
@@ -48,6 +50,7 @@ class InvocationRequest(BaseModel):
     """The AgentCore payload: the claim, and the token of the adjuster the run acts for."""
     claim_id: str
     user_token: str | None = None
+    dry_run: bool = False
 
 
 def brain():
@@ -98,18 +101,18 @@ def ping():
     return {"status": "Healthy"}
 
 
-def assess(token, claim_id):
+def assess(token, claim_id, dry_run=False):
     """Run the four agents on one claim as the adjuster whose token this is; return what happened."""
     client = ApiClient(token)
     tracer = Tracer(quiet=True)
     try:
-        result = asyncio.run(run_assessment(client, claim_id, brain=brain(), tracer=tracer))
+        result = asyncio.run(run_assessment(client, claim_id, brain=brain(), tracer=tracer, dry_run=dry_run))
     except NotImplementedError as e:
         return error(501, "brain_not_available", str(e))
     response = result.model_dump()
     response["brain"] = brain()
     response["duration_ms"] = round(tracer.total_ms())
-    if metrics_on():
+    if metrics_on() and not dry_run:      # smoke tests stay out of the dashboards and alarms
         publish(run_metrics(result, response["duration_ms"], brain()))
     return response
 
@@ -134,4 +137,4 @@ def invoke(body: InvocationRequest):
     """The same run, called through AgentCore. The adjuster's token comes in the body."""
     if not body.user_token:
         return error(401, "unauthenticated", "Send the adjuster's token as user_token.")
-    return assess(body.user_token, body.claim_id)
+    return assess(body.user_token, body.claim_id, dry_run=body.dry_run)

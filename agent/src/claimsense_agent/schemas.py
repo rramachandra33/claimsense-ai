@@ -44,7 +44,7 @@ class RunResult(BaseModel):
     """What one pipeline run did."""
     run_id: str
     claim_id: str
-    status: Literal["written", "replayed", "failed"]
+    status: Literal["written", "replayed", "failed", "dry_run"]   # dry_run: checked, no note written
     outcome: Outcome | None = None
     decision_source: str | None = None  # "model" or "deterministic_fallback"
     cited_clauses: list[str] = []

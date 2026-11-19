@@ -5,6 +5,13 @@
 #
 #   AWS_PROFILE=claimsense deploy/agentcore/deploy.sh             # arm64-latest, Claude agents
 #   TAG=<git sha> BRAIN=mock deploy/agentcore/deploy.sh
+#   SKIP_SMOKE=1 deploy/agentcore/deploy.sh                       # no smoke test (not advised)
+#
+# Smoke test (incident drill 2026-11-19, docs/INCIDENT-2026-11-19-drill.md): once the new version is
+# READY, one dry run (all four agents, no note written, no metrics) on SMOKE_CLAIM as the batch
+# service account. If it fails or an agent cannot finish, the previous image is deployed again and
+# the script exits with an error. The batch account's token is made on the instance, where the
+# signing secret is.
 #
 # Needs: deploy/lambda/deploy.sh done (the agents call those two functions), the role
 # claimsense-agentcore and the ClaimSenseAgentCoreDeploy rights (see README.md).
@@ -46,6 +53,51 @@ print(json.dumps({
     "OTEL_RESOURCE_ATTRIBUTES": "service.name=claimsense_runner",
 }))' "$API_URL" "$MCP_URL" "$BRAIN" "$AWS_REGION")
 
+SMOKE_CLAIM="${SMOKE_CLAIM:-CLM-2024-2165}"     # an open claim the batch account may read
+DNS=$(aws ec2 describe-instances \
+  --filters Name=tag:Project,Values=claimsense Name=instance-state-name,Values=running \
+  --query 'Reservations[0].Instances[0].PublicDnsName' --output text)
+
+wait_until_ready() {
+  for _ in $(seq 1 60); do
+    STATUS=$(aws bedrock-agentcore-control get-agent-runtime --agent-runtime-id "$RUNTIME_ID" \
+      --query status --output text)
+    case "$STATUS" in
+      READY) return 0 ;;
+      *FAILED*) echo "    $STATUS:"; aws bedrock-agentcore-control get-agent-runtime \
+                  --agent-runtime-id "$RUNTIME_ID" --query failureReason --output text; exit 1 ;;
+    esac
+    sleep 10
+  done
+  echo "    not READY after 10 minutes" >&2; exit 1
+}
+
+# One dry run through the new version. Prints the result; returns non-zero if the run is not healthy.
+smoke_test() {
+  local token payload out session
+  token=$(ssh -i "$KEY_FILE" -o StrictHostKeyChecking=accept-new "ec2-user@$DNS" \
+    "cd /opt/claimsense && docker compose exec -T api python -c \"from claimsense_api.auth import make_dev_token; print(make_dev_token('claimsense-batch', 'batch-service'))\"" </dev/null)
+  payload=$(mktemp) out=$(mktemp)
+  printf '{"claim_id": "%s", "user_token": "%s", "dry_run": true}' "$SMOKE_CLAIM" "$token" > "$payload"
+  session="claimsense-smoke-$(date +%s)-$(openssl rand -hex 8)"      # at least 33 characters
+  if ! aws bedrock-agentcore invoke-agent-runtime --agent-runtime-arn "$RUNTIME_ARN" \
+        --runtime-session-id "$session" --content-type application/json --accept application/json \
+        --payload "fileb://$payload" "$out" >/dev/null; then
+    rm -f "$payload" "$out"; echo "    the runtime did not answer"; return 1
+  fi
+  rm -f "$payload"
+  python3 - "$out" <<'CHECK'
+import json, sys
+answer = json.load(open(sys.argv[1]))
+print("   ", json.dumps({k: answer.get(k) for k in ("status", "outcome", "decision_source", "problems", "duration_ms")}))
+healthy = answer.get("status") == "dry_run" and answer.get("decision_source") in ("model", "deterministic_fallback")
+sys.exit(0 if healthy else 1)
+CHECK
+  local result=$?
+  rm -f "$out"
+  return $result
+}
+
 echo "==> runtime $NAME"
 RUNTIME_ID=$(aws bedrock-agentcore-control list-agent-runtimes \
   --query "agentRuntimes[?agentRuntimeName=='$NAME'].agentRuntimeId | [0]" --output text)
@@ -57,6 +109,9 @@ if [ "$RUNTIME_ID" = "None" ] || [ -z "$RUNTIME_ID" ]; then
     --tags Project=claimsense --query agentRuntimeId --output text)
   echo "    created $RUNTIME_ID"
 else
+  # The image running now, to go back to if the smoke test fails.
+  PREVIOUS_ARTIFACT=$(aws bedrock-agentcore-control get-agent-runtime --agent-runtime-id "$RUNTIME_ID" \
+    --query agentRuntimeArtifact --output json)
   # Each update makes a new immutable version; the DEFAULT endpoint moves to it.
   aws bedrock-agentcore-control update-agent-runtime --agent-runtime-id "$RUNTIME_ID" \
     --agent-runtime-artifact "$ARTIFACT" --role-arn "$ROLE_ARN" \
@@ -65,24 +120,32 @@ else
 fi
 
 echo "==> waiting until it is READY"
-for _ in $(seq 1 60); do
-  STATUS=$(aws bedrock-agentcore-control get-agent-runtime --agent-runtime-id "$RUNTIME_ID" \
-    --query status --output text)
-  case "$STATUS" in
-    READY) break ;;
-    *FAILED*) echo "    $STATUS:"; aws bedrock-agentcore-control get-agent-runtime \
-                --agent-runtime-id "$RUNTIME_ID" --query failureReason --output text; exit 1 ;;
-  esac
-  sleep 10
-done
+wait_until_ready
 RUNTIME_ARN=$(aws bedrock-agentcore-control get-agent-runtime --agent-runtime-id "$RUNTIME_ID" \
   --query agentRuntimeArn --output text)
 echo "    $STATUS: $RUNTIME_ARN"
 
+if [ "${SKIP_SMOKE:-0}" = "1" ]; then
+  echo "==> smoke test skipped (SKIP_SMOKE=1)"
+else
+  echo "==> smoke test: a dry run on $SMOKE_CLAIM (no note is written)"
+  if smoke_test; then
+    echo "    passed"
+  elif [ -n "${PREVIOUS_ARTIFACT:-}" ]; then
+    echo "    FAILED: deploying the previous image again" >&2
+    aws bedrock-agentcore-control update-agent-runtime --agent-runtime-id "$RUNTIME_ID" \
+      --agent-runtime-artifact "$PREVIOUS_ARTIFACT" --role-arn "$ROLE_ARN" \
+      --network-configuration "$NETWORK" --environment-variables "$ENVIRONMENT" >/dev/null
+    wait_until_ready
+    echo "    rolled back to $(echo "$PREVIOUS_ARTIFACT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["containerConfiguration"]["containerUri"])')" >&2
+    exit 1
+  else
+    echo "    FAILED on a new runtime (nothing to roll back to)" >&2
+    exit 1
+  fi
+fi
+
 echo "==> console's Run assessment → AgentCore (the runner on the instance forwards)"
-DNS=$(aws ec2 describe-instances \
-  --filters Name=tag:Project,Values=claimsense Name=instance-state-name,Values=running \
-  --query 'Reservations[0].Instances[0].PublicDnsName' --output text)
 ssh -i "$KEY_FILE" -o StrictHostKeyChecking=accept-new "ec2-user@$DNS" bash -s -- "$RUNTIME_ARN" <<'REMOTE'
 set -euo pipefail
 cd /opt/claimsense

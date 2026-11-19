@@ -27,6 +27,14 @@ AWS_PROFILE=claimsense deploy/agentcore/deploy.sh    # create/update the runtime
 
 `BRAIN=mock` deploys with the mock agents; `TAG=<commit>` a specific CI build.
 
+**Smoke test and automatic rollback** (added after the incident drill of 2026-11-19,
+`docs/INCIDENT-2026-11-19-drill.md`). Once the new version is READY, the script runs one **dry run**
+on `CLM-2024-2165` as the batch service account: all four agents and the draft checks, but no note
+is written and no run metrics are sent. If the run fails or an agent cannot finish, the script
+deploys the image that was running before and exits with an error, so a build that passed the
+mock-only CI gate but breaks on Bedrock never stays live. `SMOKE_CLAIM=<open claim>` picks another
+claim; `SKIP_SMOKE=1` skips it. It costs one Claude run (about $0.07).
+
 ## One-time IAM set-up (as root, in the console; `ACCOUNT` = account id)
 
 1. Role `claimsense-agentcore`: Create role → Custom trust policy `iam/runtime-role-trust.json`

@@ -87,3 +87,13 @@ def test_runs_are_forwarded_to_agentcore_when_a_runtime_is_set(monkeypatch):
     assert payload == {"claim_id": "CLM-2024-3041",
                        "user_token": headers["Authorization"].removeprefix("Bearer ")}
     assert runner_module.agentcore_runtime_arn()
+
+
+def test_a_dry_run_invocation_writes_no_note(live_api):
+    token = bearer("claimsense-batch", "batch-service")["Authorization"].removeprefix("Bearer ")
+    body = runner.post("/invocations", json={"claim_id": "CLM-2024-2165", "user_token": token,
+                                             "dry_run": True}).json()
+    RUN_IDS.append(body["run_id"])
+    assert body["status"] == "dry_run"
+    assert body["note_id"] is None
+    assert body["decision_source"] == "model"

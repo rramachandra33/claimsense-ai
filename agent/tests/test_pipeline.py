@@ -167,3 +167,16 @@ def test_the_batch_account_cannot_assess_a_decided_claim(live_api):
     result = assess(live_api, "claimsense-batch", "batch-service", "CLM-2024-1800")
     assert result.status == "failed"
     assert result.problems == ["claim not available (403 forbidden)"]
+
+
+def test_a_dry_run_checks_everything_but_writes_no_note(live_api):
+    """The smoke test after an AgentCore deploy: the full run, as the batch account, no note."""
+    from claimsense_api.db import fetch_one
+    before = fetch_one("SELECT count(*) AS n FROM claims_mgmt.claim_notes WHERE claim_id = 'CLM-2024-2165'")["n"]
+    result = assess(live_api, "claimsense-batch", "batch-service", "CLM-2024-2165", dry_run=True)
+    assert result.status == "dry_run", result.problems
+    assert result.outcome is not None
+    assert result.decision_source == "model"
+    assert result.note_id is None
+    after = fetch_one("SELECT count(*) AS n FROM claims_mgmt.claim_notes WHERE claim_id = 'CLM-2024-2165'")["n"]
+    assert after == before

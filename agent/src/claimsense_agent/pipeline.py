@@ -186,8 +186,11 @@ def fallback_draft(facts, signals, gaps, retrieved):
                        deny_reason=reason_text if outcome == "DENY" else None)
 
 
-async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citation=None):
-    """Run the four agents on one claim and write the draft note. Returns a RunResult."""
+async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citation=None, dry_run=False):
+    """Run the four agents on one claim and write the draft note. Returns a RunResult.
+
+    dry_run: do everything except write the note (status "dry_run"). Used by the smoke test after
+    each AgentCore deploy, so checking a new version does not add a draft to a claim."""
     tracer = tracer or Tracer()
     run_id = str(uuid.uuid4())
     result = RunResult(run_id=run_id, claim_id=claim_id, status="failed")
@@ -329,6 +332,19 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
             draft = draft.model_copy(update={"summary": summary, "deny_reason": deny_reason})
             t.event(f"removed {redacted} personal detail(s) from the note", level="warn")
 
+    totals = usage_summary(usage)
+    if dry_run:
+        tracer.event("dry run: no note written")
+        result.status = "dry_run"
+        result.outcome = draft.outcome
+        result.decision_source = decision_source
+        result.cited_clauses = draft.cited_clauses
+        result.problems = citation_problems + problems
+        result.input_tokens = totals["input_tokens"]
+        result.output_tokens = totals["output_tokens"]
+        result.cost_usd = totals["cost_usd"]
+        return result
+
     # ---- code writes the note (adjuster's token, idempotent) ----------------------------------
     note = {
         "run_id": run_id,
@@ -346,7 +362,6 @@ async def run_assessment(client, claim_id, brain="mock", tracer=None, bad_citati
     note["agent_outputs"]["draft_problems"] = problems
     note["agent_outputs"]["citation_problems"] = citation_problems
     note["agent_outputs"]["personal_details_removed_from_note"] = redacted
-    totals = usage_summary(usage)
     note["agent_outputs"]["usage"] = totals
     with tracer.span("write note", kind="tool") as t:
         try:
