@@ -82,10 +82,10 @@ agent: ## assess a claim: make agent CLAIM=CLM-2024-1800 AS=alice [BRAIN=bedrock
 runner: ## the service behind the console's Run assessment button (port 8100) [BRAIN=bedrock] (needs make api + make mcp)
 	cd agent && AWS_PROFILE=$(AWS_PROFILE) CLAIMSENSE_BRAIN=$(BRAIN) uv run uvicorn claimsense_agent.runner:app --port 8100
 
-eval: ## the 60-case evaluation (needs make up): make eval [BRAIN=bedrock] — mock is the CI gate
+eval: ## the 150-case evaluation (needs make up): make eval [BRAIN=bedrock] — mock is the CI gate
 	cd agent && AWS_PROFILE=$(AWS_PROFILE) uv run --extra dev claimsense-agent eval --brain $(BRAIN) --min-pass 0.9
 
-golden: ## the release gate: the 60 cases on Claude (about $3.50 and 30 minutes)
+golden: ## the release gate: the 150 cases on Claude (about $10 and 75 minutes)
 	$(MAKE) --no-print-directory eval BRAIN=bedrock
 
 verify: ## $$0 smoke gate: prerequisites + smoke eval + unit tests. Run this first.

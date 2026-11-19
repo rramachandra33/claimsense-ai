@@ -50,7 +50,7 @@ Checks that save time (each one cost a retry before):
 
 ## 2. Images (CI)
 
-Push to `main`. GitHub Actions runs every test and the evaluation gate (60 cases, mock, at least
+Push to `main`. GitHub Actions runs every test and the evaluation gate (150 cases, mock, at least
 90%), then pushes `claimsense-api`, `-runner` (amd64 and arm64), `-web` and `-seed` to ECR, tagged
 with the commit and `latest`. Check: `gh run list --limit 1` shows success, and ECR (us-east-1) has
 the four repositories.

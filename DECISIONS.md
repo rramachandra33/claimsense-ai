@@ -121,6 +121,24 @@ EC2 too once Cognito is set up, see above.)
 `CLAIMSENSE_COOKIE_SECURE=0` on EC2 while the console is plain HTTP (a Secure cookie would be
 dropped). Turn it back on behind HTTPS.
 
+## Evaluation suite: 150 cases · decided 2026-11-19
+The brief (Milestone 5) asks for 150 cases with prompt-injection, cross-record-leakage and
+forced-auto-decision families; the instructors' answer was to rebuild them from the 20 course
+claims, one change per case. The 60 cases became 150: 30 more variations, three adversarial
+families (15 + 12 + 12), 12 more access cases (including the recorded two-user test, EV-130), 4 more
+token cases and 5 holdout cases on claims no variation uses. Cases that test the trust boundary
+send requests to the data API directly and keep every request and response
+(`agent/src/claimsense_agent/api_checks.py`); a run-based case can also require that the draft is
+left for an adjuster and that another claim's details stay out of the note. Why not the 150
+synthetic cases in `evals/legacy/`: they were built on data that is no longer loaded.
+`scripts/build_eval_cases.py`, `evals/README.md`.
+
+## Batch assessment · not run on AWS · decided 2026-11-19
+The batch assessment stays built and deployed, with its schedule (`claimsense-batch-every-4h`)
+disabled. It is not run on AWS for the capstone: the console assessment covers the same pipeline,
+and a batch run assesses every open claim (about $1 a run). Enabling the schedule is one command in
+`deploy/batch/README.md`.
+
 ## Batch assessment · decided 2026-11-04, built 2026-11-05
 Every 4 hours (EventBridge Scheduler → Lambda `claimsense-batch` → AgentCore), assess open claims
 (Pending Review, Under Investigation, Escalated) never assessed or whose documents changed since the

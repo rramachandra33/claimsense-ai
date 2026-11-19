@@ -161,8 +161,8 @@ make mcp-test     # 9 tests: the MCP server and registry over HTTP
 make test         # 75 tests (+1 opt-in Claude test): the pipeline end to end
 cd batch && uv run --extra dev pytest -q && cd ..      # 5 tests: the batch loop
 uv run --with pytest pytest platform/db/seed -q          # 4 tests: seed and guardrail
-make eval         # the 60-case evaluation, mock: expect 60/60 (about 1 minute, free)
-CLAIMSENSE_LOCATION_CHECK=0 make eval                  # with the location check off: also 60/60
+make eval         # the 150-case evaluation, mock: expect 150/150 (about 2 minutes, free)
+CLAIMSENSE_LOCATION_CHECK=0 make eval                  # with the location check off: also 150/150
 ```
 
 ## 5. Claude instead of the mock agents (optional; Bedrock costs a few cents a run)
@@ -172,7 +172,7 @@ aws login --profile claimsense                  # sign in as the IAM user (a pri
 aws sts get-caller-identity --profile claimsense
 make stack BRAIN=bedrock                        # or: make runner BRAIN=bedrock in Option B
 make agent CLAIM=CLM-2024-1800 AS=alice BRAIN=bedrock    # about 40 s, about $0.08
-make golden                                     # the 60 cases on Claude: about 30 minutes and $3.50
+make golden                                     # the 150 cases on Claude: about 75 minutes and $10
 ```
 
 ## 6. Look inside

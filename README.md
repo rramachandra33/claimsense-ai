@@ -13,7 +13,7 @@ adjuster confirms every outcome. All data is synthetic.
 
 ```bash
 make stack        # the whole stack in Docker; console on http://localhost:3100 (sign in as alice)
-make eval         # the 60-case evaluation (mock brain, free)
+make eval         # the 150-case evaluation (mock brain, free)
 ```
 
 Run and test everything locally, from scratch: `TESTING_LOCALLY.md`. Deploy and test on AWS, from
@@ -40,7 +40,7 @@ runbook. Roadmap: `docs/ClaimSense-AI-Roadmap-and-Status.pdf`.
 | `data/course_fixtures/` | Course-supplied fixtures (core dataset): `source/` unchanged, plus typed JSON, clauses and code facts built by `scripts/import_course_fixtures.py` |
 | `data/identity/users.json` | Users, groups and the access rule |
 | `data/synthetic/` | Earlier generated dataset (used only by `evals/legacy/`) |
-| `evals/` | The 60-case evaluation suite (`cases.json`), `precedence_cases.json`, and the old 150 cases in `legacy/` |
+| `evals/` | The 150-case evaluation suite (`cases.json`), `precedence_cases.json`, and the old 150 cases in `legacy/` |
 | `frontend/` | First React prototype of the adjuster console (simulated backend) |
 | `data-visualization/` | Case Explorer and workflow diagram pages |
 | `scripts/` | Data generator and course-fixture importer |

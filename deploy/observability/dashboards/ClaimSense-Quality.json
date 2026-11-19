@@ -7,7 +7,7 @@
    "width": 24,
    "height": 2,
    "properties": {
-    "markdown": "## Quality: are the decisions right?\nOffline: the 60-case evaluation (CI on the mock brain, `make golden` on Claude). Live: how often a draft fails a check and code's decision is used (fallback), how often an agent cannot finish (code writes a DENY), and the outcome mix."
+    "markdown": "## Quality: are the decisions right?\nOffline: the 150-case evaluation (CI on the mock brain, `make golden` on Claude). Live: how often a draft fails a check and code's decision is used (fallback), how often an agent cannot finish (code writes a DENY), and the outcome mix."
    }
   },
   {

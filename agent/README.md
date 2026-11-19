@@ -126,7 +126,7 @@ agents are then told not to FLAG for it.
 
 ## Evaluation
 
-`make eval` runs the 60 cases in `evals/cases.json` through the real pipeline and scores them
+`make eval` runs the 150 cases in `evals/cases.json` through the real pipeline and scores them
 (`evaluate.py`; see `evals/README.md`). On the mock brain it is free and is the CI gate (pass rate
 0.9); `make eval BRAIN=bedrock` runs them on Claude. The run starts its own API, puts each changed
 claim on a temporary copy, and removes everything it wrote.

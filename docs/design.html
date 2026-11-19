@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClaimSense AI – Design</title>
+<style>
+:root {
+  --blue: #2f5d8a; --blue-dark: #1f4468; --blue-soft: #eaf1f8;
+  --orange: #b8651b; --orange-soft: #fbf1e6;
+  --green: #2e7d55; --green-soft: #e8f4ee;
+  --grey: #7a8494; --grey-soft: #f0f2f5;
+  --red: #b3362f;
+  --ink: #18202b; --muted: #5d6877; --line: #e1e6ec; --paper: #fbfcfd;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.page { max-width: 980px; margin: 0 auto; padding: 56px 32px 96px; }
+h1 { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 8px; color: var(--blue-dark); }
+.subtitle { color: var(--muted); font-size: 15px; margin-bottom: 40px; }
+h2 {
+  font-size: 24px; font-weight: 800; margin: 52px 0 18px; padding-top: 8px;
+  border-top: 1px solid var(--line); color: var(--ink);
+}
+.page > h2:first-of-type { border-top: none; }
+h3 { font-size: 18px; font-weight: 700; margin: 32px 0 12px; color: var(--blue-dark); }
+p { margin: 0 0 14px; }
+ol, ul { margin: 0 0 16px; padding-left: 24px; }
+li { margin: 6px 0; }
+li strong:first-child { color: var(--blue-dark); }
+a { color: var(--blue); text-decoration: none; border-bottom: 1px solid var(--blue-soft); }
+a:hover { border-bottom-color: var(--blue); }
+code {
+  background: var(--blue-soft); color: var(--blue-dark); padding: 2px 6px; border-radius: 5px;
+  font: 13px/1 "SF Mono", Menlo, Consolas, monospace;
+}
+pre { background: var(--ink); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+pre code { background: none; color: #dbe6f2; padding: 0; line-height: 1.5; }
+em { color: var(--muted); }
+table { width: 100%; border-collapse: collapse; margin: 8px 0 24px; font-size: 14.5px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--blue-soft); color: var(--blue-dark); font-weight: 700; }
+tr:hover td { background: #f6f9fc; }
+.table-wrap { overflow-x: auto; }
+.diagram {
+  margin: 20px 0 32px; padding: 20px; background: #fff; border: 1px solid var(--line);
+  border-radius: 14px; overflow-x: auto; text-align: center;
+}
+.diagram svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--muted); margin-top: 10px; text-align: left; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+.legend span::before {
+  content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px;
+  margin-right: 6px; vertical-align: -1px; border: 1.5px solid var(--c); background: var(--b);
+}
+.note {
+  background: var(--blue-soft); border-left: 4px solid var(--blue); border-radius: 6px;
+  padding: 12px 16px; margin: 0 0 18px; font-size: 15px;
+}
+.footer {
+  margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 13px;
+}
+@media (max-width: 640px) { .page { padding: 32px 16px 64px; } h1 { font-size: 28px; } }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>ClaimSense AI – Design</h1>
+<div class="subtitle">Architecture and design reference · as built and deployed, November 2026 ·
+decisions with dates are in <code>DECISIONS.md</code>; step-by-step flows in <a href="workflows/README.md">docs/workflows/</a></div>
+
+<p>ClaimSense is a claims adjudication co-pilot for a motor insurer. Given a claim, it drafts a first
+decision (<strong>APPROVE</strong>, <strong>FLAG</strong>, <strong>ROUTE</strong> or <strong>DENY</strong>),
+the reasoning and the policy clauses it rests on, and writes it to the claim as a note. A licensed
+adjuster confirms or rejects every draft. All data is synthetic: the course's 20 claims, 15 policies,
+74 documents and the 12-clause AutoSure policy manual.</p>
+
+<h2>1. Goals and principles</h2>
+<ol>
+<li><strong>Code decides what can be computed; the model judges and explains.</strong> Identity, access,
+policy dates, coverage purchased, deductibles, net payable, the total-loss ratio and the $25,000 senior
+threshold are worked out in code (<code>facts.py</code>). Four agents read the file, check coverage,
+assess risk and draft the decision, and the draft is checked against code before anything is written.</li>
+<li><strong>Every decision is cited.</strong> A note must cite a clause that a search returned <em>in that
+run</em>. A clause the model invents, or one it never retrieved, never reaches a note: the draft is
+replaced by code's own (<code>deterministic_fallback</code>), and a made-up citation becomes a DENY for an
+adjuster to assess.</li>
+<li><strong>A person decides.</strong> Every note is a draft pending confirmation; nothing is paid or closed
+automatically. Above $25,000 net payable only a senior adjuster may confirm (CLS-PAY-012).</li>
+<li><strong>Agents hold no permissions of their own.</strong> Each agent gets a five-minute on-behalf-of
+(OBO) token for one user, one claim and one run, with only its own scopes. Agents can never list claims,
+write notes or mint tokens.</li>
+<li><strong>One gate to the data.</strong> Everything (console, agents, batch) reaches PostgreSQL only
+through the data API, which checks the token, applies the access rule and writes the audit log on every
+call. The MCP server has no rules of its own.</li>
+<li><strong>Nothing is lost when outcomes compete.</strong> Precedence is DENY &gt; FLAG &gt; ROUTE &gt;
+APPROVE; code appends "Also needs:" and "Pending documentation:" so a FLAG still shows the specialist or
+the missing estimate.</li>
+<li><strong>Claim data stays in AWS.</strong> Claude runs on Amazon Bedrock; the Agents SDK's own tracing
+(which uploads to OpenAI) is switched off; addresses, phone numbers and emails are removed from notes.</li>
+<li><strong>Measured, not assumed.</strong> A 60-case evaluation runs in CI on every push (mock agents, free)
+and on Claude before a release (<code>make golden</code>: 60/60 on 2026-11-09).</li>
+</ol>
+
+<h2>2. System architecture</h2>
+<div class="legend">
+<span style="--c:#2f5d8a;--b:#eaf1f8">ClaimSense code</span>
+<span style="--c:#b8651b;--b:#fbf1e6">Claude (model)</span>
+<span style="--c:#2e7d55;--b:#e8f4ee">people</span>
+<span style="--c:#7a8494;--b:#f0f2f5">AWS services and data</span>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Helvetica, Arial, sans-serif" role="img" aria-label="ClaimSense on AWS">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5d6877"/></marker>
+</defs>
+<style>
+.box{stroke-width:1.5;rx:8}.t{font-size:13px;font-weight:700;fill:#18202b}.s{font-size:11px;fill:#5d6877}
+.l{font-size:10.5px;fill:#5d6877}.ln{stroke:#5d6877;stroke-width:1.3;fill:none;marker-end:url(#a)}
+.code{fill:#eaf1f8;stroke:#2f5d8a}.model{fill:#fbf1e6;stroke:#b8651b}.human{fill:#e8f4ee;stroke:#2e7d55}.aws{fill:#f0f2f5;stroke:#7a8494}
+</style>
+<!-- people -->
+<rect class="box human" x="16" y="222" width="128" height="62"/>
+<text class="t" x="80" y="247" text-anchor="middle">Adjuster</text>
+<text class="s" x="80" y="265" text-anchor="middle">browser</text>
+<!-- EC2 group -->
+<rect x="166" y="138" width="238" height="340" rx="12" fill="none" stroke="#7a8494" stroke-dasharray="5 4"/>
+<text class="s" x="176" y="156" font-weight="700">EC2 t3.small · Docker Compose</text>
+<rect class="box code" x="190" y="168" width="190" height="52"/>
+<text class="t" x="285" y="190" text-anchor="middle">Ops Console</text>
+<text class="s" x="285" y="207" text-anchor="middle">Next.js · port 3100</text>
+<rect class="box code" x="190" y="246" width="190" height="52"/>
+<text class="t" x="285" y="268" text-anchor="middle">Data API (private)</text>
+<text class="s" x="285" y="285" text-anchor="middle">FastAPI · the console's API</text>
+<rect class="box code" x="190" y="324" width="190" height="52"/>
+<text class="t" x="285" y="346" text-anchor="middle">Runner</text>
+<text class="s" x="285" y="363" text-anchor="middle">POST /runs → AgentCore</text>
+<rect class="box aws" x="190" y="402" width="190" height="56"/>
+<text class="t" x="285" y="425" text-anchor="middle">PostgreSQL</text>
+<text class="s" x="285" y="442" text-anchor="middle">4 schemas · system of record</text>
+<!-- Cognito -->
+<rect class="box aws" x="190" y="36" width="190" height="58"/>
+<text class="t" x="285" y="60" text-anchor="middle">Amazon Cognito</text>
+<text class="s" x="285" y="78" text-anchor="middle">user pool claimsense-users</text>
+<!-- Bedrock -->
+<rect class="box model" x="480" y="150" width="210" height="62"/>
+<text class="t" x="585" y="175" text-anchor="middle">Amazon Bedrock</text>
+<text class="s" x="585" y="193" text-anchor="middle">Claude Haiku 4.5 · Sonnet 4.5</text>
+<!-- AgentCore -->
+<rect class="box code" x="480" y="262" width="210" height="112"/>
+<text class="t" x="585" y="286" text-anchor="middle">AgentCore Runtime</text>
+<text class="s" x="585" y="305" text-anchor="middle">pipeline + four agents</text>
+<text class="s" x="585" y="322" text-anchor="middle">reader · coverage · risk · drafter</text>
+<text class="s" x="585" y="339" text-anchor="middle">code facts and draft check</text>
+<text class="s" x="585" y="356" text-anchor="middle">arm64 container</text>
+<!-- MCP Lambda -->
+<rect class="box code" x="746" y="270" width="198" height="62"/>
+<text class="t" x="845" y="294" text-anchor="middle">Lambda: MCP server</text>
+<text class="s" x="845" y="312" text-anchor="middle">5 read-only tools + registry</text>
+<!-- Claims API Lambda -->
+<rect class="box code" x="480" y="420" width="210" height="58"/>
+<text class="t" x="585" y="443" text-anchor="middle">Lambda: Claims API</text>
+<text class="s" x="585" y="461" text-anchor="middle">same code · in the VPC</text>
+<!-- Scheduler + batch -->
+<rect class="box aws" x="746" y="36" width="198" height="50"/>
+<text class="t" x="845" y="57" text-anchor="middle">EventBridge Scheduler</text>
+<text class="s" x="845" y="74" text-anchor="middle">every 4 hours</text>
+<rect class="box code" x="746" y="130" width="198" height="58"/>
+<text class="t" x="845" y="153" text-anchor="middle">Lambda: batch</text>
+<text class="s" x="845" y="171" text-anchor="middle">open claims · ≤25 · $5/day</text>
+<!-- CloudWatch strip -->
+<rect class="box aws" x="480" y="500" width="464" height="44"/>
+<text class="t" x="712" y="519" text-anchor="middle">CloudWatch</text>
+<text class="s" x="712" y="536" text-anchor="middle">metrics (namespace ClaimSense) · OpenTelemetry spans · logs · 3 dashboards · 2 alarms</text>
+<!-- arrows -->
+<path class="ln" d="M144,248 L190,200"/>
+<path class="ln" d="M285,168 L285,94"/>
+<text class="l" x="291" y="126">sign-in (InitiateAuth)</text>
+<path class="ln" d="M285,220 L285,246"/>
+<path class="ln" d="M190,206 L178,206 L178,350 L190,350"/>
+<text class="l" x="172" y="306" text-anchor="end">run</text>
+<text class="l" x="172" y="319" text-anchor="end">assessment</text>
+<path class="ln" d="M380,272 L392,272 L392,414 L380,414"/>
+<path class="ln" d="M380,350 L480,350"/>
+<text class="l" x="442" y="330" text-anchor="middle">AgentCore</text>
+<text class="l" x="442" y="343" text-anchor="middle">(SigV4)</text>
+<path class="ln" d="M585,262 L585,212"/>
+<text class="l" x="592" y="244">Converse</text>
+<path class="ln" d="M690,301 L746,301"/>
+<text class="l" x="694" y="294">MCP + OBO</text>
+<path class="ln" d="M845,332 L845,449 L690,449"/>
+<text class="l" x="700" y="442">API call, agent's token</text>
+<path class="ln" d="M585,374 L585,420"/>
+<text class="l" x="592" y="394">code facts, OBO tokens,</text>
+<text class="l" x="592" y="407">the note (adjuster's token)</text>
+<path class="ln" d="M480,449 L380,440"/>
+<text class="l" x="420" y="468">5432</text>
+<path class="ln" d="M845,86 L845,130"/>
+<path class="ln" d="M762,188 L672,262"/>
+<text class="l" x="700" y="226">open claims</text>
+</svg>
+<div class="caption">On AWS (us-east-1). The console's own calls go to the data API inside the instance; the
+agents and the batch use the same API code on Lambda, which reaches PostgreSQL inside the VPC. The batch
+Lambda also asks the Claims API which claims need an assessment. Locally, <code>make stack</code> runs the
+same images in Docker (mock agents by default, Claude with <code>BRAIN=bedrock</code>).</div>
+</div>
+
+<h3>Where each piece runs</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Piece</th><th>On AWS</th><th>Locally</th><th>Code</th></tr></thead>
+<tbody>
+<tr><td><strong>Ops Console</strong></td><td>EC2 container, port 3100</td><td><code>make stack</code> or <code>make web</code></td><td><code>platform/web/</code></td></tr>
+<tr><td><strong>Data API</strong></td><td>EC2 container (console) and Lambda <code>claimsense-api</code> (agents, batch)</td><td>port 8000</td><td><code>api/</code></td></tr>
+<tr><td><strong>MCP server + registry</strong></td><td>Lambda <code>claimsense-mcp</code></td><td>port 8200</td><td><code>mcp_server/</code></td></tr>
+<tr><td><strong>Pipeline + agents</strong></td><td>AgentCore runtime <code>claimsense_runner</code></td><td>runner on port 8100</td><td><code>agent/</code></td></tr>
+<tr><td><strong>Runner</strong></td><td>EC2 container, forwards to AgentCore</td><td>runs the pipeline itself</td><td><code>agent/…/runner.py</code></td></tr>
+<tr><td><strong>Batch</strong></td><td>Lambda <code>claimsense-batch</code> + EventBridge Scheduler (paused)</td><td><code>claimsense-batch --runner …</code></td><td><code>batch/</code></td></tr>
+<tr><td><strong>PostgreSQL 16</strong></td><td>EC2 container</td><td>port 5433 (<code>make up</code>)</td><td><code>platform/db/</code></td></tr>
+<tr><td><strong>Sign-in</strong></td><td>Amazon Cognito</td><td>development sign-in (or Cognito)</td><td><code>auth.py</code>, <code>cognito.ts</code></td></tr>
+</tbody>
+</table></div>
+
+<h3>One assessment, at a glance</h3>
+<div class="diagram">
+<svg viewBox="0 0 960 300" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Helvetica, Arial, sans-serif" role="img" aria-label="The assessment pipeline">
+<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5d6877"/></marker></defs>
+<style>
+.bx{stroke-width:1.5}.t{font-size:13px;font-weight:700;fill:#18202b}.s{font-size:11px;fill:#5d6877}
+.ln{stroke:#5d6877;stroke-width:1.3;fill:none;marker-end:url(#b)}
+.code{fill:#eaf1f8;stroke:#2f5d8a}.model{fill:#fbf1e6;stroke:#b8651b}.human{fill:#e8f4ee;stroke:#2e7d55}.deny{fill:#fdecea;stroke:#b3362f}
+</style>
+<rect class="bx code" x="10" y="20" width="168" height="84" rx="8"/>
+<text class="t" x="94" y="44" text-anchor="middle">1 Access + facts</text>
+<text class="s" x="94" y="63" text-anchor="middle">adjuster's token; dates,</text>
+<text class="s" x="94" y="78" text-anchor="middle">cover, money, signals</text>
+<text class="s" x="94" y="93" text-anchor="middle">403 → nothing written</text>
+<rect class="bx code" x="200" y="20" width="168" height="84" rx="8"/>
+<text class="t" x="284" y="44" text-anchor="middle">2 Rule clauses</text>
+<text class="s" x="284" y="63" text-anchor="middle">code retrieves the</text>
+<text class="s" x="284" y="78" text-anchor="middle">clauses behind its rules</text>
+<rect class="bx model" x="390" y="20" width="168" height="84" rx="8"/>
+<text class="t" x="474" y="44" text-anchor="middle">3 Reader</text>
+<text class="s" x="474" y="63" text-anchor="middle">reads the documents;</text>
+<text class="s" x="474" y="78" text-anchor="middle">notes what is unreadable</text>
+<rect class="bx model" x="580" y="20" width="168" height="84" rx="8"/>
+<text class="t" x="664" y="44" text-anchor="middle">4 Coverage</text>
+<text class="s" x="664" y="63" text-anchor="middle">policy + manual search;</text>
+<text class="s" x="664" y="78" text-anchor="middle">covered? with clauses</text>
+<rect class="bx model" x="770" y="20" width="168" height="84" rx="8"/>
+<text class="t" x="854" y="44" text-anchor="middle">5 Risk</text>
+<text class="s" x="854" y="63" text-anchor="middle">fraud indicators;</text>
+<text class="s" x="854" y="78" text-anchor="middle">≤3 manual searches</text>
+<path class="ln" d="M178,62 L200,62"/><path class="ln" d="M368,62 L390,62"/><path class="ln" d="M558,62 L580,62"/><path class="ln" d="M748,62 L770,62"/>
+<path class="ln" d="M854,104 L854,128 L94,128 L94,150"/>
+<rect class="bx model" x="10" y="150" width="168" height="84" rx="8"/>
+<text class="t" x="94" y="174" text-anchor="middle">6 Drafter</text>
+<text class="s" x="94" y="193" text-anchor="middle">outcome, summary,</text>
+<text class="s" x="94" y="208" text-anchor="middle">cited clauses</text>
+<rect class="bx code" x="200" y="150" width="260" height="84" rx="8"/>
+<text class="t" x="330" y="174" text-anchor="middle">7 Check the draft (code)</text>
+<text class="s" x="330" y="193" text-anchor="middle">cited clauses retrieved this run? exist?</text>
+<text class="s" x="330" y="208" text-anchor="middle">outcome allowed given code's outcome?</text>
+<text class="s" x="330" y="223" text-anchor="middle">add "Also needs", redact personal details</text>
+<rect class="bx code" x="482" y="150" width="200" height="84" rx="8"/>
+<text class="t" x="582" y="174" text-anchor="middle">8 Write the note</text>
+<text class="s" x="582" y="193" text-anchor="middle">once, by code, adjuster's</text>
+<text class="s" x="582" y="208" text-anchor="middle">token + Idempotency-Key;</text>
+<text class="s" x="582" y="223" text-anchor="middle">append-only, audited</text>
+<rect class="bx human" x="704" y="150" width="234" height="84" rx="8"/>
+<text class="t" x="821" y="174" text-anchor="middle">9 Adjuster reviews</text>
+<text class="s" x="821" y="193" text-anchor="middle">Confirm or Reject (reason);</text>
+<text class="s" x="821" y="208" text-anchor="middle">&gt; $25,000: senior adjuster only</text>
+<path class="ln" d="M178,192 L200,192"/><path class="ln" d="M460,192 L482,192"/><path class="ln" d="M682,192 L704,192"/>
+<rect class="bx deny" x="200" y="252" width="482" height="40" rx="8"/>
+<text class="s" x="441" y="270" text-anchor="middle" fill="#b3362f">fails a check → code's own draft (deterministic_fallback); made-up clause → DENY;</text>
+<text class="s" x="441" y="285" text-anchor="middle" fill="#b3362f">an agent fails → uncited DENY "an adjuster must assess this claim" (agent_failure)</text>
+<path class="ln" d="M330,234 L330,252"/>
+</svg>
+<div class="caption">Each agent (3–6) gets its own OBO token and reaches data only through the MCP server. Typical
+run on Claude: about 22 s and $0.07 (evaluation average); 30–60 s through the console on AWS.</div>
+</div>
+
+<h2>3. Components</h2>
+
+<h3>3.1 Ops Console (<code>platform/web</code>)</h3>
+<p>Next.js (App Router, server components). Pages: <strong>Claims</strong> (the queue: only the claims the API
+lets this user read), <strong>Claim</strong> (claim, policy, documents, notes, <em>Run assessment</em>,
+<em>Confirm</em>/<em>Reject</em>), <strong>Document</strong> (OCR text), <strong>Policy manual</strong> (word search,
+or a clause id such as CLS-FRD-007 opens that clause) and <strong>Sign in</strong>.</p>
+<ul>
+<li><strong>The browser never holds a token in script.</strong> Sign-in is a server action: the console's server
+checks the password with Cognito (<code>InitiateAuth</code>, <code>USER_PASSWORD_AUTH</code>), asks the API who the
+user is (<code>/api/v1/me</code>) and keeps only the access token in an httpOnly cookie.</li>
+<li>Every page calls the data API with that token; the console has no access rules of its own, so a list or a
+claim it shows is exactly what the API allows.</li>
+<li><em>Run assessment</em> posts to the runner. On a claim the claims system has already decided it first asks
+"It is already approved. Rerun it?" (a second opinion).</li>
+<li>Sign-out clears the cookie and redirects with a relative address, so it works on any host name.</li>
+</ul>
+
+<h3>3.2 Runner and AgentCore (<code>agent/src/claimsense_agent/runner.py</code>)</h3>
+<p>A small FastAPI service. <code>POST /runs</code> takes a claim id with the adjuster's token. It also speaks the
+AgentCore Runtime contract (<code>GET /ping</code>, <code>POST /invocations</code> with the token in the body,
+because SigV4 uses the <code>Authorization</code> header). On EC2, when <code>CLAIMSENSE_AGENTCORE_RUNTIME_ARN</code>
+is set, <code>/runs</code> forwards the run to AgentCore with the instance's AWS credentials; on AgentCore the same
+image runs the pipeline. The runner has no secrets and no access rules: it passes the adjuster's token on.</p>
+
+<h3>3.3 Pipeline and code facts (<code>pipeline.py</code>, <code>facts.py</code>)</h3>
+<p><code>run_assessment()</code> runs the nine steps in the diagram. Code facts come from the claim, policy and
+document list:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Fact or signal</th><th>Rule</th><th>Clause</th></tr></thead>
+<tbody>
+<tr><td>In force at loss (inclusive dates)</td><td>not in force → DENY</td><td>CLS-PER-006</td></tr>
+<tr><td>Cover purchased for this loss</td><td>Liability Only, or no collision/comprehensive → DENY</td><td>CLS-LIAB-003, CLS-COLL-001, CLS-COMP-002</td></tr>
+<tr><td>Loss type not mapped to a cover</td><td>ROUTE: an adjuster decides which cover applies</td><td>CLS-COMP-002</td></tr>
+<tr><td>Repair ÷ ACV ≥ 0.75</td><td>ROUTE to a total-loss appraiser</td><td>CLS-TL-005</td></tr>
+<tr><td>Injury reported</td><td>ROUTE to an injury-qualified adjuster</td><td>CLS-INJ-008</td></tr>
+<tr><td>Net payable = min(estimate, ACV) − deductible &gt; $25,000</td><td>ROUTE: senior adjuster confirms</td><td>CLS-PAY-012, CLS-DED-004</td></tr>
+<tr><td>Fraud indicators: vendor score ≥ 0.70; 2 or more prior claims in 12 months; no police report with an injury or an airbag deployment; VIN differs from the policy; FNOL and police report give different loss locations</td><td>FLAG for review</td><td>CLS-FRD-007</td></tr>
+<tr><td>No readable repair estimate (pending OCR or none)</td><td>documentation gap → FLAG</td><td>CLS-DOC-009</td></tr>
+</tbody>
+</table></div>
+<p>Code's own outcome is the first signalled in <strong>DENY &gt; FLAG &gt; ROUTE &gt; APPROVE</strong>. The drafter
+may follow it or, where it is safe, go stricter: DENY → DENY; FLAG → FLAG; ROUTE → ROUTE or FLAG;
+APPROVE → APPROVE or FLAG. A DENY code has no reason for becomes a FLAG that keeps the agents' reason
+(they may have seen an exclusion code cannot check).</p>
+
+<h3>3.4 Agents (<code>agent/src/claimsense_agent/agents</code>)</h3>
+<p>OpenAI Agents SDK with Claude on Bedrock through LiteLLM (<code>bedrock.py</code>); <code>mock.py</code> has the same
+four functions and typed outputs without a model, for tests, CI and free local runs. Each agent has at most
+15 turns and 2,000 output tokens; LiteLLM retries transient Bedrock errors three times.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Agent</th><th>Model</th><th>OBO scopes</th><th>Output</th></tr></thead>
+<tbody>
+<tr><td><strong>Reader</strong></td><td>Haiku 4.5</td><td>claim:read, documents:read</td><td>summary, documents read and unreadable, findings</td></tr>
+<tr><td><strong>Coverage</strong></td><td>Sonnet 4.5</td><td>claim:read, policy:read, clauses:search</td><td>covered (yes / no / cannot tell), reasoning, cited clauses</td></tr>
+<tr><td><strong>Risk</strong></td><td>Haiku 4.5</td><td>claim:read, documents:read, clauses:search</td><td>refer to SIU, indicators, cited clauses (≤3 searches)</td></tr>
+<tr><td><strong>Drafter</strong></td><td>Sonnet 4.5</td><td>claim:read</td><td>outcome, summary, cited clauses, deny reason</td></tr>
+</tbody>
+</table></div>
+<p>Coverage and risk citations that no search returned are dropped before the drafter sees them, so the
+drafter is never offered an unretrieved clause.</p>
+
+<h3>3.5 MCP server and registry (<code>mcp_server/</code>)</h3>
+<p>MCP over streamable HTTP at <code>/mcp</code>, with five read-only tools: <code>get_claim</code>,
+<code>get_policy</code>, <code>list_documents</code>, <code>get_document</code> and <code>search_clauses</code>. Each tool
+makes one call to the data API with the calling agent's OBO token and returns the answer unchanged. There is
+no tool to list claims or write notes. The same service hosts a registry at <code>/registry/v0/servers</code>
+(the MCP registry API shape); agents look up the server's URL there. It runs on Lambda because AgentCore
+could not reach it on the EC2 instance.</p>
+
+<h3>3.6 Data API (<code>api/</code>)</h3>
+<p>FastAPI over PostgreSQL; one code base runs as a container and, through <code>lambda_handler.py</code>, on Lambda.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Route</th><th>Who</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>GET /api/v1/me</code></td><td>people</td><td>who the token belongs to (the console's sign-in check)</td></tr>
+<tr><td><code>GET /api/v1/claims</code></td><td>people</td><td>the claims this user may read</td></tr>
+<tr><td><code>GET /claims/{id}</code>, <code>/policy</code>, <code>/documents</code>, <code>GET /documents/{id}</code></td><td>people, agents (by scope)</td><td>the claim file</td></tr>
+<tr><td><code>GET /clauses?q=</code>, <code>GET /clauses/{id}</code></td><td>people, agents</td><td>manual search (logged per run for the citation check) and one clause</td></tr>
+<tr><td><code>POST /claims/{id}/notes</code>, <code>GET …/notes</code></td><td>pipeline (adjuster's token)</td><td>write the draft once (Idempotency-Key); read notes with reviews</td></tr>
+<tr><td><code>POST …/notes/{note_id}/review</code></td><td>adjusters</td><td>Confirm or Reject, with the $25,000 rule</td></tr>
+<tr><td><code>POST /api/v1/obo/token</code></td><td>pipeline</td><td>one agent's OBO token, after the claim access check</td></tr>
+<tr><td><code>GET /api/v1/batch/candidates</code></td><td>batch account</td><td>open claims to assess, and today's batch spend</td></tr>
+<tr><td><code>POST /api/v1/dev/login</code></td><td>local only</td><td>development sign-in (404 when Cognito is on)</td></tr>
+</tbody>
+</table></div>
+<p>Every request: verify the token → look up the user in <code>claimsense.users</code> (suspended → 403) → rate limit
+(per user per minute, counted in PostgreSQL so all Lambda copies share it) → for a claim, <code>can_read_claim</code>
+→ audit. An unknown claim and a forbidden one get the same 403, so the API never confirms that a claim exists.</p>
+
+<h3>3.7 Identity and access</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Token</th><th>Issued by</th><th>Checked as</th><th>Used by</th></tr></thead>
+<tbody>
+<tr><td><strong>Cognito access token</strong> (8 h)</td><td>Amazon Cognito</td><td>RS256 against the pool's public keys; issuer, app client, <code>token_use=access</code>; Cognito group must equal the ClaimSense group</td><td>people, on AWS</td></tr>
+<tr><td><strong>Development token</strong></td><td>the API's dev sign-in (HS256)</td><td>shared secret; refused for people once Cognito is configured</td><td>people, locally</td></tr>
+<tr><td><strong>Batch token</strong></td><td>the batch Lambda (HS256)</td><td>shared secret; group <code>batch-service</code></td><td>the scheduled batch</td></tr>
+<tr><td><strong>OBO token</strong> (5 min)</td><td><code>POST /obo/token</code></td><td>one user, one claim, one run, the agent's scopes</td><td>each agent</td></tr>
+</tbody>
+</table></div>
+<p>The access rule (<code>access.py</code>, decided in code before any agent runs):</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Group</th><th>Reads</th><th>Confirms</th><th>Users</th></tr></thead>
+<tbody>
+<tr><td>adjuster</td><td>claims assigned to them</td><td>up to $25,000 net payable</td><td>alice, david (frank: suspended)</td></tr>
+<tr><td>senior-adjuster</td><td>all claims</td><td>any amount</td><td>bob</td></tr>
+<tr><td>fraud-investigator</td><td>assigned, plus vendor fraud score ≥ 0.70</td><td>reviews only</td><td>carol</td></tr>
+<tr><td>total-loss-appraiser</td><td>assigned, plus repair ≥ 75% of ACV</td><td>reviews only</td><td>eve</td></tr>
+<tr><td>batch-service</td><td>open claims only (Pending Review, Under Investigation, Escalated)</td><td>never; cannot sign in</td><td>claimsense-batch</td></tr>
+</tbody>
+</table></div>
+
+<h3>3.8 Policy manual and the clause guardrail</h3>
+<p>The manual's clauses are loaded by <code>platform/db/seed</code>. A guardrail (<code>guardrail.py</code>) checks every
+clause for injected instructions: a clean clause goes to <code>claimsense.clause_index</code> (full-text search,
+PostgreSQL <code>tsvector</code> with a GIN index); a suspicious one goes to <code>claimsense.clause_quarantine</code>
+with the pattern that matched, and can never be returned by a search. The planted chunk CLS-ADM-013 is
+quarantined; all 12 real clauses are indexed. Search ranks clauses with <code>ts_rank</code> over the query's words
+(any of them), and each search an agent makes is logged in <code>claimsense.retrieval_log</code> under its run, which
+is what the citation check reads.</p>
+
+<h3>3.9 Data layer (<code>platform/db</code>)</h3>
+<p>PostgreSQL 16 with the client's three systems as schemas, plus ClaimSense's own:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Schema</th><th>Tables</th></tr></thead>
+<tbody>
+<tr><td><code>policy_admin</code></td><td><code>policies</code>, <code>policy_clauses</code></td></tr>
+<tr><td><code>claims_mgmt</code></td><td><code>claims</code>, <code>claim_notes</code> (append-only; the only write ClaimSense makes to the client's systems), <code>note_reviews</code></td></tr>
+<tr><td><code>doc_store</code></td><td><code>documents</code> (OCR status and text)</td></tr>
+<tr><td><code>claimsense</code></td><td><code>users</code>, <code>clause_index</code>, <code>clause_quarantine</code>, <code>assessments</code> (one row per run: outcome, decision source, tokens, cost, claim status at run time, document fingerprint), <code>retrieval_log</code>, <code>idempotency_keys</code>, <code>rate_limit</code>, <code>audit_log</code></td></tr>
+</tbody>
+</table></div>
+<p>Changes after the first release are dated migrations in <code>platform/db/migrations/</code> (reviews and claim
+status, 2026-11-04; batch assessment, 2026-11-05). Note ids are one sequence across all claims.</p>
+
+<h3>3.10 Batch assessment (<code>batch/</code>)</h3>
+<p>EventBridge Scheduler calls Lambda <code>claimsense-batch</code> every 4 hours (deployed, schedule paused). It signs a
+short-lived token for the <code>claimsense-batch</code> account, asks the API for open claims never assessed or whose
+documents changed (a fingerprint of the documents is stored on each assessment), and runs them on AgentCore,
+three at a time, at most 25 a batch and $5 a day. A failed claim does not stop the batch and is not retried
+(the next batch picks it up). Notes are drafts for the assigned adjuster, author <code>claimsense-batch</code>.</p>
+
+<h3>3.11 Privacy and safety</h3>
+<ul>
+<li><strong>Prompt injection</strong>: injected clauses are quarantined at load; document text and claim text are
+data to the agents, and whatever an agent concludes still passes the draft check (evaluation family
+<em>attack</em>, 9 cases).</li>
+<li><strong>Least privilege for agents</strong>: per-agent scopes, one claim, one run, five minutes; a token used on another
+claim, outside its scopes, to list claims, to write a note or after it expires is refused (family <em>token</em>).</li>
+<li><strong>Redaction</strong> (<code>redact.py</code>): street addresses, phone numbers and emails are removed from every
+note before it is written; only the last six characters of a VIN appear.</li>
+<li><strong>Audit</strong>: every API call, allowed or refused, with the user, the acting agent and the reason
+(the reason is never returned to the caller).</li>
+<li><strong>Idempotency</strong>: a retried note write with the same key returns the stored note; the same key with a
+different body is refused.</li>
+<li><strong>Secrets</strong>: the token secret and database password are generated on the instance and copied into the
+Lambdas' encrypted environment by the deploy scripts; never in git.</li>
+</ul>
+
+<h3>3.12 Observability</h3>
+<p>Each run is traced as spans (code facts, rule clauses, each agent, check draft, write note) with
+OpenTelemetry to CloudWatch (Transaction Search); the same trace prints in the terminal locally. Metrics in
+namespace <code>ClaimSense</code>: <code>Runs</code>, <code>RunDurationMs</code>, <code>Failures</code>, <code>Resolutions</code>
+(a run that writes a note), <code>Fallbacks</code>, <code>AgentFailures</code>, <code>Decisions</code> by outcome,
+<code>InputTokens</code>, <code>OutputTokens</code>, <code>RunCostUsd</code>, and <code>EvalPassRate</code>/<code>EvalCostUsd</code>
+for evaluation runs. Dashboards: <em>Experience</em>, <em>Economics</em>, <em>Quality</em>; alarms
+<em>ClaimSense-SlowRuns</em> and <em>ClaimSense-BadRuns</em>. Cost per run is computed from the token counts
+(<code>pricing.py</code>) and stored on the assessment.</p>
+
+<h3>3.13 Build and deploy</h3>
+<p>GitHub Actions on every push: database and course data, seed and guardrail tests, data API tests, MCP tests,
+pipeline tests, batch tests, then the <strong>evaluation gate</strong> (60 cases, mock agents, at least 90%).
+On <code>main</code> it builds the images, pushes them to ECR (tagged with the commit and <code>latest</code>) through
+GitHub OIDC (no stored AWS keys), and builds the runner for arm64 for AgentCore. Deployment is by script, in
+order: <code>deploy/ec2</code>, <code>deploy/lambda</code>, <code>deploy/agentcore</code>, <code>deploy/observability</code>,
+<code>deploy/batch</code>, <code>deploy/cognito</code>; each folder has its IAM policy and a README.
+<code>DEPLOY_AND_TEST_ON_AWS.md</code> walks through it from scratch.</p>
+
+<h2>4. Key decisions and trade-offs</h2>
+<p>The full dated record is <code>DECISIONS.md</code>. The ones that shape the design:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Decision</th><th>Why</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Code computes facts; model drafts; code checks the draft</td><td>Dates and money must be exact and testable; the model cannot put a wrong figure or an unretrieved clause on a note</td><td>Rules live in code and need updating when the manual changes</td></tr>
+<tr><td>Precedence DENY &gt; FLAG &gt; ROUTE &gt; APPROVE, with "Also needs:"</td><td>One outcome per note, nothing dropped</td><td>Notes are longer</td></tr>
+<tr><td>Draft may only follow code or go stricter</td><td>DENY and ROUTE rest on facts code works out exactly</td><td>9 of 60 golden cases end on code's draft (5 of them a ROUTE where FLAG ranks higher)</td></tr>
+<tr><td>Agent failure → uncited DENY for an adjuster</td><td>Every run leaves a visible result</td><td>A transient Bedrock error shows as a DENY to reject; revisit when failures are rare</td></tr>
+<tr><td>OBO tokens minted by our API</td><td>Cognito has no token exchange; agents need per-claim, per-scope tokens</td><td>Our API holds a signing secret</td></tr>
+<tr><td>Cognito with our own sign-in form</td><td>Cognito's hosted page needs HTTPS return addresses; the console is plain HTTP</td><td>No MFA yet; sign-out cannot revoke an 8-hour token</td></tr>
+<tr><td>Full-text clause search, no embeddings</td><td>12 clauses; exact and explainable ranking; no extra service</td><td>Paraphrases with no shared word are missed (agents search again)</td></tr>
+<tr><td>PostgreSQL on EC2, not RDS</td><td>Cost for a capstone; one instance runs the database, console and runner</td><td>No managed backups or failover</td></tr>
+<tr><td>Secrets in Lambda environment, not Secrets Manager</td><td>Secrets Manager from the VPC needs an endpoint (~$7 a month)</td><td>No rotation or read audit; revisit for production</td></tr>
+<tr><td>Haiku for reading and risk, Sonnet for coverage and the draft</td><td>The decision steps get the stronger model</td><td>About $0.07 a claim</td></tr>
+<tr><td>Batch: open claims only, ≤25 a batch, $5 a day, no retries</td><td>Bounded cost; the next batch picks up a failure</td><td>A claim can wait up to 4 hours</td></tr>
+</tbody>
+</table></div>
+
+<h2>5. Testing strategy</h2>
+<ul>
+<li><strong>Unit and integration</strong>: data API 105 (access rule, Cognito tokens, OBO scopes, notes and reviews,
+the batch account, rate limit, Lambda handler), MCP server 9 (over HTTP), pipeline 75 + 1 opt-in Claude test,
+batch 5, seed and guardrail 4. All run in CI against a real PostgreSQL.</li>
+<li><strong>Evaluation</strong> (<code>evals/cases.json</code>, 60 cases): baseline 20 (every course claim as filed),
+variation 22 (one fact changed: a date, a threshold, cover, a document), attack 9 (injected instructions,
+fake or unretrieved clauses, personal details), access 4 and token 5. Cases that change a claim run on a
+temporary copy (CLM-9000-xxxx) that is removed afterwards. Each case checks the outcome, citations, that no
+other claim was read, and that no personal details reached the note.</li>
+<li><strong>CI gate</strong>: the 60 cases with mock agents, at least 90% (60/60 today), free, about a minute.</li>
+<li><strong>Release gate</strong>: <code>make golden</code>, the 60 cases on Claude. 2026-11-09: 56/60 in the full run, then
+60/60 after a fix to the harness (temporary copies kept the original claim's ids in their document text);
+$4.25 in all. Report: <code>docs/ClaimSense-AI-Golden-Run-2026-11-09.pdf</code>.</li>
+<li><strong>On AWS</strong>: <code>DEPLOY_AND_TEST_ON_AWS.md</code> §4 tests every feature by hand: Cognito sign-in and refusals,
+both APIs, AgentCore, dashboards and alarms, the batch.</li>
+</ul>
+<p>Measured: a run on Claude takes about 22 s and $0.07 (evaluation average, 1.6 million input tokens for 60
+cases); through the console on AWS 30–60 s. Mock run: under a second.</p>
+
+<h2>6. Limits and next steps for production</h2>
+<ul>
+<li>HTTPS in front of the console, then the Secure cookie, Cognito's hosted page and MFA.</li>
+<li>Shorter access tokens with refresh, so sign-out takes effect quickly.</li>
+<li>Managed PostgreSQL (RDS) with backups; secrets in Secrets Manager or Parameter Store.</li>
+<li>Row-level security in PostgreSQL as a second line behind <code>can_read_claim</code>.</li>
+<li>The fraud threshold (0.70) is provisional: the manual gives no number.</li>
+<li>Alarm notifications (SNS), log retention, reserved concurrency on the Lambdas.</li>
+</ul>
+
+<div class="footer">ClaimSense AI — claims adjudication co-pilot (FDE capstone) · synthetic data only</div>
+</div>
+</body>
+</html>

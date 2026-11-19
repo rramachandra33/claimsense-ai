@@ -74,10 +74,28 @@ def test_dates_in_case_files_become_dates():
         "policy_end": date(2024, 2, 13), "fraud_risk_score": 0.7}
 
 
-def test_the_case_file_has_60_cases_with_unique_ids():
+FAMILIES = ("baseline", "variation", "attack", "access", "token", "prompt_injection",
+            "cross_record_leakage", "forced_auto_decision", "holdout")
+
+
+def test_the_case_file_has_150_cases_with_unique_ids():
     cases = json.loads(CASES_FILE.read_text())
-    assert len(cases) == 60
-    assert len({c["case_id"] for c in cases}) == 60
+    assert len(cases) == 150
+    assert len({c["case_id"] for c in cases}) == 150
     for c in cases:
-        assert "expect" in c and c["family"] in ("baseline", "variation", "attack", "access", "token")
-        assert "claim_id" in c or "base_claim" in c or "token_check" in c
+        assert "expect" in c and c["family"] in FAMILIES
+        assert "claim_id" in c or "base_claim" in c or "token_check" in c or "api_check" in c
+
+
+def test_every_api_check_in_the_cases_exists():
+    from claimsense_agent.api_checks import CHECKS
+    cases = json.loads(CASES_FILE.read_text())
+    for c in cases:
+        if "api_check" in c:
+            assert c["api_check"] in CHECKS, c["case_id"]
+
+
+def test_the_adversarial_families_the_brief_names_are_there():
+    cases = json.loads(CASES_FILE.read_text())
+    families = {c["family"] for c in cases}
+    assert {"prompt_injection", "cross_record_leakage", "forced_auto_decision"} <= families
