@@ -38,7 +38,7 @@ litellm.num_retries = 3               # retry transient errors (503 service unav
 set_tracing_disabled(True)
 
 MODEL_FAST = os.environ.get("MODEL_FAST", "bedrock/converse/us.anthropic.claude-haiku-4-5-20251001-v1:0")
-MODEL_SMART = os.environ.get("MODEL_SMART", "bedrock/converse/us.anthropic.claude-sonnet-4-5-20250929-v9:0")
+MODEL_SMART = os.environ.get("MODEL_SMART", "bedrock/converse/us.anthropic.claude-sonnet-4-5-20250929-v1:0")
 MODELS = {"reader": MODEL_FAST, "coverage": MODEL_SMART, "risk": MODEL_FAST, "drafter": MODEL_SMART}
 
 MAX_TOKENS = 2000      # always set explicitly on Bedrock: unset reserves the model's maximum
