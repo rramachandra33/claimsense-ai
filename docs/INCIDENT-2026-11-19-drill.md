@@ -66,7 +66,9 @@ wrote a safe, reviewable draft instead of crashing or approving; the alarm fired
 1. **Smoke test after every AgentCore deploy** (`deploy/agentcore/deploy.sh`): run one assessment
    on a fixed claim and roll back automatically if it ends in `agent_failure`. **Done the same
    day**: a dry run (no note written, no metrics) on CLM-2024-2165; on failure the previous image
-   is deployed again and the script exits with an error.
+   is deployed again and the script exits with an error. Checked on AWS (commit `96c07fd`): the
+   dry run passed (APPROVE, model, 33.8 s, notes unchanged at 22); with the smoke claim set to one
+   the batch account may not read, the dry run failed and the script put `96c07fd` back and exited 1.
 2. **Check the model ids before deploying**: the deploy script calls Bedrock (`get-inference-profile`)
    for each id in `MODELS` and stops if one does not exist.
 3. **Run the Claude evaluation on changes to the agents** (`agent/src/claimsense_agent/agents/`),

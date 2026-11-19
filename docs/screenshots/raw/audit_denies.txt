@@ -1,0 +1,11 @@
+    time_utc    |     user_id      | actor |   action    |  resource_id  | decision |                    reason                    
+----------------+------------------+-------+-------------+---------------+----------+----------------------------------------------
+ 11-19 14:43:16 | claimsense-batch | human | get_claim   | CLM-2024-1800 | deny     | batch: claim is Approved, not open
+ 11-10 00:55:58 | alice            | human | get_claim   | CLM-2024-1873 | deny     | not entitled (assigned to carol)
+ 11-10 00:55:40 | (none)           | human | me          |               | deny     | user is suspended
+ 11-05 15:50:06 | (none)           | human | list_claims |               | deny     | authentication failed: invalid token: Signat
+ 11-05 15:49:58 | (none)           | human | list_claims |               | deny     | authentication failed: invalid token: Signat
+ 11-05 15:44:00 | (none)           | human | list_claims |               | deny     | authentication failed: invalid token: Signat
+ 11-05 15:43:34 | (none)           | human | me          |               | deny     | authentication failed: development tokens ar
+ 11-05 15:43:33 | (none)           | human | me          |               | deny     | authentication failed: development tokens ar
+(8 rows)

@@ -1,0 +1,14 @@
+    time_utc    |     user_id      |  actor   |     action     |  resource_id  | decision |        reason        
+----------------+------------------+----------+----------------+---------------+----------+----------------------
+ 11-19 14:25:10 | claimsense-batch | human    | get_claim      | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:10 | claimsense-batch | human    | get_policy     | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:13 | claimsense-batch | reader   | get_claim      | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:13 | claimsense-batch | reader   | list_documents | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:19 | claimsense-batch | coverage | get_claim      | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:19 | claimsense-batch | coverage | search_clauses |               | allow    | 4 clause(s) returned
+ 11-19 14:25:24 | claimsense-batch | risk     | get_claim      | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:24 | claimsense-batch | risk     | list_documents | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:26 | claimsense-batch | drafter  | get_claim      | CLM-2024-2165 | allow    | batch: open claim
+ 11-19 14:25:28 | claimsense-batch | drafter  | get_claim      | CLM-2024-2165 | allow    | batch: open claim
+(10 rows)
+
