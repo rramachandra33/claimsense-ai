@@ -27,7 +27,11 @@ dist/
 platform/db/seed/data/
 
 # evaluation run outputs (keep a run by copying it out, or commit it deliberately)
-evals/results/
+evals/results/*
+# the release evidence for the submission is committed
+!evals/results/20261119-134237-bedrock.json
+!evals/results/20261119-134433-bedrock.json
+!evals/results/20261119-125817-mock.json
 
 # Lambda package built by deploy/lambda/deploy.sh
 deploy/lambda/.build/

@@ -174,12 +174,13 @@ API).
 
 | Need | Where |
 |---|---|
+| Start here | `docs/HANDOVER.md`: every artefact by milestone, and how to check each acceptance criterion in the console |
 | Run it locally | `README.md` (`make stack` starts everything with one command), `TESTING_LOCALLY.md` |
 | Deploy it | `DEPLOY_AND_TEST_ON_AWS.md`, `deploy/*/README.md` |
 | Operate it | `docs/RUNBOOK.md`: add a user, roll back a deployment, escalate a flagged claim manually, update the policy corpus |
 | Understand it | `docs/design.html` (architecture, the code/model boundary, decisions), `DECISIONS.md` (every decision, dated, with the code it lives in), `docs/ClaimSense-AI-Risk-Register.md` (five risks, and which ones happened) |
 | Trust it | `evals/README.md` and the golden-run reports, the incident report, the screenshot set, the audit log |
-| Scope and price | `Milestone-2/` (statement of work and pricing), `Milestone-1/` (charter material, stakeholders, success criteria) |
+| Scope and price | `Milestone-2/` (statement of work and pricing), `Milestone-1/` (engagement charter, stakeholders and RACI, success criteria with results) |
 | See it | the narrated demonstration recording (8 min 42 s) |
 
 The runbook's rollback procedure was exercised in the drill. Its other three procedures were
