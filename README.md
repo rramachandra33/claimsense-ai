@@ -13,6 +13,11 @@ adjuster confirms every outcome. All data is synthetic.
 
 - **ClaimSense console:** https://claimsenseai.rajur-dev.com (sign in with the accounts given in the
   submission form; start with `docs/HANDOVER.md`)
+- **Design document and recorded demo:** click the ClaimSense logo (on the sign-in screen or at
+  the top of the sidebar) for a menu with **Design Document** (`/docs/design.html`) and
+  **Recorded Demo** (`/presentation/ClaimSense_Capstone_Presentation.mp4`, 8 min 42 s). Caddy
+  serves both from `/opt/claimsense/site/` on the instance; the video is not in the repository.
+  The logo is `platform/web/src/components/Logo.tsx`, the menu `BrandMenu.tsx`.
 - **CloudWatch dashboards** (sign-in to the AWS account required):
   - [ClaimSense-Experience](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards/dashboard/ClaimSense-Experience):
     p95 latency, call volume, failures, Lambda errors

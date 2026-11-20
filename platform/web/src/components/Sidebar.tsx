@@ -6,6 +6,7 @@ import { FileStack, BookText, LogOut, type LucideIcon } from "lucide-react";
 import type { Session } from "@/lib/session";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { BrandMenu } from "./BrandMenu";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
@@ -34,18 +35,8 @@ export function Sidebar({ session }: { session: Session }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col bg-claimsense-darkest text-teal-50">
       {/* Wordmark */}
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-claimsense-gold font-serif text-base font-bold text-[#0B2E2A] shadow-sm">
-          C
-        </span>
-        <div className="leading-tight">
-          <div className="font-serif text-base font-semibold tracking-tight text-white">
-            ClaimSense
-          </div>
-          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-teal-300/70">
-            AutoSure claims
-          </div>
-        </div>
+      <div className="px-4 py-4">
+        <BrandMenu size="sm" subtitle="AutoSure claims" />
       </div>
 
       {/* Nav */}

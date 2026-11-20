@@ -2,5 +2,19 @@
 # Caddy redirects HTTP to HTTPS and manages the certificate itself.
 {$SITE_DOMAIN} {
 	encode gzip
-	reverse_proxy web:3100
+
+	# The logo menu's links: the design document and the recorded demo, copied to
+	# /opt/claimsense/site/ on the instance (not built into any image).
+	handle /docs/* {
+		root * /srv/site
+		file_server
+	}
+	handle /presentation/* {
+		root * /srv/site
+		file_server
+	}
+
+	handle {
+		reverse_proxy web:3100
+	}
 }

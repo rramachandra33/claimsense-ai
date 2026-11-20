@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { LoginForm } from "./LoginForm";
+import { BrandMenu } from "@/components/BrandMenu";
 import { getSession } from "@/lib/session";
 import { cognitoConfig } from "@/lib/cognito";
 
@@ -26,12 +27,7 @@ export default function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
       <div className="relative hidden flex-col justify-between bg-claimsense-darkest p-12 text-teal-50 lg:flex">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-claimsense-gold font-serif text-lg font-bold text-[#0B2E2A]">
-            C
-          </span>
-          <div className="font-serif text-xl font-semibold tracking-tight text-white">ClaimSense</div>
-        </div>
+        <BrandMenu subtitle="AutoSure claims" />
         <div>
           <h2 className="font-serif text-3xl font-semibold leading-tight text-white">
             A first decision in minutes,
@@ -52,6 +48,10 @@ export default function LoginPage() {
       {/* Form panel */}
       <div className="flex items-center justify-center bg-claimsense-bg px-6 py-12">
         <div className="w-full max-w-sm">
+          {/* On small screens the brand panel is hidden: show the logo and its menu here */}
+          <div className="mb-6 inline-block rounded-xl bg-claimsense-darkest p-2 lg:hidden">
+            <BrandMenu size="sm" />
+          </div>
           <h1 className="text-lg font-semibold text-claimsense-ink">Sign in to ClaimSense</h1>
           <p className="mb-6 mt-1 text-sm text-claimsense-muted">
             {cognito

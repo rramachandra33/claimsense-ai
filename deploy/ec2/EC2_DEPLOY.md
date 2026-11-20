@@ -61,7 +61,10 @@ account (ClarityFi's `rr-capstone`) cannot be touched; pass only the `claimsense
 3. `cd /opt/claimsense && docker compose --profile https up -d --no-deps web caddy`
    (`deploy.sh` copies the `Caddyfile`). Caddy obtains the Let's Encrypt certificate within
    seconds and renews it; `docker compose logs caddy` shows "certificate obtained successfully".
-4. Put the port 3100 rule back to the owner's IP (or remove it): nothing listens there from outside
+4. The logo menu's links are static files served by Caddy from `/opt/claimsense/site/`:
+   `docs/design.html`, `docs/workflows/*.md` and `presentation/ClaimSense_Capstone_Presentation.mp4`
+   (copy them with `scp`; the video is kept out of the repository).
+5. Put the port 3100 rule back to the owner's IP (or remove it): nothing listens there from outside
    any more. To reach the console directly, use an SSH tunnel:
    `ssh -i <key> -L 3100:127.0.0.1:3100 ec2-user@<address>`, then http://localhost:3100.
 

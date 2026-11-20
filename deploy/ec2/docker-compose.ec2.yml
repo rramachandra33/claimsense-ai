@@ -112,7 +112,8 @@ services:
         condition: service_healthy
 
   web:
-    image: ${REGISTRY}/claimsense-web:${TAG:-latest}
+    # WEB_TAG lets the console move to a newer build without touching the other services
+    image: ${REGISTRY}/claimsense-web:${WEB_TAG:-${TAG:-latest}}
     restart: *restart
     environment:
       CLAIMSENSE_API_URL: http://api:8000
@@ -145,6 +146,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./site:/srv/site:ro              # docs/design.html and the demo video (EC2_DEPLOY.md)
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
