@@ -1,6 +1,6 @@
 # ClaimSense AI: observation document
 
-Submission 2 · 19 November 2026 · commit `aa97590` (code as deployed: `96c07fd`)
+Submission 2 · 20 November 2026 · tag `submission-2` (application code as deployed: `96c07fd`; later commits change only documents and the alarm setup)
 
 ClaimSense is a claims-adjudication co-pilot for a motor insurer. Given a claim, four Claude agents
 read the file, check cover, assess fraud risk and draft a first decision (APPROVE, FLAG, ROUTE or

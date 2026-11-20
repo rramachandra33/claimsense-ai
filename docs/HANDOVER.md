@@ -92,7 +92,7 @@ The five criteria every first-time user must be able to demonstrate (brief §6, 
 
 | Required | Where |
 |---|---|
-| Codebase at the final tag | this repository, at the tag named in the submission form |
+| Codebase at the final tag | this repository, tag `submission-2` |
 | Deployed frontend URL | http://34.235.178.85:3100 |
 | Observation document (six sections) | `docs/ClaimSense-AI-Observation-Document.md` / `.pdf` |
 | Demonstration recording, under 10 minutes | link in the submission form (8 min 42 s) |
