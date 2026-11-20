@@ -37,12 +37,15 @@ owner as root, from the policy files in each `deploy/*/iam/` folder; the deploy 
 through it from a fresh account.
 
 **Running state at submission.** Everything runs build `96c07fd` (EC2 services and AgentCore). The
-console is at `http://<public address>:3100` (the address is given in the submission form; see the
-note on reachability in section 6).
+console is at **`http://34.235.178.85:3100`**, an Elastic IP, so the address stays the same when the
+instance is stopped and started. Graders sign in as `david` (adjuster: only the claims assigned to
+that account; confirms up to $25,000) and `bob` (senior adjuster: every claim; the only role that confirms
+above $25,000); the passwords are given in the submission form. Between the two, a grader can
+repeat the two-user test (EV-130): `david` is refused a claim that `bob` can open.
 
 **Cost.** One assessment on Claude costs about $0.07 (27,800 input and 1,400 output tokens across
 the four agents; S19 shows $0.0702). The 150-case evaluation on Claude cost $8.49. The fixed cost
-is the EC2 instance (about $15 a month while running); Lambda, Cognito, ECR and CloudWatch are
+is the EC2 instance (about $15 a month while running) and the Elastic IP (about $3.60 a month); Lambda, Cognito, ECR and CloudWatch are
 within or close to the free tier at this volume.
 
 **Problems found while deploying, and fixed** (all in the git history):
@@ -205,9 +208,13 @@ checked against the code and scripts but not yet performed by a first-time opera
    both alarms notify the SNS topic `claimsense-alarms` (email) on ALARM and on OK, and the API, MCP
    and AgentCore log groups keep 90 days. Still open: the alarm needs runs to fire, and an
    agent-failure alarm on a 5-minute window (incident action 4) is not built yet.
-6. **Reachability for grading.** The console is served on port 3100 to one IP address, and the
-   instance's public address changes on every start. For grading, an Elastic IP and an inbound rule
-   for port 3100 are needed, with test accounts for the graders; the HTTP-only console is acceptable
-   for synthetic data and a capstone, not for production.
+6. **Reachability for grading.** Until 20 Nov the console was served on port 3100 to one IP address,
+   and the instance's public address changed on every start. Fixed for grading: an Elastic IP
+   (`34.235.178.85`) and an inbound rule opening port 3100 to any address; SSH stays limited to one
+   address. Graders use two existing course identities, `david` and `bob`, because a new account
+   would own no claims (access follows the claim's assigned adjuster). Anyone with the URL reaches
+   the sign-in page, so after grading the rule goes back to one address, the passwords are reset
+   (`RESET_PASSWORDS=1 deploy/cognito/setup.sh`) and the Elastic IP is released. The HTTP-only
+   console without MFA is acceptable for synthetic data and a capstone, not for production.
 7. **Cost is small and predictable.** About $0.07 a claim on Claude; Sonnet for coverage and the draft,
    Haiku for reading and risk. The model choice per agent, not the platform, sets the cost.
