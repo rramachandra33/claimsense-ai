@@ -37,8 +37,8 @@ owner as root, from the policy files in each `deploy/*/iam/` folder; the deploy 
 through it from a fresh account.
 
 **Running state at submission.** Everything runs build `96c07fd` (EC2 services and AgentCore). The
-console is at **`http://34.235.178.85:3100`**, an Elastic IP, so the address stays the same when the
-instance is stopped and started. Graders sign in as `david` (adjuster: only the claims assigned to
+console is at **`https://claimsenseai.rajur-dev.com`**: HTTPS with a Let's Encrypt certificate, in front of an Elastic IP
+(`34.235.178.85`), so the address stays the same when the instance is stopped and started. Graders sign in as `david` (adjuster: only the claims assigned to
 that account; confirms up to $25,000) and `bob` (senior adjuster: every claim; the only role that confirms
 above $25,000); the passwords are given in the submission form. Between the two, a grader can
 repeat the two-user test (EV-130): `david` is refused a claim that `bob` can open.
@@ -163,8 +163,8 @@ DENY drafts; nothing wrong reached a claim.
 | 14:22:43 UTC | 14:24:29 (1 min 46 s) | 14:24:52 (16 s) | 14:25:55 | **3 min 12 s** |
 
 **Known gaps** (all recorded, none hidden): one instance, one region, no high availability; no
-automated database backup (a full redeploy reloads the course data and loses notes); the console is
-plain HTTP, MFA is off in Cognito; secrets live in the instance's `.env` and the Lambda settings,
+automated database backup (a full redeploy reloads the course data and loses notes); MFA is off in
+Cognito; secrets live in the instance's `.env` and the Lambda settings,
 not Secrets Manager; the database has no row-level security (entitlement is enforced in the data
 API).
 
@@ -209,13 +209,15 @@ checked against the code and scripts but not yet performed by a first-time opera
    both alarms notify the SNS topic `claimsense-alarms` (email) on ALARM and on OK, and the API, MCP
    and AgentCore log groups keep 90 days. Still open: the alarm needs runs to fire, and an
    agent-failure alarm on a 5-minute window (incident action 4) is not built yet.
-6. **Reachability for grading.** Until 20 Nov the console was served on port 3100 to one IP address,
-   and the instance's public address changed on every start. Fixed for grading: an Elastic IP
-   (`34.235.178.85`) and an inbound rule opening port 3100 to any address; SSH stays limited to one
-   address. Graders use two existing course identities, `david` and `bob`, because a new account
+6. **Reachability for grading.** Until 20 Nov the console was plain HTTP on port 3100, open to one
+   IP address, and the instance's public address changed on every start. Fixed for grading: an
+   Elastic IP (`34.235.178.85`), the name `claimsenseai.rajur-dev.com`, and Caddy in front of the
+   console with a Let's Encrypt certificate, so only ports 80 (redirect) and 443 are open to
+   everyone; the session cookie is Secure again; the console itself listens only inside the
+   instance, so plain HTTP on 3100 is closed; SSH stays limited to one address. Graders use two existing course identities, `david` and `bob`, because a new account
    would own no claims (access follows the claim's assigned adjuster). Anyone with the URL reaches
-   the sign-in page, so after grading the rule goes back to one address, the passwords are reset
-   (`RESET_PASSWORDS=1 deploy/cognito/setup.sh`) and the Elastic IP is released. The HTTP-only
-   console without MFA is acceptable for synthetic data and a capstone, not for production.
+   the sign-in page, so after grading the passwords are reset
+   (`RESET_PASSWORDS=1 deploy/cognito/setup.sh`) and the address released. Sign-in without MFA is
+   acceptable for synthetic data and a capstone, not for production.
 7. **Cost is small and predictable.** About $0.07 a claim on Claude; Sonnet for coverage and the draft,
    Haiku for reading and risk. The model choice per agent, not the platform, sets the cost.

@@ -32,6 +32,7 @@ until "${SSH[@]}" test -f /opt/claimsense/.bootstrapped 2>/dev/null; do sleep 10
 
 echo "==> copying the Compose file"
 scp -i "$KEY_FILE" -q docker-compose.ec2.yml "ec2-user@$DNS:/opt/claimsense/docker-compose.yml"
+scp -i "$KEY_FILE" -q Caddyfile "ec2-user@$DNS:/opt/claimsense/Caddyfile"
 
 echo "==> pulling and starting the stack"
 "${SSH[@]}" bash -s -- "$REGISTRY" "$TAG" "$BRAIN" "$AWS_REGION" <<'REMOTE'

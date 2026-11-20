@@ -117,9 +117,21 @@ The public Lambda Function URL has development sign-in off (404). Sign-in stays 
 the EC2 instance until Cognito replaces it; both share the token secret. (Since 2026-11-05: off on
 EC2 too once Cognito is set up, see above.)
 
-### Console cookie over plain HTTP · decided 2026-11-04
+### Console cookie over plain HTTP · decided 2026-11-04, reversed 2026-11-20
 `CLAIMSENSE_COOKIE_SECURE=0` on EC2 while the console is plain HTTP (a Secure cookie would be
-dropped). Turn it back on behind HTTPS.
+dropped). Turned back on (`CLAIMSENSE_COOKIE_SECURE=1` in the instance's `.env`) once the console
+was behind HTTPS; see the next entry.
+
+### HTTPS for the console · decided 2026-11-20
+For grading, the console needed a fixed public address. Rather than open plain HTTP on port 3100
+to everyone, the instance got an Elastic IP, the name `claimsenseai.rajur-dev.com` (Route 53 A
+record) and Caddy (`caddy:2.8.4`, profile `https` in `deploy/ec2/docker-compose.ec2.yml`,
+`deploy/ec2/Caddyfile`), which obtains and renews a Let's Encrypt certificate and redirects HTTP
+to HTTPS. Ports 80 and 443 are open; the console listens on 127.0.0.1:3100 only (`CONSOLE_BIND`),
+because a plain-HTTP sign-in still worked from the owner's address; 22 is limited to one address.
+Why Caddy in Compose
+and not on the host: the instance runs Amazon Linux, the setup stays in the repository, and it
+restarts with the stack. Same pattern as the ClarityFI deployment.
 
 ## Evaluation suite: 150 cases · decided 2026-11-19
 The brief (Milestone 5) asks for 150 cases with prompt-injection, cross-record-leakage and

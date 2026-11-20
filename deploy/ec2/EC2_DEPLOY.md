@@ -50,6 +50,21 @@ account (ClarityFi's `rr-capstone`) cannot be touched; pass only the `claimsense
 - On the instance, the API (8000), MCP server (8200) and runner (8100) listen on 127.0.0.1 only.
 - IMDSv2 only, hop limit 2 (containers reach the role's credentials); disk encrypted.
 
+## HTTPS and a fixed name (optional; set up 2026-11-20)
+
+1. As the account administrator: allocate an Elastic IP and associate it with the instance; add an
+   A record (here `claimsenseai.rajur-dev.com` in Route 53) pointing at it; open 80 and 443 to
+   0.0.0.0/0 on `claimsense-sg`.
+2. On the instance, add to `/opt/claimsense/.env`:
+   `SITE_DOMAIN=claimsenseai.rajur-dev.com`, `CLAIMSENSE_COOKIE_SECURE=1` and `CONSOLE_BIND=127.0.0.1`
+   (the console then listens only inside the instance; Caddy reaches it over the Compose network).
+3. `cd /opt/claimsense && docker compose --profile https up -d --no-deps web caddy`
+   (`deploy.sh` copies the `Caddyfile`). Caddy obtains the Let's Encrypt certificate within
+   seconds and renews it; `docker compose logs caddy` shows "certificate obtained successfully".
+4. Put the port 3100 rule back to the owner's IP (or remove it): nothing listens there from outside
+   any more. To reach the console directly, use an SSH tunnel:
+   `ssh -i <key> -L 3100:127.0.0.1:3100 ec2-user@<address>`, then http://localhost:3100.
+
 ## Cost and teardown
 
 About $0.02 an hour while running (t3.small) plus about $1.60 a month for the 20 GB disk. Stop it

@@ -12,7 +12,7 @@ deliverable lives. Synthetic data only.
 
 | | |
 |---|---|
-| Console | **http://34.235.178.85:3100** (AWS us-east-1, fixed address) |
+| Console | **https://claimsenseai.rajur-dev.com** (AWS us-east-1; HTTPS with a Let's Encrypt certificate) |
 | Sign in as an adjuster | `david`: sees only the claims assigned to that account; confirms drafts up to $25,000 |
 | Sign in as a senior adjuster | `bob`: sees every claim; the only role that confirms above $25,000 |
 | Passwords | given in the submission form |
@@ -27,7 +27,7 @@ The five criteria every first-time user must be able to demonstrate (brief §6, 
 | Criterion | Try this in the console | Evidence in the repository |
 |---|---|---|
 | 1. A decision on any claim | As `bob`, open any claim and run an assessment: a draft with reasoning and cited clauses appears in about 20–35 s | Golden run 19 Nov: 148/150, then 150/150 (`docs/ClaimSense-AI-Golden-Run-2026-11-19.md`); screenshots S17–S19 |
-| 2. Refusal on entitlement | As `david`, open `http://34.235.178.85:3100/claims/CLM-2024-1800` (assigned to `alice`): no claim data, the same answer as an unknown claim; as `bob` the same claim opens | EV-130, the recorded two-user test, with both requests and responses (`evals/results/20261119-134237-bedrock.json`); S20; the refusal in the audit log (S14) |
+| 2. Refusal on entitlement | As `david`, open `https://claimsenseai.rajur-dev.com/claims/CLM-2024-1800` (assigned to `alice`): no claim data, the same answer as an unknown claim; as `bob` the same claim opens | EV-130, the recorded two-user test, with both requests and responses (`evals/results/20261119-134237-bedrock.json`); S20; the refusal in the audit log (S14) |
 | 3. Attribution in every response | In a note, "How this was reached" shows code's facts beside the model's judgment, and the note says whether the model or code decided | `decision_source` on every result (`model` or `deterministic_fallback`); S19 |
 | 4. Reproducible evidence | — | CI runs the 150 cases on every commit and blocks the image push below 90% (`.github/workflows/ci.yml`, S15, S16); `make golden` reruns them on Claude |
 | 5. Operability without the author | Follow `docs/RUNBOOK.md` | Incident drill: detected in 1 min 46 s, recovered in 3 min 12 s (`docs/INCIDENT-2026-11-19-drill.md`); dashboards and alarms S05–S09 |
@@ -93,7 +93,7 @@ The five criteria every first-time user must be able to demonstrate (brief §6, 
 | Required | Where |
 |---|---|
 | Codebase at the final tag | this repository, tag `submission-2` |
-| Deployed frontend URL | http://34.235.178.85:3100 |
+| Deployed frontend URL | https://claimsenseai.rajur-dev.com |
 | Observation document (six sections) | `docs/ClaimSense-AI-Observation-Document.md` / `.pdf` |
 | Demonstration recording, under 10 minutes | link in the submission form (8 min 42 s) |
 | CI run on the submitted commit | GitHub Actions, workflow `ci` on the tagged commit |
@@ -112,14 +112,15 @@ The five criteria every first-time user must be able to demonstrate (brief §6, 
 
 ## Known gaps, accepted for the pilot
 
-MFA is not enforced in Cognito; the console is plain HTTP; secrets are in the instance's `.env`
+MFA is not enforced in Cognito; secrets are in the instance's `.env`
 and the Lambda settings; the database has no row-level security; there is no automated database
 backup; one instance in one region. Each is listed with its production fix in SOW §9 and the risk
 register.
 
 ## After grading
 
-1. Put the port 3100 inbound rule on `claimsense-sg` back to one address.
+1. Remove the port 80 and 443 inbound rules on `claimsense-sg` (or keep them while the console
+   should stay reachable), and the DNS record `claimsenseai.rajur-dev.com` when the address is released.
 2. Reset the test passwords: `RESET_PASSWORDS=1 AWS_PROFILE=claimsense deploy/cognito/setup.sh`.
 3. Release the Elastic IP, or stop the instance and keep it for about $3.60 a month.
 4. At the end of the engagement, follow SOW §12 (export, then delete every resource listed).

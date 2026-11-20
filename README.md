@@ -11,7 +11,7 @@ adjuster confirms every outcome. All data is synthetic.
 
 ## Live deployment (AWS us-east-1)
 
-- **ClaimSense console:** http://34.235.178.85:3100 (sign in with the accounts given in the
+- **ClaimSense console:** https://claimsenseai.rajur-dev.com (sign in with the accounts given in the
   submission form; start with `docs/HANDOVER.md`)
 - **CloudWatch dashboards** (sign-in to the AWS account required):
   - [ClaimSense-Experience](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards/dashboard/ClaimSense-Experience):

@@ -1,0 +1,6 @@
+# HTTPS for the ClaimSense console. SITE_DOMAIN comes from /opt/claimsense/.env.
+# Caddy redirects HTTP to HTTPS and manages the certificate itself.
+{$SITE_DOMAIN} {
+	encode gzip
+	reverse_proxy web:3100
+}

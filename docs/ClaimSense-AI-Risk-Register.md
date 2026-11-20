@@ -159,5 +159,6 @@ model (R3).
   *ClaimSense-Economics* dashboard; an AWS Budgets alert on the account is recommended.
 * **Loss of notes.** There is no automated database backup, and re-running the seed job reloads the
   course data and deletes notes. The runbook warns against it; a backup is needed before production.
-* **Security gaps accepted for the pilot** (SOW §9): HTTP console, MFA off in Cognito, secrets in
-  the instance's `.env` and the Lambda settings, no row-level security. Synthetic data only.
+* **Security gaps accepted for the pilot** (SOW §9): MFA off in Cognito, secrets in the instance's
+  `.env` and the Lambda settings, no row-level security. Synthetic data only. The fourth gap in the
+  SOW, the plain-HTTP console, was closed on 20 November: HTTPS through Caddy, Secure cookie.
