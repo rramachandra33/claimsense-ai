@@ -9,6 +9,23 @@ adjuster confirms every outcome. All data is synthetic.
 - **Stack:** Python, OpenAI Agents SDK with Claude on Amazon Bedrock, PostgreSQL behind an MCP server,
   Amazon Cognito, containers, CI with an evaluation gate, AWS (EC2).
 
+## Live deployment (AWS us-east-1)
+
+- **ClaimSense console:** http://34.235.178.85:3100 (sign in with the accounts given in the
+  submission form; start with `docs/HANDOVER.md`)
+- **CloudWatch dashboards** (sign-in to the AWS account required):
+  - [ClaimSense-Experience](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards/dashboard/ClaimSense-Experience):
+    p95 latency, call volume, failures, Lambda errors
+  - [ClaimSense-Quality](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards/dashboard/ClaimSense-Quality):
+    evaluation pass rate against the 90% gate, fallbacks, decisions by outcome
+  - [ClaimSense-Economics](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards/dashboard/ClaimSense-Economics):
+    model cost per resolution, tokens
+  - [Alarms](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#alarmsV2:?search=ClaimSense):
+    ClaimSense-BadRuns and ClaimSense-SlowRuns
+
+  Without AWS access, the annotated screenshots of these pages are in
+  `docs/ClaimSense-AI-AWS-Evidence-Screenshots.pdf` (S05–S09).
+
 ## Run it
 
 ```bash
@@ -24,8 +41,9 @@ scratch: `DEPLOY_AND_TEST_ON_AWS.md`. Every decision, dated: `DECISIONS.md`. `ma
 Built and deployed on AWS: data API (EC2 and Lambda), MCP server and registry (Lambda), four
 agents on AgentCore (Claude on Bedrock; mock agents locally), console with Confirm/Reject, scheduled
 batch assessment, Amazon Cognito sign-in (`deploy/cognito/`), CI with the evaluation gate, and
-CloudWatch dashboards and alarms. Still to do: the capstone documents, the incident drill and
-runbook. Roadmap: `docs/ClaimSense-AI-Roadmap-and-Status.pdf`.
+CloudWatch dashboards and alarms with email notification. Evaluated (150 cases, 148/150 on Claude),
+drilled (recovered in 3 min 12 s), with a runbook and a handover pack: `docs/HANDOVER.md`. Final
+submission: tag `submission-2`.
 
 ## Repository layout (current)
 
