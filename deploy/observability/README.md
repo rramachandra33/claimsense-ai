@@ -48,4 +48,15 @@ calls and `CloudWatch.PutMetricData`.
 - CI role `claimsense-github-ci`: inline policy `eval-metrics`, PutMetricData for `ClaimSense`
   (`deploy/ci/setup_github_oidc.sh`).
 - IAM user: managed policy `ClaimSenseObservability` (`iam/deployer-policy.json`): dashboards and
-  alarms named `ClaimSense-*`, read metrics, publish to `ClaimSense`, query the trace logs.
+  alarms named `ClaimSense-*`, read metrics, publish to `ClaimSense`, query the trace logs, the
+  SNS topic `claimsense-alarms`, and retention on the ClaimSense log groups (added 2026-11-19).
+
+## Notifications and retention (2026-11-19)
+
+Both alarms notify the SNS topic `claimsense-alarms` when they go to ALARM and when they return to
+OK; `ALARM_EMAIL=<address> deploy/observability/setup.sh` subscribes an address (AWS emails a
+confirmation link first). The Lambda and AgentCore log groups keep 90 days of logs
+(`LOG_RETENTION_DAYS` changes it); before this they never expired.
+
+`claimsense-batch` has no log group yet (it has never run); run `setup.sh` again after its first run
+so that group gets the retention too.

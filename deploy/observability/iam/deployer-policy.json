@@ -18,6 +18,16 @@
      "Resource": ["arn:aws:logs:us-east-1:ACCOUNT:log-group:aws/spans",
                   "arn:aws:logs:us-east-1:ACCOUNT:log-group:aws/spans:*",
                   "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/bedrock-agentcore/runtimes/*"]},
-    {"Sid": "QueryResults", "Effect": "Allow", "Action": "logs:GetQueryResults", "Resource": "*"}
+    {"Sid": "QueryResults", "Effect": "Allow", "Action": "logs:GetQueryResults", "Resource": "*"},
+    {"Sid": "AlarmTopic", "Effect": "Allow",
+     "Action": ["sns:CreateTopic", "sns:GetTopicAttributes", "sns:SetTopicAttributes", "sns:Subscribe",
+                "sns:ListSubscriptionsByTopic", "sns:TagResource"],
+     "Resource": "arn:aws:sns:us-east-1:ACCOUNT:claimsense-alarms"},
+    {"Sid": "LogRetention", "Effect": "Allow",
+     "Action": ["logs:PutRetentionPolicy", "logs:DescribeLogGroups"],
+     "Resource": ["arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/lambda/claimsense-*",
+                  "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/lambda/claimsense-*:*",
+                  "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/bedrock-agentcore/runtimes/claimsense_runner-*",
+                  "arn:aws:logs:us-east-1:ACCOUNT:log-group:/aws/bedrock-agentcore/runtimes/claimsense_runner-*:*"]}
   ]
 }
