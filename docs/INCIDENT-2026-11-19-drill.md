@@ -35,8 +35,9 @@ agent-failure DENY: a draft for an adjuster, with no citation and the error as i
 
 * 4 runs failed; 4 agent-failure DENY drafts written (notes 17–20). They are drafts: nothing was
   paid, closed or denied to a customer, and the review rules require a reason before an adjuster
-  can confirm or reject an agent-failure DENY. To be rejected in the console with the reason
-  "incident drill".
+  can confirm or reject an agent-failure DENY. All four were rejected in the console by `bob`
+  (senior adjuster) with the reason "incident drill", 00:50–00:52 UTC on 20 Nov; the recovery
+  notes 21 and 22 were left for normal review.
 * No data exposure; access control, audit and the draft checks were unaffected.
 * Cost of the drill: about $0.30 in model calls.
 * The runs were started as the `claimsense-batch` service account from the instance (people's
