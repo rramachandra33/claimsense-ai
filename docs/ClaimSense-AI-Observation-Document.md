@@ -1,6 +1,6 @@
 # ClaimSense AI: observation document
 
-Submission 2 · 20 November 2026 · tag `submission-2` (application code as deployed: `96c07fd`; later commits change only documents and the alarm setup)
+Submission 2 · 20 November 2026 · tag `submission-2` (deployed: agents, data API and MCP server `96c07fd`, console `79f4b95`)
 
 ClaimSense is a claims-adjudication co-pilot for a motor insurer. Given a claim, four Claude agents
 read the file, check cover, assess fraud risk and draft a first decision (APPROVE, FLAG, ROUTE or
@@ -36,7 +36,9 @@ owner as root, from the policy files in each `deploy/*/iam/` folder; the deploy 
 (`rramachandra33`) has only the rights those files grant. `DEPLOY_AND_TEST_ON_AWS.md` walks
 through it from a fresh account.
 
-**Running state at submission.** Everything runs build `96c07fd` (EC2 services and AgentCore). The
+**Running state at submission.** AgentCore, the data API, the MCP server and the runner run build
+`96c07fd`; the console runs `79f4b95`, which only adds the logo and its menu linking the design
+document and the recorded demo. The
 console is at **`https://claimsenseai.rajur-dev.com`**: HTTPS with a Let's Encrypt certificate, in front of an Elastic IP
 (`34.235.178.85`), so the address stays the same when the instance is stopped and started. Graders sign in as `david` (adjuster: only the claims assigned to
 that account; confirms up to $25,000) and `bob` (senior adjuster: every claim; the only role that confirms
